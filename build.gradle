@@ -1,0 +1,19 @@
+allprojects {
+    apply plugin: 'java'
+    group = 'xyz.ressor'
+    
+    sourceCompatibility = 1.12
+    targetCompatibility = 1.12
+
+    repositories {
+        mavenCentral()
+        mavenLocal()
+        jcenter()
+    }
+
+    configurations.all {
+        exclude group: "org.slf4j", module: "slf4j-log4j12"
+        exclude module: "log4j-to-slf4j"
+        exclude group: "ch.qos.logback"
+    }
+}
