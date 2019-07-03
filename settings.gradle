@@ -1,1 +1,2 @@
 include 'ressor-core'
+include 'ressor-commons'
