@@ -1,0 +1,3 @@
+dependencies {
+    compile group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '5.4.0.201906121030-r'
+}

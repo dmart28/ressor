@@ -1,2 +1,5 @@
 include 'ressor-core'
 include 'ressor-commons'
+include 'ressor-git-source'
+include 'ressor-http-source'
+include 'ressor-svn-source'
