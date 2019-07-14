@@ -32,7 +32,7 @@ public class FileSystemSource implements Source {
 
     @Override
     public boolean isListenable() {
-        return watchService != null;
+        return /*watchService != null*/true;
     }
 
     @Override

@@ -16,7 +16,7 @@ public class FileSystemWatchService {
     private static final Logger log = LoggerFactory.getLogger(FileSystemWatchService.class);
     private final WatchService watchService = getWatchService();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private final Map<Path, Consumer<WatchEvent<Path>>> listeners = new ConcurrentHashMap<>();
+    private final Map<Path, Consumer<Path>> listeners = new ConcurrentHashMap<>();
 
     public void init() {
         executor.submit(() -> {
@@ -28,10 +28,11 @@ public class FileSystemWatchService {
                     for (WatchEvent<?> event : key.pollEvents()) {
                         var path = (Path) event.context();
                         if (path != null) {
-                            var listener = listeners.get(path.toAbsolutePath());
+                            var resolvedPath = ((Path) key.watchable()).resolve(path);
+                            var listener = listeners.get(resolvedPath);
                             if (listener != null) {
                                 try {
-                                    listener.accept((WatchEvent<Path>) event);
+                                    listener.accept(resolvedPath);
                                 } catch (Throwable t) {
                                     log.error("Error calling callback for path {}", path, t);
                                 }
@@ -53,16 +54,21 @@ public class FileSystemWatchService {
             log.debug("Destroying File System watch service ...");
             executor.shutdownNow();
             executor.awaitTermination(5, TimeUnit.SECONDS);
+            watchService.close();
             log.debug("File System watch service destroyed.");
         } catch (Throwable t) {
             throw wrap(t);
         }
     }
 
-    public void registerJob(Path path, Consumer<WatchEvent<Path>> listener) {
+    public void registerJob(Path path, Consumer<Path> listener) {
+        var watchPath = path;
+        if (!Files.isDirectory(watchPath)) {
+            watchPath = watchPath.getParent();
+        }
         if (!executor.isShutdown()) {
             try {
-                path.register(watchService, ENTRY_MODIFY);
+                watchPath.register(watchService, ENTRY_MODIFY);
             } catch (IOException e) {
                 throw wrap(e);
             }
