@@ -1,6 +1,7 @@
 package xyz.ressor.source;
 
 import java.io.InputStream;
+import java.util.Objects;
 
 public class LoadedResource {
     /**
@@ -34,5 +35,20 @@ public class LoadedResource {
 
     public String getResourceId() {
         return resourceId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LoadedResource that = (LoadedResource) o;
+        return lastModifiedMillis == that.lastModifiedMillis &&
+                Objects.equals(inputStream, that.inputStream) &&
+                Objects.equals(resourceId, that.resourceId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(inputStream, lastModifiedMillis, resourceId);
     }
 }

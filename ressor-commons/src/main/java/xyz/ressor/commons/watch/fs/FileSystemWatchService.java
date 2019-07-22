@@ -1,10 +1,13 @@
-package xyz.ressor.commons.fs;
+package xyz.ressor.commons.watch.fs;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
@@ -14,9 +17,9 @@ import static xyz.ressor.commons.utils.Exceptions.wrap;
 
 public class FileSystemWatchService {
     private static final Logger log = LoggerFactory.getLogger(FileSystemWatchService.class);
-    private final WatchService watchService = getWatchService();
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private final Map<Path, Consumer<Path>> listeners = new ConcurrentHashMap<>();
+    protected final WatchService watchService = getWatchService();
+    protected final ExecutorService executor = Executors.newSingleThreadExecutor();
+    protected final Map<Path, List<Consumer<Path>>> listeners = new ConcurrentHashMap<>();
 
     public void init() {
         executor.submit(() -> {
@@ -29,10 +32,10 @@ public class FileSystemWatchService {
                         var path = (Path) event.context();
                         if (path != null) {
                             var resolvedPath = ((Path) key.watchable()).resolve(path);
-                            var listener = listeners.get(resolvedPath);
-                            if (listener != null) {
+                            var ls = listeners.get(resolvedPath);
+                            if (ls != null) {
                                 try {
-                                    listener.accept(resolvedPath);
+                                    ls.forEach(l -> l.accept(resolvedPath));
                                 } catch (Throwable t) {
                                     log.error("Error calling callback for path {}", path, t);
                                 }
@@ -72,7 +75,7 @@ public class FileSystemWatchService {
             } catch (IOException e) {
                 throw wrap(e);
             }
-            listeners.put(path.toAbsolutePath(), listener);
+            listeners.computeIfAbsent(path.toAbsolutePath(), k -> new ArrayList<>()).add(listener);
         }
     }
 

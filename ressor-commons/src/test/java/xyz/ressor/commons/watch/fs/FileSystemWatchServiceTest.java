@@ -1,4 +1,4 @@
-package xyz.ressor.commons.fs;
+package xyz.ressor.commons.watch.fs;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -13,7 +13,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.createFile;
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.apache.commons.io.IOUtils.writeLines;
 import static org.awaitility.Awaitility.await;
