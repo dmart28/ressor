@@ -1,7 +1,7 @@
 dependencies {
     compile project(":ressor-commons")
-
     compile "net.bytebuddy:byte-buddy:$bytebuddyVersion"
-    compile group: 'io.netty', name: 'netty-buffer', version: '4.1.37.Final'
+
+    testCompile group: 'commons-io', name: 'commons-io', version: '2.6'
 }
 

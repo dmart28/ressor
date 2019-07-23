@@ -1,0 +1,11 @@
+{
+  "data": [{
+    "id": 1,
+    "name": "John Doe",
+    "address": "228 Park Ave S"
+  },{
+    "id": 2,
+    "name": "Judy Doe",
+    "address": "22 Cortlandt St"
+  }]
+}

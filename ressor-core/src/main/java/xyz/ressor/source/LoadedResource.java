@@ -43,12 +43,11 @@ public class LoadedResource {
         if (o == null || getClass() != o.getClass()) return false;
         LoadedResource that = (LoadedResource) o;
         return lastModifiedMillis == that.lastModifiedMillis &&
-                Objects.equals(inputStream, that.inputStream) &&
                 Objects.equals(resourceId, that.resourceId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(inputStream, lastModifiedMillis, resourceId);
+        return Objects.hash(lastModifiedMillis, resourceId);
     }
 }

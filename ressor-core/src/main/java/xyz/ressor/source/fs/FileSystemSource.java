@@ -1,6 +1,7 @@
 package xyz.ressor.source.fs;
 
 import xyz.ressor.commons.watch.fs.FileSystemWatchService;
+import xyz.ressor.source.Subscription;
 import xyz.ressor.source.LoadedResource;
 import xyz.ressor.source.Source;
 
@@ -18,13 +19,22 @@ public class FileSystemSource implements Source {
     private static final String CLASSPATH_PREFIX = "classpath:";
     private final String rawResourcePath;
     private final Path resourcePath;
-    private FileSystemWatchService watchService;
     private final boolean isClasspath;
     private final List<Consumer<LoadedResource>> listeners = new CopyOnWriteArrayList<>();
     private final AtomicBoolean isSubscribed = new AtomicBoolean();
+    private volatile long classpathLastModified = -1;
+    private FileSystemWatchService watchService;
+
+    public FileSystemSource(Path resourcePath) {
+        this(resourcePath.toString(), null);
+    }
 
     public FileSystemSource(String resourcePath) {
         this(resourcePath, null);
+    }
+
+    public FileSystemSource(Path resourcePath, FileSystemWatchService watchService) {
+        this(resourcePath.toString(), watchService);
     }
 
     public FileSystemSource(String resourcePath, FileSystemWatchService watchService) {
@@ -44,10 +54,19 @@ public class FileSystemSource implements Source {
                 } else {
                     return null;
                 }
-            } else if (lastModifiedMillis < 0) {
-                return new LoadedResource(getClass().getClassLoader().getResourceAsStream(rawResourcePath), -1, rawResourcePath);
             } else {
-                return null;
+                var currentLastModified = classpathLastModified;
+                if (currentLastModified < 0) {
+                    var resourceURI = getClass().getClassLoader().getResource(rawResourcePath);
+                    if (resourceURI != null) {
+                        classpathLastModified = (currentLastModified = resourceURI.openConnection().getLastModified());
+                    }
+                }
+                if (currentLastModified > lastModifiedMillis) {
+                    return new LoadedResource(getClass().getClassLoader().getResourceAsStream(rawResourcePath), currentLastModified, CLASSPATH_PREFIX + rawResourcePath);
+                } else {
+                    return null;
+                }
             }
         } catch (Throwable t) {
             throw wrap(t);
@@ -56,17 +75,21 @@ public class FileSystemSource implements Source {
 
     @Override
     public boolean isListenable() {
-        return watchService != null;
+        return watchService != null && resourcePath != null;
     }
 
     @Override
-    public void subscribe(Consumer<LoadedResource> listener) {
+    public Subscription subscribe(Consumer<LoadedResource> listener) {
+        if (!isListenable()) {
+            throw new UnsupportedOperationException("The source is not listenable.");
+        }
         listeners.add(listener);
         if (!isSubscribed.compareAndExchange(false, true)) {
             watchService.registerJob(resourcePath, p -> {
                 listeners.forEach(l -> l.accept(loadIfModified(-1)));
             });
         }
+        return () -> listeners.remove(listener);
     }
 
     public boolean isClasspath() {

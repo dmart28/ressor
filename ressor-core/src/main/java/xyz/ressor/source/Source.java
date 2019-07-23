@@ -17,8 +17,12 @@ public interface Source {
      */
     boolean isListenable();
 
-    void subscribe(Consumer<LoadedResource> listener);
+    Subscription subscribe(Consumer<LoadedResource> listener);
 
+    /**
+     * Load resource forcibly from the {@link Source}
+     * @return
+     */
     default LoadedResource load() {
         return loadIfModified(-1);
     }
