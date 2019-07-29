@@ -1,7 +1,8 @@
 dependencies {
     compile project(":ressor-commons")
     compile "net.bytebuddy:byte-buddy:$bytebuddyVersion"
+    compile "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonYamlVersion"
 
     testCompile group: 'commons-io', name: 'commons-io', version: '2.6'
 }
-
