@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.JsonToken;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
+import java.nio.ByteBuffer;
 import java.util.Random;
+import java.util.function.Function;
 
 import static java.nio.charset.StandardCharsets.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -82,6 +84,15 @@ public class TranslatorsTest {
         assertThat(parser.currentName()).isEqualTo("invoice");
         assertThat(parser.nextToken()).isEqualTo(JsonToken.VALUE_NUMBER_INT);
         assertThat(parser.getIntValue()).isEqualTo(34843);
+    }
+
+    @Test
+    public void testPrependingTranslator() {
+        Translator<Integer, String> translator = i -> Integer.toString(i);
+
+        var nt = translator.prepend((Function<byte[], Integer>) bytes -> ByteBuffer.wrap(bytes).getInt());
+
+        assertThat(nt.translate(new byte[] { 0, 0, 5, 1 })).isEqualTo("1281");
     }
 
 }

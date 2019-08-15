@@ -1,0 +1,5 @@
+dependencies {
+    compile project(":ressor-core")
+
+    compile group: 'org.springframework', name: 'spring-beans', version: "$springVersion"
+}
