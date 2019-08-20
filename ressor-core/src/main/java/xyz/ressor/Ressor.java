@@ -7,6 +7,7 @@ import xyz.ressor.translator.Translators;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.function.Function;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -14,11 +15,12 @@ public class Ressor {
     private static final Logger log = LoggerFactory.getLogger(Ressor.class);
 
     public static <T> RessorBuilder<T> builder(Class<T> type) {
-        return new RessorBuilder<T>();
+        return new RessorBuilder<>();
     }
 
     public static class RessorBuilder<T> {
         private Translator<InputStream, ?> translator;
+        private Function<?, ? extends T> factory;
 
         public RessorBuilder<T> yaml() {
             this.translator = Translators.inputStream2Yaml();
@@ -56,6 +58,11 @@ public class Ressor {
 
         public RessorBuilder<T> translator(Translator<InputStream, ?> translator) {
             this.translator = translator;
+            return this;
+        }
+
+        public <D> RessorBuilder<T> factory(Function<D, ? extends T> factory) {
+            this.factory = factory;
             return this;
         }
 
