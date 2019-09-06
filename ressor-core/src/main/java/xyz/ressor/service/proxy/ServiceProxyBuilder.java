@@ -36,14 +36,6 @@ public class ServiceProxyBuilder {
                 .with(typeDef.getDefaultArguments())
                 .with(ConstructorStrategy.Default.NO_CONSTRUCTORS);
 
-        //
-        for (var m : context.getType().getDeclaredMethods()) {
-            if (m.getDeclaredAnnotation(ProxyConstructor.class) != null) {
-                constructor = invoke(m).with(typeDef.getDefaultArguments());
-            }
-        }
-        //
-
         var m = b.implement(RessorService.class)
                 .defineConstructor(Visibility.PUBLIC)
                 .intercept(constructor)
