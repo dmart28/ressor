@@ -21,7 +21,7 @@ public interface Source {
 
     /**
      * Load resource forcibly from the {@link Source}
-     * @return
+     * @return the loaded resource or null
      */
     default LoadedResource load() {
         return loadIfModified(-1);

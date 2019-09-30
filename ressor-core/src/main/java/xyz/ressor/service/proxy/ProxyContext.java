@@ -16,6 +16,7 @@ public class ProxyContext<T> {
     private final List<ServiceExtension> extensions;
     private final ClassLoader classLoader;
     private final T initialInstance;
+    private final Object[] proxyDefaultArguments;
 
     public static <T> ProxyContextBuilder<T> builder(Class<? extends T> type) {
         return new ProxyContextBuilder<>(type);
@@ -23,13 +24,14 @@ public class ProxyContext<T> {
 
     private ProxyContext(Class<? extends T> type, Translator<InputStream, ?> translator,
                         Function<Object, ? extends T> factory, List<ServiceExtension> extensions,
-                        ClassLoader classLoader, T initialInstance) {
+                        ClassLoader classLoader, T initialInstance, Object[] proxyDefaultArguments) {
         this.type = type;
         this.translator = translator;
         this.factory = factory;
         this.extensions = extensions == null ? Collections.emptyList() : Collections.unmodifiableList(extensions);
         this.classLoader = classLoader;
         this.initialInstance = initialInstance;
+        this.proxyDefaultArguments = proxyDefaultArguments;
     }
 
     public Class<? extends T> getType() {
@@ -56,6 +58,10 @@ public class ProxyContext<T> {
         return initialInstance;
     }
 
+    public Object[] getProxyDefaultArguments() {
+        return proxyDefaultArguments;
+    }
+
     public static class ProxyContextBuilder<T> {
         private final Class<? extends T> type;
         private Translator<InputStream, ?> translator;
@@ -63,6 +69,7 @@ public class ProxyContext<T> {
         private List<ServiceExtension> extensions;
         private ClassLoader classLoader;
         private T initialInstance;
+        private Object[] proxyDefaultArguments;
 
         private ProxyContextBuilder(Class<? extends T> type) {
             this.type = type;
@@ -96,9 +103,14 @@ public class ProxyContext<T> {
             return this;
         }
 
+        public ProxyContextBuilder<T> proxyDefaultArguments(Object... proxyDefaultArguments) {
+            this.proxyDefaultArguments = proxyDefaultArguments;
+            return this;
+        }
+
         public ProxyContext<T> build() {
             return new ProxyContext<>(type, translator, factory, extensions, classLoader,
-                    initialInstance);
+                    initialInstance, proxyDefaultArguments);
         }
     }
 }

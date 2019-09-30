@@ -1,17 +1,18 @@
 package xyz.ressor.service.proxy;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 import xyz.ressor.commons.exceptions.TypeDefinitionException;
 import xyz.ressor.service.RessorService;
-import xyz.ressor.service.proxy.model.JsonCarRepository;
-import xyz.ressor.service.proxy.model.JsonConstructorOnlyCarRepository;
-import xyz.ressor.service.proxy.model.JsonNestedCarRepository;
-import xyz.ressor.service.proxy.model.VeryBasicClass;
+import xyz.ressor.service.proxy.model.*;
 import xyz.ressor.source.LoadedResource;
+
+import java.lang.reflect.InvocationTargetException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static xyz.ressor.translator.Translators.inputStream2Json;
+import static xyz.ressor.utils.TestUtils.json;
 import static xyz.ressor.utils.TestUtils.load;
 
 public class ServiceProxyBuilderTest {
@@ -79,6 +80,46 @@ public class ServiceProxyBuilderTest {
 
         assertThat(carRepository.getModel()).isEqualTo("Astra");
         assertThat(carRepository.getManufacturer()).isEqualTo("Opel");
+    }
+
+    @Test
+    public void testDefaultArgumentsJsonCarRepository() {
+        var carRepository = proxyBuilder.buildProxy(ProxyContext
+                .builder(DefaultArgumentsJsonCarRepository.class)
+                .translator(inputStream2Json())
+                .proxyDefaultArguments(json("{\"model\":\"None\",\"manufacturer\":\"None\"}"))
+                .initialInstance(new DefaultArgumentsJsonCarRepository(json("{\"model\":\"-\",\"manufacturer\":\"-\"}")))
+                .build());
+
+        assertThat(carRepository).isNotNull();
+        assertThat(carRepository.getModel()).isEqualTo("-");
+        assertThat(carRepository.getManufacturer()).isEqualTo("-");
+    }
+
+    @Test
+    public void testNoDefaultArgumentsJsonCarRepository() {
+        assertThrows(InvocationTargetException.class, () -> proxyBuilder.buildProxy(ProxyContext
+                .builder(DefaultArgumentsJsonCarRepository.class)
+                .translator(inputStream2Json())
+                .initialInstance(new DefaultArgumentsJsonCarRepository(json("{\"model\":\"-\",\"manufacturer\":\"-\"}")))
+                .build()));
+    }
+
+    @Test
+    public void testInterfaceRepository() {
+        var personInfo = proxyBuilder.buildProxy(ProxyContext
+                .builder(PersonInfo.class)
+                .translator(inputStream2Json())
+                .factory((JsonNode n) -> new PersonInfoImpl(n.path("first_name").asText(), n.path("last_name").asText()))
+                .build());
+
+        assertThat(personInfo).isNotNull();
+
+        ((RessorService<PersonInfo>) personInfo).reload(load("classpath:proxy/person_info.json"));
+
+        assertThat(personInfo.firstName()).isEqualTo("John");
+        assertThat(personInfo.lastName()).isEqualTo("Doe");
+        assertThat(personInfo).isNotInstanceOf(PersonInfoImpl.class);
     }
 
 }

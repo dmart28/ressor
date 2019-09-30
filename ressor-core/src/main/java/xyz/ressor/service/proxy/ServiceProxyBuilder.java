@@ -43,9 +43,9 @@ public class ServiceProxyBuilder {
 
         var i = b.implement(RessorService.class);
         DynamicType.Builder<? extends T> m = i;
-        if (typeDef.getDefaultArguments().length > 0) {
+        if (!typeDef.isInterface() && typeDef.getDefaultArguments().length > 0) {
             var constructor = invoke(typeDef.getDefaultConstructor())
-                    .with(typeDef.getDefaultArguments());
+                    .with(firstNonNull(context.getProxyDefaultArguments(), typeDef.getDefaultArguments()));
             m = i.defineConstructor(Visibility.PUBLIC).intercept(constructor);
         }
         var f = m.defineMethod("getRessorUnderlying", context.getType(), Visibility.PUBLIC)
