@@ -1,15 +1,22 @@
 package xyz.ressor.service.proxy;
 
 import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.description.ByteCodeElement;
+import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy;
-import net.bytebuddy.implementation.MethodCall;
-import xyz.ressor.commons.annotations.ProxyConstructor;
+import net.bytebuddy.matcher.ElementMatcher;
+import xyz.ressor.commons.annotations.ServiceFactory;
+import xyz.ressor.commons.exceptions.TypeDefinitionException;
 import xyz.ressor.commons.utils.Exceptions;
 import xyz.ressor.service.RessorService;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.function.Function;
 
 import static net.bytebuddy.dynamic.loading.ClassLoadingStrategy.Default.INJECTION;
 import static net.bytebuddy.implementation.MethodCall.call;
@@ -18,13 +25,16 @@ import static net.bytebuddy.implementation.MethodDelegation.to;
 import static net.bytebuddy.implementation.MethodDelegation.toMethodReturnOf;
 import static net.bytebuddy.matcher.ElementMatchers.*;
 import static xyz.ressor.commons.utils.CollectionUtils.isNotEmpty;
+import static xyz.ressor.commons.utils.Exceptions.catchingFunc;
+import static xyz.ressor.commons.utils.ReflectionUtils.findAnnotatedExecutables;
+import static xyz.ressor.commons.utils.ReflectionUtils.findExecutable;
 import static xyz.ressor.commons.utils.RessorUtils.firstNonNull;
 
 public class ServiceProxyBuilder {
     private final ByteBuddy byteBuddy = new ByteBuddy();
 
     public <T> T buildProxy(ProxyContext<T> context) {
-        var serviceProxy = new RessorServiceImpl<>(context.getType(), context.getFactory(), context.getTranslator());
+        var serviceProxy = new RessorServiceImpl<>(context.getType(), getFactory(context), context.getTranslator(), context.getInitialInstance());
         var b = byteBuddy.subclass(context.getType());
         if (isNotEmpty(context.getExtensions())) {
             for (var ext : context.getExtensions()) {
@@ -33,18 +43,17 @@ public class ServiceProxyBuilder {
         }
         var typeDef = TypeDefinition.of(context.getType());
         var constructor = invoke(typeDef.getDefaultConstructor())
-                .with(typeDef.getDefaultArguments())
-                .with(ConstructorStrategy.Default.NO_CONSTRUCTORS);
+                .with(typeDef.getDefaultArguments());
 
         var m = b.implement(RessorService.class)
                 .defineConstructor(Visibility.PUBLIC)
                 .intercept(constructor)
                 .defineMethod("getRessorUnderlying", context.getType(), Visibility.PUBLIC)
                 .intercept(call(serviceProxy::instance))
-                .method(isDeclaredBy(context.getType()))
-                .intercept(toMethodReturnOf("getRessorUnderlying"))
                 .method(isDeclaredBy(RessorService.class))
-                .intercept(to(serviceProxy));
+                .intercept(to(serviceProxy))
+                .method(isDeepDeclaredBy(context.getType()))
+                .intercept(toMethodReturnOf("getRessorUnderlying"));
 
         try {
             var loaded = m.make()
@@ -55,6 +64,41 @@ public class ServiceProxyBuilder {
             return targetConstructor.newInstance();
         } catch (Throwable t) {
             throw Exceptions.wrap(t);
+        }
+    }
+
+    private <T> Function<Object, ? extends T> getFactory(ProxyContext<T> context) {
+        if (context.getFactory() != null) {
+            return context.getFactory();
+        } else {
+            var type = context.getType();
+            var factoryExecutable = findAnnotatedExecutables(type, ServiceFactory.class).stream()
+                    // TODO check also the input type of translator
+                    .filter(e -> e.getParameterCount() == 1)
+                    .filter(e -> !(e instanceof Method) || Modifier.isStatic(e.getModifiers()))
+                    .findFirst()
+                    .orElse(findExecutable(type, 1));
+            if (factoryExecutable == null) {
+                throw new TypeDefinitionException(type, "Unable to find any @ServiceFactory or matching constructor");
+            }
+            factoryExecutable.setAccessible(true);
+            if (factoryExecutable instanceof Method) {
+                return catchingFunc(a -> (T) ((Method) factoryExecutable).invoke(null, a));
+            } else {
+                return catchingFunc(a -> (T) ((Constructor) factoryExecutable).newInstance(a));
+            }
+        }
+    }
+
+    private ElementMatcher<? super MethodDescription> isDeepDeclaredBy(Class<?> type) {
+        var is = isDeclaredBy(type);
+        for (var ifc : type.getInterfaces()) {
+            is = is.or(isDeclaredBy(ifc)).or((ElementMatcher<? super ByteCodeElement>) isDeepDeclaredBy(ifc));
+        }
+        if (type != Object.class && type.getSuperclass() != Object.class) {
+            return is.or(isDeepDeclaredBy(type.getSuperclass()));
+        } else {
+            return is;
         }
     }
 

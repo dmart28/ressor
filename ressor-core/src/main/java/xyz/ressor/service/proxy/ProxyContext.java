@@ -15,6 +15,7 @@ public class ProxyContext<T> {
     private final Function<Object, ? extends T> factory;
     private final List<ServiceExtension> extensions;
     private final ClassLoader classLoader;
+    private final T initialInstance;
 
     public static <T> ProxyContextBuilder<T> builder(Class<? extends T> type) {
         return new ProxyContextBuilder<>(type);
@@ -22,12 +23,13 @@ public class ProxyContext<T> {
 
     private ProxyContext(Class<? extends T> type, Translator<InputStream, ?> translator,
                         Function<Object, ? extends T> factory, List<ServiceExtension> extensions,
-                        ClassLoader classLoader) {
+                        ClassLoader classLoader, T initialInstance) {
         this.type = type;
         this.translator = translator;
         this.factory = factory;
         this.extensions = extensions == null ? Collections.emptyList() : Collections.unmodifiableList(extensions);
         this.classLoader = classLoader;
+        this.initialInstance = initialInstance;
     }
 
     public Class<? extends T> getType() {
@@ -50,6 +52,9 @@ public class ProxyContext<T> {
         return classLoader;
     }
 
+    public T getInitialInstance() {
+        return initialInstance;
+    }
 
     public static class ProxyContextBuilder<T> {
         private final Class<? extends T> type;
@@ -57,6 +62,7 @@ public class ProxyContext<T> {
         private Function<Object, ? extends T> factory;
         private List<ServiceExtension> extensions;
         private ClassLoader classLoader;
+        private T initialInstance;
 
         private ProxyContextBuilder(Class<? extends T> type) {
             this.type = type;
@@ -85,10 +91,14 @@ public class ProxyContext<T> {
             return this;
         }
 
-        public ProxyContext<T> build() {
-            return new ProxyContext<>(type, translator, factory, extensions, classLoader);
+        public ProxyContextBuilder<T> initialInstance(T initialInstance) {
+            this.initialInstance = initialInstance;
+            return this;
         }
 
+        public ProxyContext<T> build() {
+            return new ProxyContext<>(type, translator, factory, extensions, classLoader,
+                    initialInstance);
+        }
     }
-
 }

@@ -8,19 +8,23 @@ import java.io.InputStream;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.Function;
 
+import static xyz.ressor.commons.utils.RessorUtils.firstNonNull;
+
 public class RessorServiceImpl<T> implements RessorService<T> {
     private final Function<Object, ? extends T> factory;
     private final Translator<InputStream, ?> translator;
     private final Class<? extends T> type;
+    private T initialInstance;
     private T underlyingInstance;
     private long lastModifiedMillis;
     private final StampedLock lock = new StampedLock();
 
     public RessorServiceImpl(Class<? extends T> type, Function<Object, ? extends T> factory,
-                             Translator<InputStream, ?> translator) {
+                             Translator<InputStream, ?> translator, T initialInstance) {
         this.type = type;
         this.factory = factory;
         this.translator = translator;
+        this.initialInstance = initialInstance;
     }
 
     @Override
@@ -40,7 +44,7 @@ public class RessorServiceImpl<T> implements RessorService<T> {
                 lock.unlockRead(stamp);
             }
         }
-        return instance;
+        return firstNonNull(instance, initialInstance);
     }
 
     @Override

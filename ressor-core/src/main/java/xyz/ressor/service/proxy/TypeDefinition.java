@@ -8,6 +8,7 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 
 import static java.lang.reflect.Modifier.isPrivate;
+import static xyz.ressor.commons.utils.ReflectionUtils.findAnnotatedExecutable;
 import static xyz.ressor.commons.utils.RessorUtils.defaultInstance;
 
 public class TypeDefinition<T> {
@@ -45,7 +46,7 @@ public class TypeDefinition<T> {
         var isInterface = type.isInterface();
         if (!isInterface) {
             Constructor<T>[] constructors = (Constructor<T>[]) type.getDeclaredConstructors();
-            Constructor<T> defaultConstructor = findProxyConstructor(constructors);
+            Constructor<T> defaultConstructor = findAnnotatedExecutable(constructors, ProxyConstructor.class);
 
             if (defaultConstructor == null) {
                 Arrays.sort(constructors, ConstructorComparator.instance());
@@ -73,14 +74,5 @@ public class TypeDefinition<T> {
             defaultArguments[i] = defaultInstance(parameterTypes[i]);
         }
         return defaultArguments;
-    }
-
-    private static <T> Constructor<T> findProxyConstructor(Constructor<T>[] constructors) {
-        for (var c : constructors) {
-            if (c.getAnnotation(ProxyConstructor.class) != null) {
-                return c;
-            }
-        }
-        return null;
     }
 }

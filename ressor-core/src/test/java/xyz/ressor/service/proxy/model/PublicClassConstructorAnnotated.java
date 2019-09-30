@@ -13,7 +13,7 @@ public class PublicClassConstructorAnnotated {
     }
 
     @ProxyConstructor
-    private PublicClassConstructorAnnotated(int i, long j) {
+    public PublicClassConstructorAnnotated(int i, long j) {
         this.i = i + (int) j;
     }
 }

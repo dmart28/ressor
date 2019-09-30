@@ -3,8 +3,6 @@ package xyz.ressor.service.proxy;
 import org.junit.jupiter.api.Test;
 import xyz.ressor.service.proxy.model.*;
 
-import java.lang.reflect.Type;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TypeDefinitionTest {
@@ -74,14 +72,6 @@ public class TypeDefinitionTest {
         assertThat(td.getDefaultConstructor().getParameterCount()).isEqualTo(2);
         assertThat(td.isFinal()).isFalse();
         assertThat(td.isInterface()).isFalse();
-    }
-
-    @Test
-    public void testClassPrivateConstructor() {
-        var td = TypeDefinition.of(ClassPrivateConstructor.class);
-        assertThat(td).isNotNull();
-        assertThat(td.getDefaultConstructor()).isNotNull();
-        assertThat(td.getDefaultConstructor().getParameterCount()).isZero();
     }
 
     @Test

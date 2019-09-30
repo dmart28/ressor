@@ -1,63 +1,36 @@
 package xyz.ressor.service.proxy;
 
 import org.junit.jupiter.api.Test;
-import xyz.ressor.commons.annotations.ProxyConstructor;
-import xyz.ressor.service.RessorService;
-import xyz.ressor.translator.Translators;
-
-import java.util.function.Function;
+import xyz.ressor.commons.exceptions.TypeDefinitionException;
+import xyz.ressor.service.proxy.model.JsonCarRepository;
+import xyz.ressor.service.proxy.model.VeryBasicClass;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static xyz.ressor.utils.TestUtils.illegalConstructor;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static xyz.ressor.translator.Translators.inputStream2Json;
 
 public class ServiceProxyBuilderTest {
+    private ServiceProxyBuilder proxyBuilder = new ServiceProxyBuilder();
 
     @Test
-    public void testAllConstructorsPrivate() {
-        AllPrivateConstructors instance = new ServiceProxyBuilder()
-                .buildProxy(ProxyContext.builder(AllPrivateConstructors.class)
-                .translator(Translators.inputStream2String())
-                .factory((Function<String, AllPrivateConstructors>) AllPrivateConstructors::new)
+    public void testVeryBasicClass() {
+        assertThrows(TypeDefinitionException.class, () -> proxyBuilder.buildProxy(
+                ProxyContext.builder(VeryBasicClass.class).build()));
+    }
+
+    @Test
+    public void testJsonCarRepository() {
+        var initialInstance = new JsonCarRepository("-", "-");
+        var carRepository = proxyBuilder.buildProxy(ProxyContext
+                .builder(JsonCarRepository.class)
+                .translator(inputStream2Json())
+                .initialInstance(initialInstance)
                 .build());
 
-        assertThat(instance).isInstanceOf(RessorService.class);
-        assertThat(instance.val).isNull();
-
-    }
-
-    @Test
-    public void testSimpleProxyCase() {
-
-    }
-
-    public static class AllPrivateConstructors {
-        public final String val;
-
-        public String getVal() {
-            return val;
-        }
-
-        private AllPrivateConstructors(String val) {
-            this.val = val;
-        }
-
-        private AllPrivateConstructors(String val, Object o) {
-            throw illegalConstructor();
-        }
-
-        private AllPrivateConstructors(String val, int a) {
-            throw illegalConstructor();
-        }
-
-        private AllPrivateConstructors(String val, int b, int c) {
-            throw illegalConstructor();
-        }
-
-        @ProxyConstructor
-        public static AllPrivateConstructors create(String v) {
-            return new AllPrivateConstructors(v);
-        }
-
+        assertThat(carRepository).isNotNull();
+        assertThat(carRepository).isNotSameAs(initialInstance);
+        assertThat(carRepository.getModel()).isEqualTo("-");
+        assertThat(carRepository.getManufacturer()).isEqualTo("-");
     }
 
 }
