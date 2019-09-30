@@ -79,6 +79,15 @@ public class Ressor {
             return this;
         }
 
+        public RessorBuilder<T> lines() {
+            return lines(UTF_8);
+        }
+
+        public RessorBuilder<T> lines(Charset charset) {
+            this.translator = Translators.inputStream2Lines(charset);
+            return this;
+        }
+
         public RessorBuilder<T> translator(Translator<InputStream, ?> translator) {
             this.translator = translator;
             return this;

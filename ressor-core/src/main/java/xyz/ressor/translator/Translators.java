@@ -28,6 +28,10 @@ public abstract class Translators {
         return define(s -> new String(s, charset), byte[].class, String.class);
     }
 
+    public static Translator<byte[], String[]> bytes2Lines(Charset charset) {
+        return define(s -> new String(s, charset).split(System.lineSeparator()), byte[].class, String[].class);
+    }
+
     public static Translator<InputStream, byte[]> inputStream2Bytes() {
         return define(s -> {
             try {
@@ -44,6 +48,14 @@ public abstract class Translators {
 
     public static Translator<InputStream, String> inputStream2String(Charset charset) {
         return inputStream2Bytes().chain(bytes2String(charset));
+    }
+
+    public static Translator<InputStream, String[]> inputStream2Lines() {
+        return inputStream2Lines(UTF_8);
+    }
+
+    public static Translator<InputStream, String[]> inputStream2Lines(Charset charset) {
+        return inputStream2Bytes().chain(bytes2Lines(charset));
     }
 
     public static Translator<InputStream, JsonNode> inputStream2Json() {
