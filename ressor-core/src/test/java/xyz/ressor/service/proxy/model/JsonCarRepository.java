@@ -15,6 +15,10 @@ public class JsonCarRepository {
         return manufacturer;
     }
 
+    public final String finalMethod() {
+        return getManufacturer();
+    }
+
     public JsonCarRepository(String model, String manufacturer) {
         this.model = model;
         this.manufacturer = manufacturer;

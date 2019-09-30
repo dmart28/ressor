@@ -10,6 +10,7 @@ import net.bytebuddy.matcher.ElementMatcher;
 import xyz.ressor.commons.annotations.ServiceFactory;
 import xyz.ressor.commons.exceptions.TypeDefinitionException;
 import xyz.ressor.commons.utils.Exceptions;
+import xyz.ressor.commons.utils.RessorUtils;
 import xyz.ressor.service.RessorService;
 
 import java.io.File;
@@ -42,13 +43,15 @@ public class ServiceProxyBuilder {
             }
         }
         var typeDef = TypeDefinition.of(context.getType());
-        var constructor = invoke(typeDef.getDefaultConstructor())
-                .with(typeDef.getDefaultArguments());
 
-        var m = b.implement(RessorService.class)
-                .defineConstructor(Visibility.PUBLIC)
-                .intercept(constructor)
-                .defineMethod("getRessorUnderlying", context.getType(), Visibility.PUBLIC)
+        var i = b.implement(RessorService.class);
+        DynamicType.Builder<? extends T> m = i;
+        if (typeDef.getDefaultArguments().length > 0) {
+            var constructor = invoke(typeDef.getDefaultConstructor())
+                    .with(typeDef.getDefaultArguments());
+            m = i.defineConstructor(Visibility.PUBLIC).intercept(constructor);
+        }
+        var f = m.defineMethod("getRessorUnderlying", context.getType(), Visibility.PUBLIC)
                 .intercept(call(serviceProxy::instance))
                 .method(isDeclaredBy(RessorService.class))
                 .intercept(to(serviceProxy))
@@ -56,7 +59,7 @@ public class ServiceProxyBuilder {
                 .intercept(toMethodReturnOf("getRessorUnderlying"));
 
         try {
-            var loaded = m.make()
+            var loaded = f.make()
                     .load(firstNonNull(context.getClassLoader(), getClass().getClassLoader()), INJECTION)
                     .getLoaded();
             var targetConstructor = loaded.getDeclaredConstructor();
@@ -92,10 +95,13 @@ public class ServiceProxyBuilder {
 
     private ElementMatcher<? super MethodDescription> isDeepDeclaredBy(Class<?> type) {
         var is = isDeclaredBy(type);
-        for (var ifc : type.getInterfaces()) {
-            is = is.or(isDeclaredBy(ifc)).or((ElementMatcher<? super ByteCodeElement>) isDeepDeclaredBy(ifc));
+        var interfaces = type.getInterfaces();
+        if (interfaces != null && interfaces.length > 0) {
+            for (var ifc : interfaces) {
+                is = is.or(isDeclaredBy(ifc)).or((ElementMatcher<? super ByteCodeElement>) isDeepDeclaredBy(ifc));
+            }
         }
-        if (type != Object.class && type.getSuperclass() != Object.class) {
+        if (type.getSuperclass() != null && type.getSuperclass() != Object.class) {
             return is.or(isDeepDeclaredBy(type.getSuperclass()));
         } else {
             return is;
