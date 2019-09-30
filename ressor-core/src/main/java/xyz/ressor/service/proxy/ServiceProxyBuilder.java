@@ -5,15 +5,12 @@ import net.bytebuddy.description.ByteCodeElement;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.DynamicType;
-import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy;
 import net.bytebuddy.matcher.ElementMatcher;
 import xyz.ressor.commons.annotations.ServiceFactory;
 import xyz.ressor.commons.exceptions.TypeDefinitionException;
 import xyz.ressor.commons.utils.Exceptions;
-import xyz.ressor.commons.utils.RessorUtils;
 import xyz.ressor.service.RessorService;
 
-import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -76,13 +73,13 @@ public class ServiceProxyBuilder {
         } else {
             var type = context.getType();
             var factoryExecutable = findAnnotatedExecutables(type, ServiceFactory.class).stream()
-                    // TODO check also the input type of translator
                     .filter(e -> e.getParameterCount() == 1)
+                    .filter(e -> e.getParameterTypes()[0].isAssignableFrom(context.getTranslator().outputType()))
                     .filter(e -> !(e instanceof Method) || Modifier.isStatic(e.getModifiers()))
                     .findFirst()
-                    .orElse(findExecutable(type, 1));
+                    .orElse(findExecutable(type, context.getTranslator().outputType()));
             if (factoryExecutable == null) {
-                throw new TypeDefinitionException(type, "Unable to find any @ServiceFactory or matching constructor");
+                throw new TypeDefinitionException(type, "Unable to find any @ServiceFactory or any matching constructor for the given source");
             }
             factoryExecutable.setAccessible(true);
             if (factoryExecutable instanceof Method) {

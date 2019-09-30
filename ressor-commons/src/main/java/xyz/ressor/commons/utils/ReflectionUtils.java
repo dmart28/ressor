@@ -32,9 +32,9 @@ public class ReflectionUtils {
         return result;
     }
 
-    public static <T extends Executable> T findExecutable(Class<?> type, int parameterCount) {
+    public static <T extends Executable> T findExecutable(Class<?> type, Class<?> outputType) {
         for (var c : type.getDeclaredConstructors()) {
-            if (c.getParameterCount() == parameterCount) {
+            if (c.getParameterCount() == 1 && c.getParameterTypes()[0].isAssignableFrom(outputType)) {
                 return (T) c;
             }
         }

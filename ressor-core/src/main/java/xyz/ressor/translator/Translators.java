@@ -12,6 +12,7 @@ import java.nio.charset.Charset;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static xyz.ressor.commons.utils.Exceptions.wrap;
+import static xyz.ressor.translator.Translator.define;
 
 public abstract class Translators {
     private static final JsonFactory JSON_FACTORY = new JsonFactory();
@@ -24,17 +25,17 @@ public abstract class Translators {
     }
 
     public static Translator<byte[], String> bytes2String(Charset charset) {
-        return s -> new String(s, charset);
+        return define(s -> new String(s, charset), byte[].class, String.class);
     }
 
     public static Translator<InputStream, byte[]> inputStream2Bytes() {
-        return s -> {
+        return define(s -> {
             try {
                 return s.readAllBytes();
             } catch (IOException e) {
                 throw wrap(e);
             }
-        };
+        }, InputStream.class, byte[].class);
     }
 
     public static Translator<InputStream, String> inputStream2String() {
@@ -50,43 +51,43 @@ public abstract class Translators {
     }
 
     public static Translator<InputStream, JsonNode> inputStream2Json(ObjectMapper mapper) {
-        return s -> {
+        return define(s -> {
             try {
                 return mapper.readTree(s);
             } catch (IOException e) {
                 throw wrap(e);
             }
-        };
+        }, InputStream.class, JsonNode.class);
     }
 
     public static Translator<InputStream, JsonNode> inputStream2Yaml() {
-        return s -> {
+        return define(s -> {
             try {
                 return YAML_MAPPER.readTree(s);
             } catch (IOException e) {
                 throw wrap(e);
             }
-        };
+        }, InputStream.class, JsonNode.class);
     }
 
     public static Translator<InputStream, JsonParser> inputStream2JsonParser() {
-        return s -> {
+        return define(s -> {
             try {
                 return JSON_FACTORY.createParser(s);
             } catch (IOException e) {
                 throw wrap(e);
             }
-        };
+        }, InputStream.class, JsonParser.class);
     }
 
     public static Translator<InputStream, JsonParser> inputStream2YamlParser() {
-        return s -> {
+        return define(s -> {
             try {
                 return YAML_FACTORY.createParser(s);
             } catch (IOException e) {
                 throw wrap(e);
             }
-        };
+        }, InputStream.class, JsonParser.class);
     }
 
 }

@@ -6,11 +6,11 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.nio.ByteBuffer;
 import java.util.Random;
-import java.util.function.Function;
 
 import static java.nio.charset.StandardCharsets.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static xyz.ressor.commons.utils.FileUtils.classpath;
+import static xyz.ressor.translator.Translator.define;
 import static xyz.ressor.translator.Translators.*;
 
 public class TranslatorsTest {
@@ -88,9 +88,9 @@ public class TranslatorsTest {
 
     @Test
     public void testPrependingTranslator() {
-        Translator<Integer, String> translator = i -> Integer.toString(i);
+        var translator = define(i -> Integer.toString(i), Integer.class, String.class);
 
-        var nt = translator.prepend((Function<byte[], Integer>) bytes -> ByteBuffer.wrap(bytes).getInt());
+        var nt = translator.prepend(bytes -> ByteBuffer.wrap(bytes).getInt(), byte[].class);
 
         assertThat(nt.translate(new byte[] { 0, 0, 5, 1 })).isEqualTo("1281");
     }

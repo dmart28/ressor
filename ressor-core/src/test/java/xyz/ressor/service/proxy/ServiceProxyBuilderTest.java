@@ -20,7 +20,7 @@ public class ServiceProxyBuilderTest {
     @Test
     public void testVeryBasicClass() {
         assertThrows(TypeDefinitionException.class, () -> proxyBuilder.buildProxy(
-                ProxyContext.builder(VeryBasicClass.class).build()));
+                ProxyContext.builder(VeryBasicClass.class).translator(inputStream2Json()).build()));
     }
 
     @Test
