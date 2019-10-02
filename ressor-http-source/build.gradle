@@ -1,3 +1,4 @@
 dependencies {
+    compile project(":ressor-commons")
     compile "org.apache.httpcomponents:httpclient:$httpClientVersion"
 }

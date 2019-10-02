@@ -1,3 +1,6 @@
 dependencies {
+    compile project(":ressor-core")
     compile "org.eclipse.jgit:org.eclipse.jgit:$jGitVersion"
+
+    testCompile group: 'commons-io', name: 'commons-io', version: '2.6'
 }
