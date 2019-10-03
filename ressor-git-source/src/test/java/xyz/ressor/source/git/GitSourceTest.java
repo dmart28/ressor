@@ -5,8 +5,11 @@ import org.eclipse.jgit.api.Git;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import xyz.ressor.source.Source;
+import xyz.ressor.source.git.builder.LocalRepositoryBuilder;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,6 +19,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static xyz.ressor.source.git.GitSource.EMPTY_TRANSPORT_CONFIG;
+import static xyz.ressor.source.git.RefType.TAG;
 
 public class GitSourceTest {
     private Git git;
@@ -36,20 +40,65 @@ public class GitSourceTest {
 
     @Test
     public void test() throws Exception {
-        var source = new GitSource(git, EMPTY_TRANSPORT_CONFIG, "data.txt", "master", false);
+        var source = new GitSource(git, EMPTY_TRANSPORT_CONFIG, "data.txt", new GitRef("master"), false);
 
-        var resource = source.load();
-        assertThat(IOUtils.toString(resource.getInputStream(), UTF_8)).isEqualTo("master data");
+        assertThat(toString(source)).isEqualTo("master data");
 
-        source = new GitSource(git, EMPTY_TRANSPORT_CONFIG, "data.txt", "develop", false);
-        resource = source.load();
-        assertThat(IOUtils.toString(resource.getInputStream(), UTF_8)).isEqualTo("develop data");
+        source = new GitSource(git, EMPTY_TRANSPORT_CONFIG, "data.txt", new GitRef("develop"), false);
+        assertThat(toString(source)).isEqualTo("develop data");
 
-        source = new GitSource(git, EMPTY_TRANSPORT_CONFIG, "nodata.txt", "develop", false);
-        resource = source.load();
-        assertThat(resource).isNull();
+        source = new GitSource(git, EMPTY_TRANSPORT_CONFIG, "nodata.txt", new GitRef("develop"), false);
+        assertThat(source.load()).isNull();
 
-        assertThrows(IllegalArgumentException.class, () -> new GitSource(git, EMPTY_TRANSPORT_CONFIG, "data.txt", "nobranch", false));
+        assertThrows(IllegalArgumentException.class, () -> new GitSource(git, EMPTY_TRANSPORT_CONFIG, "data.txt", new GitRef("nobranch"), false));
+    }
+
+    @Test
+    public void testPredefinedRepository() throws Exception {
+        var source = local().filePath("data.txt").build();
+        assertThat(source).isNotNull();
+        assertThat(toString(source)).isEqualTo("One");
+
+        source = local().refValue("master", TAG).filePath("data.txt").build();
+        assertThat(toString(source)).isEqualTo("Three");
+
+        source = local().refValue("develop").filePath("data.txt").build();
+        assertThat(source.load()).isNull();
+
+        source = local().refValue("develop").filePath("nodata.txt").build();
+        assertThat(source.load()).isNotNull();
+
+        source = local().refValue("develop", TAG).filePath("data.txt").build();
+        assertThat(toString(source)).isEqualTo("Four");
+
+        source = local().refValue("refs/tags/develop").filePath("data.txt").build();
+        assertThat(toString(source)).isEqualTo("Four");
+
+        source = local().refValue("refs/heads/master").filePath("data.txt").build();
+        assertThat(toString(source)).isEqualTo("One");
+
+        source = local().refValue("refs/tags/master").filePath("data.txt").build();
+        assertThat(toString(source)).isEqualTo("Three");
+
+        source = local().refValue("954a68210f524228ed29a85e7b8574dd1577bf40").filePath("data.txt").build();
+        assertThat(toString(source)).isEqualTo("Five");
+
+        source = local().refValue("tag-2").filePath("data.txt").build();
+        assertThat(toString(source)).isEqualTo("Two");
+
+        source = local().refValue("refs/tags/tag-2").filePath("data.txt").build();
+        assertThat(toString(source)).isEqualTo("Two");
+
+        assertThrows(IllegalArgumentException.class, () -> local().refValue("tag-3").filePath("data.txt").build());
+    }
+
+    private LocalRepositoryBuilder local() throws URISyntaxException {
+        var repositoryDirectory = classpath("repository/test/HEAD").getParent().toFile().getAbsolutePath();
+        return GitRepository.local().repositoryDirectory(repositoryDirectory);
+    }
+
+    private String toString(Source source) throws IOException {
+        return IOUtils.toString(source.load().getInputStream(), UTF_8);
     }
 
     private Path classpath(String name) throws URISyntaxException {

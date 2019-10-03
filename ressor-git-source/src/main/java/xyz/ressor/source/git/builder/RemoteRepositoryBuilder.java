@@ -35,10 +35,10 @@ public class RemoteRepositoryBuilder extends RepositoryBuilderBase<RemoteReposit
             var transportConfig = createTransportConfig();
             return new GitSource(Git.cloneRepository()
                     .setURI(repositoryURI)
-                    .setBranch(branch)
+                    .setBranch(ref)
                     .setBare(bare)
                     .setDirectory(new File(repositoryDirectory))
-                    .setTransportConfigCallback(transportConfig).call(), transportConfig, filePath, branch, asyncPull);
+                    .setTransportConfigCallback(transportConfig).call(), transportConfig, filePath, ref(), asyncPull);
         } catch (Throwable t) {
             throw Exceptions.wrap(t);
         }

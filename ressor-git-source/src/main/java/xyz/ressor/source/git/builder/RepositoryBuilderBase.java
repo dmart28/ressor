@@ -8,17 +8,27 @@ import org.eclipse.jgit.transport.JschConfigSessionFactory;
 import org.eclipse.jgit.transport.OpenSshConfig;
 import org.eclipse.jgit.transport.SshTransport;
 import org.eclipse.jgit.util.FS;
+import xyz.ressor.source.git.GitRef;
 import xyz.ressor.source.git.GitSource;
+import xyz.ressor.source.git.RefType;
 
 public abstract class RepositoryBuilderBase<T extends RepositoryBuilderBase> {
-    protected String branch = "master";
+    protected String ref = "master";
+    protected RefType refType;
     protected String repositoryDirectory;
     protected String privateKeyPath;
+    protected String privateKeyPassphrase;
     protected String filePath;
     protected boolean asyncPull = false;
 
-    public T branch(String branch) {
-        this.branch = branch;
+    public T refValue(String ref) {
+        this.ref = ref;
+        return (T) this;
+    }
+
+    public T refValue(String ref, RefType refType) {
+        this.ref = ref;
+        this.refType = refType;
         return (T) this;
     }
 
@@ -32,6 +42,11 @@ public abstract class RepositoryBuilderBase<T extends RepositoryBuilderBase> {
         return (T) this;
     }
 
+    public T privateKeyPassphrase(String privateKeyPassphrase) {
+        this.privateKeyPassphrase = privateKeyPassphrase;
+        return (T) this;
+    }
+
     public T filePath(String filePath) {
         this.filePath = filePath;
         return (T) this;
@@ -40,6 +55,10 @@ public abstract class RepositoryBuilderBase<T extends RepositoryBuilderBase> {
     public T asyncPull(boolean asyncPull) {
         this.asyncPull = asyncPull;
         return (T) this;
+    }
+
+    protected GitRef ref() {
+        return refType == null ? new GitRef(ref) : new GitRef(ref, refType);
     }
 
     protected TransportConfigCallback createTransportConfig() {
@@ -54,7 +73,7 @@ public abstract class RepositoryBuilderBase<T extends RepositoryBuilderBase> {
                 @Override
                 protected JSch createDefaultJSch(FS fs) throws JSchException {
                     var jSch = super.createDefaultJSch(fs);
-                    jSch.addIdentity(privateKeyPath);
+                    jSch.addIdentity(privateKeyPath, privateKeyPassphrase);
                     return jSch;
                 }
             });

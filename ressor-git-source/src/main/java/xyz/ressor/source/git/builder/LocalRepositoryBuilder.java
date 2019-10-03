@@ -17,7 +17,7 @@ public class LocalRepositoryBuilder extends RepositoryBuilderBase<LocalRepositor
         }
         try {
             return new GitSource(Git.open(new File(repositoryDirectory)), createTransportConfig(),
-                    filePath, branch, asyncPull);
+                    filePath, ref(), asyncPull);
         } catch (Throwable t) {
             throw Exceptions.wrap(t);
         }
