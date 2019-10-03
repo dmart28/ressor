@@ -1,3 +1,0 @@
-dependencies {
-    compile "org.tmatesoft.svnkit:svnkit:$svnKitVersion"
-}

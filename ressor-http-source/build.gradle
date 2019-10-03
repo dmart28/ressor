@@ -1,4 +1,6 @@
 dependencies {
-    compile project(":ressor-commons")
+    compile project(":ressor-core")
     compile "org.apache.httpcomponents:httpclient:$httpClientVersion"
+
+    testCompile group: 'commons-io', name: 'commons-io', version: '2.6'
 }

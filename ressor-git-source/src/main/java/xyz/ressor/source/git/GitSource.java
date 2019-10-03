@@ -5,6 +5,7 @@ import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.api.TransportConfigCallback;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.filter.AndRevFilter;
 import org.eclipse.jgit.revwalk.filter.CommitTimeRevFilter;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
@@ -63,18 +64,17 @@ public class GitSource implements Source {
     public LoadedResource loadIfModified(long lastModifiedMillis) {
         try {
             pull();
-            var logsCmd = git.log()
-                    .all()
-                    .setRevFilter(CommitTimeRevFilter.after(lastModifiedMillis));
+            var filter = CommitTimeRevFilter.after(lastModifiedMillis);
+            var logsCmd = git.log().all();
 
             if (refValue.isHash()) {
-                logsCmd.add(objectId).setRevFilter(exact(objectId));
+                logsCmd.add(objectId).setRevFilter(AndRevFilter.create(filter, exact(objectId)));
             } else {
                 if (refValue.isTag()) {
                     var objectId = git.getRepository().findRef(refValue.getFullName()).getPeeledObjectId();
-                    logsCmd.setRevFilter(exact(objectId));
+                    logsCmd.setRevFilter(AndRevFilter.create(filter, exact(objectId)));
                 } else {
-                    logsCmd.addPath(filePath);
+                    logsCmd.addPath(filePath).setRevFilter(filter);
                 }
             }
 

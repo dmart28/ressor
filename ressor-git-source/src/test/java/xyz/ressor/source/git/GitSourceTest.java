@@ -87,7 +87,8 @@ public class GitSourceTest {
         assertThat(toString(source)).isEqualTo("Two");
 
         source = local().refValue("refs/tags/tag-2").filePath("data.txt").build();
-        assertThat(toString(source)).isEqualTo("Two");
+        assertThat(toString(source, 1570108694000L)).isEqualTo("Two");
+        assertThat(source.loadIfModified(1570108695000L)).isNull();
 
         assertThrows(IllegalArgumentException.class, () -> local().refValue("tag-3").filePath("data.txt").build());
     }
@@ -99,6 +100,10 @@ public class GitSourceTest {
 
     private String toString(Source source) throws IOException {
         return IOUtils.toString(source.load().getInputStream(), UTF_8);
+    }
+
+    private String toString(Source source, long ifModifiedSince) throws IOException {
+        return IOUtils.toString(source.loadIfModified(ifModifiedSince).getInputStream(), UTF_8);
     }
 
     private Path classpath(String name) throws URISyntaxException {
