@@ -3,4 +3,5 @@ dependencies {
     compile "org.apache.httpcomponents:httpclient:$httpClientVersion"
 
     testCompile group: 'commons-io', name: 'commons-io', version: '2.6'
+    testCompile group: 'com.github.tomakehurst', name: 'wiremock', version: '2.25.0'
 }

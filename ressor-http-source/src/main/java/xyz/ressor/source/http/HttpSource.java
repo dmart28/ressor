@@ -51,8 +51,7 @@ public class HttpSource implements Source {
         if (version == SourceVersion.EMPTY || cacheControl == CacheControlStrategy.NONE) {
             return loadResource();
         } else if (cacheControl == CacheControlStrategy.ETAG) {
-            return loadResource(singletonList(new BasicHeader(HttpHeaders.IF_NONE_MATCH,
-                    version.val().toString())));
+            return loadResource(singletonList(new BasicHeader(HttpHeaders.IF_NONE_MATCH, version.val().toString())));
         } else if (cacheControl == CacheControlStrategy.IF_MODIFIED_SINCE) {
             return loadResource(singletonList(new BasicHeader(HttpHeaders.IF_MODIFIED_SINCE, lastModifiedValue(version.val()))));
         } else if (cacheControl == CacheControlStrategy.LAST_MODIFIED_HEAD ||
