@@ -15,7 +15,7 @@ import xyz.ressor.source.LoadedResource;
 import xyz.ressor.source.Source;
 import xyz.ressor.source.SourceVersion;
 import xyz.ressor.source.Subscription;
-import xyz.ressor.source.version.LastModifiedVersion;
+import xyz.ressor.source.version.LastModified;
 
 import java.io.InputStream;
 import java.util.concurrent.ForkJoinPool;
@@ -26,7 +26,7 @@ import static xyz.ressor.source.git.GitRev.exact;
 public class GitSource implements Source {
     private static final Logger log = LoggerFactory.getLogger(GitSource.class);
     public static final TransportConfigCallback EMPTY_TRANSPORT_CONFIG = transport -> {};
-    private static final SourceVersion EMPTY = new LastModifiedVersion(-1L);
+    private static final SourceVersion EMPTY = new LastModified(-1L);
     private final Git git;
     private final TransportConfigCallback transportConfig;
     private final String filePath;
@@ -140,7 +140,7 @@ public class GitSource implements Source {
 
     protected LoadedResource loadFromCommit(RevCommit commit) {
         var stream = getContent(commit, filePath);
-        return stream == null ? null : new LoadedResource(stream, new LastModifiedVersion(commit.getCommitTime() * 1000L), filePath);
+        return stream == null ? null : new LoadedResource(stream, new LastModified(commit.getCommitTime() * 1000L), filePath);
     }
 
     protected InputStream getContent(RevCommit commit, String path) {

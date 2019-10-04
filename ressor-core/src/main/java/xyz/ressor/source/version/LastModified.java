@@ -4,10 +4,10 @@ import xyz.ressor.source.SourceVersion;
 
 import java.util.Objects;
 
-public class LastModifiedVersion implements SourceVersion {
+public class LastModified implements SourceVersion {
     private final Long lastModifiedMillis;
 
-    public LastModifiedVersion(long lastModifiedMillis) {
+    public LastModified(long lastModifiedMillis) {
         this.lastModifiedMillis = lastModifiedMillis;
     }
 
@@ -20,7 +20,7 @@ public class LastModifiedVersion implements SourceVersion {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        LastModifiedVersion that = (LastModifiedVersion) o;
+        LastModified that = (LastModified) o;
         return Objects.equals(lastModifiedMillis, that.lastModifiedMillis);
     }
 
