@@ -1,9 +1,11 @@
 package xyz.ressor.source.fs;
 
 import xyz.ressor.commons.watch.fs.FileSystemWatchService;
+import xyz.ressor.source.SourceVersion;
 import xyz.ressor.source.Subscription;
 import xyz.ressor.source.LoadedResource;
 import xyz.ressor.source.Source;
+import xyz.ressor.source.version.LastModifiedVersion;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,6 +18,7 @@ import static java.nio.file.Files.newInputStream;
 import static xyz.ressor.commons.utils.Exceptions.wrap;
 
 public class FileSystemSource implements Source {
+    private static final SourceVersion EMPTY = new LastModifiedVersion(-1L);
     private static final String CLASSPATH_PREFIX = "classpath:";
     private final String rawResourcePath;
     private final Path resourcePath;
@@ -45,12 +48,13 @@ public class FileSystemSource implements Source {
     }
 
     @Override
-    public LoadedResource loadIfModified(long lastModifiedMillis) {
+    public LoadedResource loadIfModified(SourceVersion version) {
+        final long lastModifiedMillis = version.val();
         try {
             if (!isClasspath) {
                 var currentLastModified = Files.getLastModifiedTime(resourcePath).toMillis();
                 if (currentLastModified > lastModifiedMillis) {
-                    return new LoadedResource(newInputStream(resourcePath), currentLastModified, rawResourcePath);
+                    return new LoadedResource(newInputStream(resourcePath), new LastModifiedVersion(currentLastModified), rawResourcePath);
                 } else {
                     return null;
                 }
@@ -63,7 +67,8 @@ public class FileSystemSource implements Source {
                     }
                 }
                 if (currentLastModified > lastModifiedMillis) {
-                    return new LoadedResource(getClass().getClassLoader().getResourceAsStream(rawResourcePath), currentLastModified, CLASSPATH_PREFIX + rawResourcePath);
+                    return new LoadedResource(getClass().getClassLoader().getResourceAsStream(rawResourcePath),
+                            new LastModifiedVersion(currentLastModified), CLASSPATH_PREFIX + rawResourcePath);
                 } else {
                     return null;
                 }
@@ -86,10 +91,15 @@ public class FileSystemSource implements Source {
         listeners.add(listener);
         if (!isSubscribed.compareAndExchange(false, true)) {
             watchService.registerJob(resourcePath, p -> {
-                listeners.forEach(l -> l.accept(loadIfModified(-1)));
+                listeners.forEach(l -> l.accept(load()));
             });
         }
         return () -> listeners.remove(listener);
+    }
+
+    @Override
+    public SourceVersion emptyVersion() {
+        return EMPTY;
     }
 
     public boolean isClasspath() {

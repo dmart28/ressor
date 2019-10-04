@@ -32,7 +32,8 @@ public class ServiceProxyBuilder {
     private final ByteBuddy byteBuddy = new ByteBuddy();
 
     public <T> T buildProxy(ProxyContext<T> context) {
-        var serviceProxy = new RessorServiceImpl<>(context.getType(), getFactory(context), context.getTranslator(), context.getInitialInstance());
+        var serviceProxy = new RessorServiceImpl<>(context.getType(), getFactory(context), context.getTranslator(), context.getInitialInstance())
+                .state(StateVariables.SOURCE, context.getSource());
         var b = byteBuddy.subclass(context.getType());
         if (isNotEmpty(context.getExtensions())) {
             for (var ext : context.getExtensions()) {

@@ -8,8 +8,6 @@ public interface RessorService<T> {
 
     T instance();
 
-    long lastModifiedMillis();
-
     void reload(LoadedResource resource);
 
 }

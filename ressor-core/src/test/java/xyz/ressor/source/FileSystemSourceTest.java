@@ -31,7 +31,7 @@ public class FileSystemSourceTest {
         var resource = source.load();
 
         assertThat(resource).isNotNull();
-        assertThat(resource.getLastModifiedMillis()).isGreaterThan(0);
+        assertThat((long) resource.getVersion().val()).isGreaterThan(0);
         assertThat(resource.getInputStream()).isNotNull();
         assertThat(resource.getResourceId()).isEqualTo("classpath:fs/user_data.json");
 
@@ -40,7 +40,7 @@ public class FileSystemSourceTest {
         assertThat(IOUtils.toString(resource.getInputStream(), UTF_8))
                 .isEqualTo(IOUtils.toString(originalURI, UTF_8));
 
-        var conditionalResource = source.loadIfModified(resource.getLastModifiedMillis());
+        var conditionalResource = source.loadIfModified(resource.getVersion());
 
         assertThat(conditionalResource).isNull();
 
@@ -60,32 +60,32 @@ public class FileSystemSourceTest {
         var resource = source.load();
 
         assertThat(resource).isNotNull();
-        assertThat(resource.getLastModifiedMillis()).isGreaterThan(0);
+        assertThat((long) resource.getVersion().val()).isGreaterThan(0);
         assertThat(resource.getInputStream()).isNotNull();
         assertThat(resource.getResourceId()).isEqualTo(filePath.toString());
 
         assertThat(IOUtils.toString(resource.getInputStream(), UTF_8))
                 .isEqualTo(IOUtils.toString(stream("fs/user_data.json"), UTF_8));
 
-        assertThat(source.loadIfModified(resource.getLastModifiedMillis())).isNull();
+        assertThat(source.loadIfModified(resource.getVersion())).isNull();
 
         Thread.sleep(1000);
         copy(stream("fs/new_user_data.json"), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-        assertThat(source.loadIfModified(resource.getLastModifiedMillis())).isNotNull();
+        assertThat(source.loadIfModified(resource.getVersion())).isNotNull();
 
         var newResource = source.load();
 
         assertThat(newResource).isNotNull();
         assertThat(newResource).isNotEqualTo(resource);
-        assertThat(newResource.getLastModifiedMillis()).isGreaterThan(resource.getLastModifiedMillis());
+        assertThat((long) newResource.getVersion().val()).isGreaterThan((long) resource.getVersion().val());
         assertThat(newResource.getInputStream()).isNotNull();
         assertThat(newResource.getResourceId()).isEqualTo(filePath.toString());
 
         assertThat(IOUtils.toString(newResource.getInputStream(), UTF_8))
                 .isEqualTo(IOUtils.toString(stream("fs/new_user_data.json"), UTF_8));
 
-        assertThat(source.loadIfModified(newResource.getLastModifiedMillis())).isNull();
+        assertThat(source.loadIfModified(newResource.getVersion())).isNull();
     }
 
     @Test

@@ -5,11 +5,12 @@ import java.util.function.Consumer;
 public interface Source {
 
     /**
-     * Loads the contents of the resource if it was modified since the {@param lastModifiedMillis} time
-     * @param lastModifiedMillis the last modified date prior which the resource shouldn't be loaded
+     * Loads the contents of the resource if it was modified since the {@param version} version
+     *
+     * @param version the last modified version prior which the resource shouldn't be loaded
      * @return the loaded resource or null
      */
-    LoadedResource loadIfModified(long lastModifiedMillis);
+    LoadedResource loadIfModified(SourceVersion version);
 
     /**
      * Describes whether you can subscribe for the changes on this resource
@@ -19,12 +20,16 @@ public interface Source {
 
     Subscription subscribe(Consumer<LoadedResource> listener);
 
+    default SourceVersion emptyVersion() {
+        return SourceVersion.EMPTY;
+    }
+
     /**
      * Load resource forcibly from the {@link Source}
      * @return the loaded resource or null
      */
     default LoadedResource load() {
-        return loadIfModified(-1);
+        return loadIfModified(emptyVersion());
     }
 
 }

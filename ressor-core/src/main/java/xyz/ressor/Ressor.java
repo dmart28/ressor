@@ -152,6 +152,7 @@ public class Ressor {
                 fsWatchService.init();
             }
             var ctx = ProxyContext.builder(type)
+                    .source(source)
                     .classLoader(classLoader)
                     .factory(factory)
                     .proxyDefaultArguments(proxyDefaultArguments)

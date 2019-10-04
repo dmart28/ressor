@@ -44,11 +44,6 @@ public class FactoryBeanExtensionTest {
         }
 
         @Override
-        public long lastModifiedMillis() {
-            return 10;
-        }
-
-        @Override
         public void reload(LoadedResource resource) {
         }
     }

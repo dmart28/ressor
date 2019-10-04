@@ -12,16 +12,16 @@ public class LoadedResource {
      * The last modified date in the milliseconds.
      * For the file it's read from the FS metadata, in HTTP from Last-Modified header, etc.
      */
-    private final long lastModifiedMillis;
+    private final SourceVersion version;
     /**
      * The unique string that would uniquely identify the resource in the best way.
      * FS path in case of file, URL in case of HTTP resource, etc.
      */
     private final String resourceId;
 
-    public LoadedResource(InputStream inputStream, long lastModifiedMillis, String resourceId) {
+    public LoadedResource(InputStream inputStream, SourceVersion version, String resourceId) {
         this.inputStream = inputStream;
-        this.lastModifiedMillis = lastModifiedMillis;
+        this.version = version;
         this.resourceId = resourceId;
     }
 
@@ -29,8 +29,8 @@ public class LoadedResource {
         return inputStream;
     }
 
-    public long getLastModifiedMillis() {
-        return lastModifiedMillis;
+    public SourceVersion getVersion() {
+        return version;
     }
 
     public String getResourceId() {
@@ -42,12 +42,12 @@ public class LoadedResource {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         LoadedResource that = (LoadedResource) o;
-        return lastModifiedMillis == that.lastModifiedMillis &&
+        return  Objects.equals(version, that.version) &&
                 Objects.equals(resourceId, that.resourceId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(lastModifiedMillis, resourceId);
+        return Objects.hash(version, resourceId);
     }
 }

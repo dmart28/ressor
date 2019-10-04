@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import xyz.ressor.source.Source;
 import xyz.ressor.source.git.builder.LocalRepositoryBuilder;
+import xyz.ressor.source.version.LastModifiedVersion;
 
 import java.io.File;
 import java.io.IOException;
@@ -88,7 +89,7 @@ public class GitSourceTest {
 
         source = local().refValue("refs/tags/tag-2").filePath("data.txt").build();
         assertThat(toString(source, 1570108694000L)).isEqualTo("Two");
-        assertThat(source.loadIfModified(1570108695000L)).isNull();
+        assertThat(source.loadIfModified(new LastModifiedVersion(1570108695000L))).isNull();
 
         assertThrows(IllegalArgumentException.class, () -> local().refValue("tag-3").filePath("data.txt").build());
     }
@@ -103,7 +104,7 @@ public class GitSourceTest {
     }
 
     private String toString(Source source, long ifModifiedSince) throws IOException {
-        return IOUtils.toString(source.loadIfModified(ifModifiedSince).getInputStream(), UTF_8);
+        return IOUtils.toString(source.loadIfModified(new LastModifiedVersion(ifModifiedSince)).getInputStream(), UTF_8);
     }
 
     private Path classpath(String name) throws URISyntaxException {
