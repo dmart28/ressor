@@ -2,18 +2,26 @@ package xyz.ressor.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.MissingNode;
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import xyz.ressor.Ressor;
 import xyz.ressor.integration.model.geo.GeoService;
 import xyz.ressor.integration.model.geo.GeoServiceImpl;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.concurrent.TimeUnit;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 public class GeoServiceTest {
 
     @Test
     public void testJson() {
-        checkGeoService(Ressor.builder(GeoService.class)
+        checkGeoService(Ressor.service(GeoService.class)
                 .fileSource("classpath:integration/geoData.json")
                 .json()
                 .<JsonNode>factory(GeoServiceImpl::new)
@@ -22,7 +30,7 @@ public class GeoServiceTest {
 
     @Test
     public void testYaml() {
-        checkGeoService(Ressor.builder(GeoService.class)
+        checkGeoService(Ressor.service(GeoService.class)
                 .fileSource("classpath:integration/geoData.yml")
                 .yaml()
                 .<JsonNode>factory(GeoServiceImpl::new)
@@ -31,7 +39,7 @@ public class GeoServiceTest {
 
     @Test
     public void testString() {
-        checkGeoService(Ressor.builder(GeoService.class)
+        checkGeoService(Ressor.service(GeoService.class)
                 .fileSource("classpath:integration/geoData.csv")
                 .string()
                 .<String>factory(s -> new GeoServiceImpl(s.split(System.lineSeparator())))
@@ -40,7 +48,7 @@ public class GeoServiceTest {
 
     @Test
     public void testLines() {
-        checkGeoService(Ressor.builder(GeoService.class)
+        checkGeoService(Ressor.service(GeoService.class)
                 .fileSource("classpath:integration/geoData.csv")
                 .lines()
                 .<String[]>factory(GeoServiceImpl::new)
@@ -49,7 +57,7 @@ public class GeoServiceTest {
 
     @Test
     public void testJsonImplementationOnly() {
-        checkGeoService(Ressor.builder(GeoServiceImpl.class)
+        checkGeoService(Ressor.service(GeoServiceImpl.class)
                 .fileSource("classpath:integration/geoData.json")
                 .json()
                 .proxyDefaultArguments(MissingNode.getInstance())
@@ -58,7 +66,7 @@ public class GeoServiceTest {
 
     @Test
     public void testYamlImplementationOnly() {
-        checkGeoService(Ressor.builder(GeoServiceImpl.class)
+        checkGeoService(Ressor.service(GeoServiceImpl.class)
                 .fileSource("classpath:integration/geoData.yml")
                 .yaml()
                 .proxyDefaultArguments(MissingNode.getInstance())
@@ -67,11 +75,53 @@ public class GeoServiceTest {
 
     @Test
     public void testLinesImplementationOnly() {
-        checkGeoService(Ressor.builder(GeoServiceImpl.class)
+        checkGeoService(Ressor.service(GeoServiceImpl.class)
                 .fileSource("classpath:integration/geoData.csv")
                 .lines()
                 .proxyDefaultArguments(MissingNode.getInstance())
                 .build());
+    }
+
+    @Test
+    public void testListenLoader(@TempDir Path tempDir) throws Exception {
+        IOUtils.copy(getClass().getClassLoader().getResourceAsStream("integration/geoData.yml"),
+                Files.newOutputStream(tempDir.resolve("file.yml"), StandardOpenOption.CREATE));
+        var geoService = Ressor.service(GeoService.class)
+                .fileSource(tempDir.resolve("file.yml"))
+                .yaml()
+                .<JsonNode>factory(GeoServiceImpl::new)
+                .build();
+
+        Ressor.listen(geoService);
+
+        assertThat(geoService.detect("193.124.4.85").getCountryCode()).isEqualTo("RU");
+
+        IOUtils.copy(getClass().getClassLoader().getResourceAsStream("integration/newGeoData.yml"),
+                Files.newOutputStream(tempDir.resolve("file.yml"), StandardOpenOption.TRUNCATE_EXISTING));
+
+        await().atMost(30, TimeUnit.SECONDS)
+                .pollInterval(100, TimeUnit.MILLISECONDS)
+                .until(() -> geoService.detect("193.124.4.85").getCountryCode().equals("CN"));
+
+        Ressor.stop(geoService);
+
+        IOUtils.copy(getClass().getClassLoader().getResourceAsStream("integration/geoData.yml"),
+                Files.newOutputStream(tempDir.resolve("file.yml"), StandardOpenOption.TRUNCATE_EXISTING));
+
+        Ressor.poll(geoService).every(2, TimeUnit.SECONDS);
+
+        await().atMost(10, TimeUnit.SECONDS)
+                .pollInterval(1, TimeUnit.SECONDS)
+                .until(() -> geoService.detect("193.124.4.85").getCountryCode().equals("RU"));
+
+        Ressor.poll(geoService).cron("* * * * * ? *");
+
+        IOUtils.copy(getClass().getClassLoader().getResourceAsStream("integration/newGeoData.yml"),
+                Files.newOutputStream(tempDir.resolve("file.yml"), StandardOpenOption.TRUNCATE_EXISTING));
+
+        await().atMost(10, TimeUnit.SECONDS)
+                .pollInterval(1, TimeUnit.SECONDS)
+                .until(() -> geoService.detect("193.124.4.85").getCountryCode().equals("CN"));
     }
 
     private void checkGeoService(GeoService geoService) {

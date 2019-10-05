@@ -19,7 +19,7 @@ public class Ressor {
         return RessorGlobals.getInstance();
     }
 
-    public static <T> RessorBuilder<T> builder(Class<T> type) {
+    public static <T> RessorBuilder<T> service(Class<T> type) {
         return new RessorBuilder<>(type);
     }
 
