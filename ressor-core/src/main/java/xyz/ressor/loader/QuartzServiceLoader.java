@@ -33,7 +33,9 @@ public class QuartzServiceLoader extends ServiceLoaderBase {
 
     public void start(int every, TimeUnit unit) {
         var trigger = newTrigger()
-                .withSchedule(simpleSchedule().withIntervalInMilliseconds(unit.toMillis(every)))
+                .withSchedule(simpleSchedule()
+                        .withIntervalInMilliseconds(unit.toMillis(every))
+                        .repeatForever())
                 .build();
         start(trigger);
     }

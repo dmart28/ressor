@@ -16,8 +16,10 @@ public class ListeningServiceLoader extends ServiceLoaderBase {
         if (!source.isListenable()) {
             throw new IllegalArgumentException("Service source doesn't support listening, use polling instead");
         }
+        log.debug("Subscribing {} to [{}] source", service.underlyingType(), source.describe());
         this.subscription = source.subscribe(() -> RessorGlobals.getInstance().threadPool().submit(() -> {
             try {
+                log.debug("Reloading by notification from [{}]", source.describe());
                 service.reload(source.load());
             } catch (Throwable t) {
                 log.error("Failed reloading service [{}] from the [{}] source: {}", service.underlyingType(), source.describe(), t.getMessage(), t);

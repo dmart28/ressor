@@ -16,8 +16,8 @@ public class QuartzLoaderJob implements Job {
     public void execute(JobExecutionContext ctx) throws JobExecutionException {
         try {
             var threadPool = RessorGlobals.getInstance().threadPool();
-            var service = (RessorServiceImpl) ctx.get(QuartzServiceLoader.SERVICE_KEY);
-            var source = (Source) ctx.get(QuartzServiceLoader.SOURCE_KEY);
+            var service = (RessorServiceImpl) ctx.getMergedJobDataMap().get(QuartzServiceLoader.SERVICE_KEY);
+            var source = (Source) ctx.getMergedJobDataMap().get(QuartzServiceLoader.SOURCE_KEY);
 
             threadPool.submit(() -> {
                 try {

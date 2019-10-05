@@ -32,6 +32,11 @@ public class RessorServiceImpl<T> implements RessorService<T> {
     }
 
     @Override
+    public RessorService<T> unwrap() {
+        return this;
+    }
+
+    @Override
     public Class<? extends T> underlyingType() {
         return type;
     }

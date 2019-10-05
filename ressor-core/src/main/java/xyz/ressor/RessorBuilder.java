@@ -13,6 +13,7 @@ import xyz.ressor.translator.Translators;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
@@ -95,6 +96,10 @@ public class RessorBuilder<T> {
         }
         this.source = new FileSystemSource(resourcePath, fsWatchService);
         return this;
+    }
+
+    public RessorBuilder<T> fileSource(Path resourcePath) {
+        return fileSource(resourcePath.toFile().getAbsolutePath());
     }
 
     public RessorBuilder<T> fileSource(FileSystemSource fileSource) {

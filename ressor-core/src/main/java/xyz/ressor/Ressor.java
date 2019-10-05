@@ -3,6 +3,7 @@ package xyz.ressor;
 import xyz.ressor.config.RessorGlobals;
 import xyz.ressor.loader.ListeningServiceLoader;
 import xyz.ressor.loader.ServiceLoaderBase;
+import xyz.ressor.service.RessorService;
 import xyz.ressor.service.proxy.RessorServiceImpl;
 import xyz.ressor.source.Source;
 
@@ -57,8 +58,8 @@ public class Ressor {
     }
 
     private static <T, R> R checkRessorService(T service, Function<RessorServiceImpl, R> action) {
-        if (service instanceof RessorServiceImpl) {
-            return action.apply((RessorServiceImpl) service);
+        if (service instanceof RessorService) {
+            return action.apply((RessorServiceImpl) ((RessorService) service).unwrap());
         } else {
             throw new IllegalArgumentException("Provided service is not generated with Ressor");
         }

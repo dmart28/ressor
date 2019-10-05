@@ -5,6 +5,8 @@ import xyz.ressor.source.SourceVersion;
 
 public interface RessorService<T> {
 
+    RessorService<T> unwrap();
+
     Class<? extends T> underlyingType();
 
     T instance();

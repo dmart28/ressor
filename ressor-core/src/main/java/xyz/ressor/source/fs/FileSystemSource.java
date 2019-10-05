@@ -99,7 +99,7 @@ public class FileSystemSource implements Source {
 
     @Override
     public String describe() {
-        return resourcePath.toFile().getAbsolutePath();
+        return rawResourcePath;
     }
 
     @Override

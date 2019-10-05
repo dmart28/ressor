@@ -35,6 +35,11 @@ public class FactoryBeanExtensionTest {
         public static final Object INSTANCE = new Object();
 
         @Override
+        public RessorService<Object> unwrap() {
+            return this;
+        }
+
+        @Override
         public Class<? extends Object> underlyingType() {
             return TestRessorService.class;
         }
