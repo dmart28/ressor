@@ -26,14 +26,14 @@ import static xyz.ressor.source.git.GitRev.exact;
 public class GitSource implements Source {
     private static final Logger log = LoggerFactory.getLogger(GitSource.class);
     public static final TransportConfigCallback EMPTY_TRANSPORT_CONFIG = transport -> {};
-    private static final SourceVersion EMPTY = new LastModified(-1L);
-    private final Git git;
-    private final TransportConfigCallback transportConfig;
-    private final String filePath;
-    private final GitRef refValue;
-    private final ObjectId objectId;
-    private final boolean asyncPull;
-    private final boolean hasRemotes;
+    protected static final SourceVersion EMPTY = new LastModified(-1L);
+    protected final Git git;
+    protected final TransportConfigCallback transportConfig;
+    protected final String filePath;
+    protected final GitRef refValue;
+    protected final ObjectId objectId;
+    protected final boolean asyncPull;
+    protected final boolean hasRemotes;
 
     public GitSource(Git git, TransportConfigCallback transportConfig,
                      String filePath, GitRef ref, boolean asyncPull) {
@@ -119,7 +119,7 @@ public class GitSource implements Source {
         return EMPTY;
     }
 
-    private void pull() {
+    protected void pull() {
         if (asyncPull) {
             ForkJoinPool.commonPool().submit(this::doPull);
         } else {

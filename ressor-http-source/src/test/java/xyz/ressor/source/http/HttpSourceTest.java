@@ -16,6 +16,7 @@ import xyz.ressor.source.version.LastModified;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static xyz.ressor.source.http.CacheControlStrategy.*;
 
 public class HttpSourceTest {
     public static final String PATH = "/resource";
@@ -39,7 +40,7 @@ public class HttpSourceTest {
                 .willReturn(aResponse()
                         .withStatus(200).withBody("one")));
 
-        var source = new HttpSource(client(), defaultURL(), CacheControlStrategy.NONE);
+        var source = Http.source(defaultURL()).cacheControlStrategy(NONE).build();
         assertThat(IOUtils.toString(source.load().getInputStream(), UTF_8)).isEqualTo("one");
         assertThat(IOUtils.toString(source.loadIfModified(new LastModified(System.currentTimeMillis()))
                 .getInputStream(), UTF_8)).isEqualTo("one");
@@ -55,7 +56,7 @@ public class HttpSourceTest {
                 .willReturn(aResponse().withStatus(200).withHeader("Last-Modified", "Fri, 4 Oct 2019 18:58:32 GMT")
                         .withBody("one")));
 
-        var source = new HttpSource(client(), defaultURL(), CacheControlStrategy.IF_MODIFIED_SINCE);
+        var source = Http.source(defaultURL()).cacheControlStrategy(IF_MODIFIED_SINCE).pool(5, 10000).build();
         var loadedResource = source.load();
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
 
@@ -76,7 +77,7 @@ public class HttpSourceTest {
         stubFor(getPath().withHeader("If-None-Match", equalTo("1ac")).willReturn(aResponse().withStatus(200)
                 .withHeader("ETag", "1ad").withBody("one")));
 
-        var source = new HttpSource(client(), defaultURL(), CacheControlStrategy.ETAG);
+        var source = Http.source(defaultURL()).cacheControlStrategy(ETAG).socketTimeoutMs(10000).connectTimeoutMs(10000).build();
         var loadedResource = source.load();
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
 
@@ -122,7 +123,7 @@ public class HttpSourceTest {
         stubFor(headPath().willReturn(response));
         stubFor(getPath().willReturn(response.withBody("init")));
 
-        var source = new HttpSource(client(), defaultURL(), CacheControlStrategy.ETAG_HEAD);
+        var source = Http.source(defaultURL()).cacheControlStrategy(ETAG_HEAD).receiveBufferSize(5).build();
         var loadedResource = source.load();
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
         verify(exactly(0), headRequestedFor(urlPathEqualTo(PATH)));

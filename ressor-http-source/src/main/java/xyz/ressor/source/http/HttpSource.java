@@ -5,6 +5,7 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.jetbrains.annotations.NotNull;
@@ -36,14 +37,23 @@ import static org.apache.http.HttpStatus.SC_OK;
 public class HttpSource implements Source {
     private static final Logger log = LoggerFactory.getLogger(HttpSource.class);
     private static final ZoneId GMT = ZoneId.of("GMT");
-    private final CloseableHttpClient client;
-    private final String resourceURI;
-    private final CacheControlStrategy cacheControl;
+    protected final CloseableHttpClient client;
+    protected final String resourceURI;
+    protected final CacheControlStrategy cacheControl;
+    protected final Consumer<HttpRequestBase> requestInterceptor;
+    protected final boolean keepAlive;
 
     public HttpSource(CloseableHttpClient client, String resourceURI, CacheControlStrategy cacheControl) {
+        this(client, resourceURI, cacheControl, r -> {}, true);
+    }
+
+    public HttpSource(CloseableHttpClient client, String resourceURI, CacheControlStrategy cacheControl,
+                      Consumer<HttpRequestBase> requestInterceptor, boolean keepAlive) {
         this.client = client;
         this.resourceURI = resourceURI;
         this.cacheControl = cacheControl;
+        this.requestInterceptor = requestInterceptor;
+        this.keepAlive = keepAlive;
     }
 
     @Override
@@ -76,6 +86,7 @@ public class HttpSource implements Source {
     protected boolean isChanged(SourceVersion version) {
         try {
             var head = new HttpHead(resourceURI);
+            intercept(head);
             var response = client.execute(head);
 
             if (cacheControl == CacheControlStrategy.ETAG_HEAD) {
@@ -100,6 +111,7 @@ public class HttpSource implements Source {
         try {
             var get = new HttpGet(resourceURI);
             headers.forEach(get::addHeader);
+            intercept(get);
             var response = client.execute(get);
             if (response.getStatusLine() != null) {
                 var statusCode = response.getStatusLine().getStatusCode();
@@ -154,6 +166,13 @@ public class HttpSource implements Source {
             }
         }
         return ta == null ? null : Instant.from(ta);
+    }
+
+    protected void intercept(HttpRequestBase req) {
+        requestInterceptor.accept(req);
+        if (keepAlive) {
+            req.addHeader(HttpHeaders.CONNECTION, "keep-alive");
+        }
     }
 
     protected String lastModifiedValue(long timestamp) {
