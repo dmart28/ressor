@@ -9,8 +9,8 @@ public class LoadedResource {
      */
     private final InputStream inputStream;
     /**
-     * The last modified date in the milliseconds.
-     * For the file it's read from the FS metadata, in HTTP from Last-Modified header, etc.
+     * The current version stamp of the given entity value
+     * For the file it's read from the FS metadata, in HTTP from Last-Modified/ETag headers, etc.
      */
     private final SourceVersion version;
     /**
