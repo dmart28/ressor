@@ -2,6 +2,7 @@ package xyz.ressor.service.proxy;
 
 import xyz.ressor.service.RessorService;
 import xyz.ressor.source.LoadedResource;
+import xyz.ressor.source.SourceVersion;
 import xyz.ressor.translator.Translator;
 
 import java.io.InputStream;
@@ -18,6 +19,7 @@ public class RessorServiceImpl<T> implements RessorService<T> {
     private final Class<? extends T> type;
     private T initialInstance;
     private T underlyingInstance;
+    private SourceVersion currentVersion;
     private final Map<Object, Object> state = new HashMap<>();
     private final StampedLock lock = new StampedLock();
 
@@ -50,9 +52,25 @@ public class RessorServiceImpl<T> implements RessorService<T> {
     }
 
     @Override
+    public SourceVersion currentVersion() {
+        var stamp = lock.tryOptimisticRead();
+        var result = currentVersion;
+        if (!lock.validate(stamp)) {
+            stamp = lock.readLock();
+            try {
+                result = currentVersion;
+            } finally {
+                lock.unlockRead(stamp);
+            }
+        }
+        return result;
+    }
+
+    @Override
     public void reload(LoadedResource resource) {
         long stamp = lock.writeLock();
         try {
+            this.currentVersion = resource.getVersion();
             this.underlyingInstance = factory.apply(translator.translate(resource.getInputStream()));
         } finally {
             lock.unlockWrite(stamp);

@@ -23,7 +23,7 @@ public class FileSystemSource implements Source {
     private final String rawResourcePath;
     private final Path resourcePath;
     private final boolean isClasspath;
-    private final List<Consumer<LoadedResource>> listeners = new CopyOnWriteArrayList<>();
+    private final List<Runnable> listeners = new CopyOnWriteArrayList<>();
     private final AtomicBoolean isSubscribed = new AtomicBoolean();
     private volatile long classpathLastModified = -1;
     private FileSystemWatchService watchService;
@@ -84,17 +84,22 @@ public class FileSystemSource implements Source {
     }
 
     @Override
-    public Subscription subscribe(Consumer<LoadedResource> listener) {
+    public Subscription subscribe(Runnable listener) {
         if (!isListenable()) {
             throw new UnsupportedOperationException("The source is not listenable.");
         }
         listeners.add(listener);
         if (!isSubscribed.compareAndExchange(false, true)) {
             watchService.registerJob(resourcePath, p -> {
-                listeners.forEach(l -> l.accept(load()));
+                listeners.forEach(Runnable::run);
             });
         }
         return () -> listeners.remove(listener);
+    }
+
+    @Override
+    public String describe() {
+        return resourcePath.toFile().getAbsolutePath();
     }
 
     @Override

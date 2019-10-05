@@ -98,8 +98,8 @@ public class FileSystemSourceTest {
         assertThat(source.isClasspath()).isEqualTo(false);
         assertThat(source.isListenable()).isEqualTo(true);
 
-        var subscription = source.subscribe(r -> {});
-        source.subscribe(r -> {});
+        var subscription = source.subscribe(() -> {});
+        source.subscribe(() -> {});
 
         verify(watchService).registerJob(any(), any());
 

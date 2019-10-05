@@ -1,179 +1,67 @@
 package xyz.ressor;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import xyz.ressor.commons.exceptions.RessorBuilderException;
-import xyz.ressor.commons.watch.fs.FileSystemWatchService;
-import xyz.ressor.ext.ServiceExtension;
-import xyz.ressor.service.RessorService;
-import xyz.ressor.service.proxy.ProxyContext;
-import xyz.ressor.service.proxy.ServiceProxyBuilder;
+import xyz.ressor.config.RessorGlobals;
+import xyz.ressor.loader.ListeningServiceLoader;
+import xyz.ressor.loader.ServiceLoaderBase;
+import xyz.ressor.service.proxy.RessorServiceImpl;
 import xyz.ressor.source.Source;
-import xyz.ressor.source.fs.FileSystemSource;
-import xyz.ressor.translator.Translator;
-import xyz.ressor.translator.Translators;
 
-import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.util.LinkedList;
-import java.util.concurrent.ForkJoinPool;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static xyz.ressor.service.proxy.StateVariables.LOADER;
+import static xyz.ressor.service.proxy.StateVariables.SOURCE;
 
 public class Ressor {
-    private static final Logger log = LoggerFactory.getLogger(Ressor.class);
+
+    public static RessorGlobals globals() {
+        return RessorGlobals.getInstance();
+    }
 
     public static <T> RessorBuilder<T> builder(Class<T> type) {
         return new RessorBuilder<>(type);
     }
 
-    public static class RessorBuilder<T> {
-        private static final ServiceProxyBuilder proxyBuilder = new ServiceProxyBuilder();
-        private final Class<T> type;
-        private Translator<InputStream, ?> translator;
-        private Function<?, ? extends T> factory;
-        private Source source;
-        private FileSystemWatchService fsWatchService;
-        private T initialValue;
-        private boolean isAsync;
-        private ClassLoader classLoader;
-        private LinkedList<ServiceExtension> extensions = new LinkedList<>();
-        private Object[] proxyDefaultArguments;
+    public static <T> void listen(T service) {
+        checkRessorService(service, ressorService -> {
+            checkAndStopLoaderIfRequired(ressorService);
+            var loader = new ListeningServiceLoader(ressorService, (Source) ressorService.state(SOURCE));
+            ressorService.state(LOADER, loader);
+        });
+    }
 
-        public RessorBuilder(Class<T> type) {
-            this.type = type;
+    public static <T> PollingBuilder poll(T service) {
+        return checkRessorService(service, ressorService -> {
+            checkAndStopLoaderIfRequired(ressorService);
+            return new PollingBuilder(ressorService);
+        });
+    }
+
+    public static <T> void stop(T service) {
+        checkRessorService(service, Ressor::checkAndStopLoaderIfRequired);
+    }
+
+    private static <T> void checkRessorService(T service, Consumer<RessorServiceImpl> action) {
+        checkRessorService(service, (Function<RessorServiceImpl, Void>) rs -> {
+           action.accept(rs);
+           return null;
+        });
+    }
+
+    private static void checkAndStopLoaderIfRequired(RessorServiceImpl ressorService) {
+        var loader = ressorService.state(LOADER);
+        if (loader != null) {
+            ((ServiceLoaderBase) loader).stop();
+            ressorService.state(LOADER, null);
         }
+    }
 
-        public RessorBuilder<T> yaml() {
-            this.translator = Translators.inputStream2Yaml();
-            return this;
+    private static <T, R> R checkRessorService(T service, Function<RessorServiceImpl, R> action) {
+        if (service instanceof RessorServiceImpl) {
+            return action.apply((RessorServiceImpl) service);
+        } else {
+            throw new IllegalArgumentException("Provided service is not generated with Ressor");
         }
-
-        public RessorBuilder<T> yamlParser() {
-            this.translator = Translators.inputStream2YamlParser();
-            return this;
-        }
-
-        public RessorBuilder<T> json() {
-            this.translator = Translators.inputStream2Json();
-            return this;
-        }
-
-        public RessorBuilder<T> jsonParser() {
-            this.translator = Translators.inputStream2JsonParser();
-            return this;
-        }
-
-        public RessorBuilder<T> bytes() {
-            this.translator = Translators.inputStream2Bytes();
-            return this;
-        }
-
-        public RessorBuilder<T> string() {
-            return string(UTF_8);
-        }
-
-        public RessorBuilder<T> string(Charset charset) {
-            this.translator = Translators.inputStream2String(charset);
-            return this;
-        }
-
-        public RessorBuilder<T> lines() {
-            return lines(UTF_8);
-        }
-
-        public RessorBuilder<T> lines(Charset charset) {
-            this.translator = Translators.inputStream2Lines(charset);
-            return this;
-        }
-
-        public RessorBuilder<T> translator(Translator<InputStream, ?> translator) {
-            this.translator = translator;
-            return this;
-        }
-
-        public <D> RessorBuilder<T> factory(Function<D, ? extends T> factory) {
-            this.factory = factory;
-            return this;
-        }
-
-        public RessorBuilder<T> fileSource(String resourcePath) {
-            if (fsWatchService == null) {
-                fsWatchService = new FileSystemWatchService();
-            }
-            this.source = new FileSystemSource(resourcePath, fsWatchService);
-            return this;
-        }
-
-        public RessorBuilder<T> fileSource(FileSystemSource fileSource) {
-            this.source = fileSource;
-            return this;
-        }
-
-        public RessorBuilder<T> source(Source source) {
-            this.source = source;
-            return this;
-        }
-
-        public RessorBuilder<T> initialInstance(T initialValue) {
-            this.initialValue = initialValue;
-            return this;
-        }
-
-        public RessorBuilder<T> asyncInitialReload() {
-            this.isAsync = true;
-            return this;
-        }
-
-        public RessorBuilder<T> classLoader(ClassLoader classLoader) {
-            this.classLoader = classLoader;
-            return this;
-        }
-
-        public RessorBuilder<T> addExtension(ServiceExtension extension) {
-            this.extensions.add(extension);
-            return this;
-        }
-
-        public RessorBuilder<T> proxyDefaultArguments(Object... proxyDefaultArguments) {
-            this.proxyDefaultArguments = proxyDefaultArguments;
-            return this;
-        }
-
-        public T build() {
-            if (source == null) {
-                throw new RessorBuilderException("No source instance provided");
-            }
-            if (translator == null) {
-                throw new RessorBuilderException("The data format of the source is unknown, please provide a translator");
-            }
-            if (fsWatchService != null) {
-                fsWatchService.init();
-            }
-            var ctx = ProxyContext.builder(type)
-                    .source(source)
-                    .classLoader(classLoader)
-                    .factory(factory)
-                    .proxyDefaultArguments(proxyDefaultArguments)
-                    .initialInstance(initialValue)
-                    .translator(translator);
-            if (extensions.size() > 0) {
-                extensions.forEach(ctx::addExtension);
-            }
-            var proxy = (RessorService<T>) proxyBuilder.buildProxy(ctx.build());
-            if (isAsync) {
-                ForkJoinPool.commonPool().submit(() -> reload(proxy));
-            } else {
-                reload(proxy);
-            }
-            return (T) proxy;
-        }
-
-        private void reload(RessorService<T> proxy) {
-            proxy.reload(source.load());
-        }
-
     }
 
 }

@@ -1,7 +1,5 @@
 package xyz.ressor.source;
 
-import java.util.function.Consumer;
-
 public interface Source {
 
     /**
@@ -14,11 +12,13 @@ public interface Source {
 
     /**
      * Describes whether you can subscribe for the changes on this resource
-     * @return true if {@link Source#subscribe(Consumer)} call is supported, otherwise false
+     * @return true if {@link Source#subscribe(Runnable)} call is supported, otherwise false
      */
     boolean isListenable();
 
-    Subscription subscribe(Consumer<LoadedResource> listener);
+    Subscription subscribe(Runnable listener);
+
+    String describe();
 
     default SourceVersion emptyVersion() {
         return SourceVersion.EMPTY;

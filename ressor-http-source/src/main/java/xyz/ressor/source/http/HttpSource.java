@@ -79,8 +79,13 @@ public class HttpSource implements Source {
     }
 
     @Override
-    public Subscription subscribe(Consumer<LoadedResource> listener) {
+    public Subscription subscribe(Runnable listener) {
         return null;
+    }
+
+    @Override
+    public String describe() {
+        return resourceURI;
     }
 
     protected boolean isChanged(SourceVersion version) {

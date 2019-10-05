@@ -1,5 +1,5 @@
 package xyz.ressor.service.proxy;
 
 public enum StateVariables {
-    SOURCE
+    SOURCE, LOADER
 }

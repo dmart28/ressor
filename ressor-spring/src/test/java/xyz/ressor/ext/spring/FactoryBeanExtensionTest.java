@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.FactoryBean;
 import xyz.ressor.service.RessorService;
 import xyz.ressor.source.LoadedResource;
+import xyz.ressor.source.SourceVersion;
 
 import static net.bytebuddy.dynamic.loading.ClassLoadingStrategy.Default.INJECTION;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,6 +42,11 @@ public class FactoryBeanExtensionTest {
         @Override
         public Object instance() {
             return INSTANCE;
+        }
+
+        @Override
+        public SourceVersion currentVersion() {
+            return null;
         }
 
         @Override
