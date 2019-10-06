@@ -2,7 +2,7 @@
 
 Ressor is a framework which ease the development of resource-based Java services. It translates your static or dynamic resources (files, http endpoints, git repositories, etc) into a complete Java service instance, implicitly reloading it when the source data is changed.
 
-It supports various data formats as well as various data sources.
+It supports various formats as well as different kinds of data sources.
 
 ## How it works?
 
@@ -78,7 +78,7 @@ Releases are available via Maven Central.
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository]().
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [releases on this repository](https://github.com/dmart28/ressor/releases).
 
 ## License
 
