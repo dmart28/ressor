@@ -64,6 +64,12 @@ That's all, you can continue using `bookService` instance, which will be always 
 
 See our [Wiki](https://github.com/dmart28/ressor/wiki).
 
+## Requirements
+
+- Java 11
+
+Java 8 special binaries might be supported, in case of such demand from the community.
+
 ## Import
 
 Releases are available via Maven Central.
