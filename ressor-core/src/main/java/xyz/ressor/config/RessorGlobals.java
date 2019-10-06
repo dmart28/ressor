@@ -3,6 +3,9 @@ package xyz.ressor.config;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * Global configurations for the Ressor
+ */
 public class RessorGlobals {
     private static final Object lock = new Object();
     private static volatile RessorGlobals instance;
@@ -12,6 +15,9 @@ public class RessorGlobals {
     private RessorGlobals() {
     }
 
+    /**
+     * The amount of threads used for polling
+     */
     public int pollingThreads() {
         return pollingThreads;
     }
@@ -21,6 +27,9 @@ public class RessorGlobals {
         return this;
     }
 
+    /**
+     * The thread pool which is used by Ressor services for loading the resources data
+     */
     public ExecutorService threadPool() {
         return threadPool;
     }

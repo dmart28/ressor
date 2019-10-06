@@ -20,6 +20,29 @@ import java.util.function.Function;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+/**
+ * The builder for the Ressor proxy class, which will be created and loaded by a ClassLoader.
+ *
+ *
+ * If {@param <T>} is a class, it will be extended by our proxy class.
+ * If {@param <T>} doesn't have a default constructor, Ressor will scan it for the mostly short and public constructor available, which will be used
+ * for the proxy instance creation (which happens once).
+ * This can't be avoided since this is how the JVM inheritance mechanism works - we should call at least one constructor of super type, even though
+ * we are creating an instance of our own new proxy class.
+ * Otherwise, you can mark your constructor with {@link xyz.ressor.commons.annotations.ProxyConstructor} annotation, which will tell Ressor
+ * to use it explicitly. If constructor has parameters, Ressor will guess and pass the default ones, based on the underlying parameter type ({@link null} for objects,
+ * 0 for ints, etc). Alternatively, you can provide your own param values with {@link #proxyDefaultArguments(Object...)}.
+ * By default, Ressor will also find the constructor for the creation of actual instances of your service. You can alternatively mark
+ * the desired constructor/factory method with {@link xyz.ressor.commons.annotations.ServiceFactory} annotation. It must have single parameter,
+ * which will be of type of your selected {@link Source} ({@link #yaml()}, {@link #json()}, etc).
+ *
+ *
+ * If {@param <T>} is an interface, it will be implemented by our proxy class.
+ * In that case you should provide a {@link #factory(Function)} which will be in charge of creating the actual instances of your service based
+ * on the {@link Source} ({@link #yaml()}, {@link #json()}, etc).
+ *
+ * @param <T> service public type
+ */
 public class RessorBuilder<T> {
     private static final ServiceProxyBuilder proxyBuilder = new ServiceProxyBuilder();
     private final Class<T> type;
