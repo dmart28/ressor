@@ -1,3 +1,8 @@
+apply plugin: 'osgi'
+apply plugin: 'java-library'
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
 dependencies {
     compile project(":ressor-commons")
     compile "net.bytebuddy:byte-buddy:$bytebuddyVersion"
@@ -6,4 +11,88 @@ dependencies {
     compile "org.quartz-scheduler:quartz:$quartzVersion"
 
     testCompile group: 'commons-io', name: 'commons-io', version: '2.6'
+}
+
+jar {
+    manifest {
+        attributes("Bundle-Vendor": "Ressor",
+                   "Bundle-Description": "Ressor: Java dynamic resource-based services",
+                   "Bundle-DocURL": "https://ressor.xyz")
+    }
+}
+
+task fooJar(type: Jar) {
+    manifest = osgiManifest {
+        instruction 'Bundle-Vendor', 'Ressor'
+    }
+}
+
+task sourcesJar(type: Jar) {
+    archiveClassifier = 'sources'
+    from sourceSets.main.allJava
+}
+
+task javadocJar(type: Jar) {
+    archiveClassifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar, javadocJar
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId 'xyz.ressor'
+            artifactId 'ressor-core'
+            from components.java
+
+            artifact sourcesJar
+            artifact javadocJar
+
+            pom {
+                name = 'Ressor Core'
+                packaging = 'jar'
+                description = 'Ressor framework core engine'
+                url = 'https://ressor.xyz'
+
+                scm {
+                    connection = 'scm:git:https://github.com/dmart28/ressor.git'
+                    developerConnection = 'scm:git:git@github.com:dmart28/ressor.git'
+                    url = 'https://github.com/dmart28/ressor'
+                }
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'dmart28'
+                        name = 'Artem Dmitriev'
+                        email = 'me@tema.im'
+                    }
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+            def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            credentials {
+                username = "$ossrhUsername"
+                password = "$ossrhPassword"
+            }
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.mavenJava
 }
