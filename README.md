@@ -6,9 +6,9 @@ It supports various formats as well as different kinds of data sources.
 
 ## How it works?
 
-Ressor generates a special proxy class at runtime, which is based on the class/interface provided by you and inherits it. It delegates the calls to an actual instance of your service, which is created and stored inside this proxy.
+Ressor generates a special proxy class at runtime, which inherits the class/interface of your service. It delegates the calls to an actual instance of your service, which is created and stored inside this proxy, filled with the resource data.
 
-As a result, you create once a single instance and use it everywhere for the whole application lifetime. When the source changes, we just swap to the new instance under the hood.
+As a result, you generate a single instance once and use it everywhere for the whole application lifetime. When the source data changes, we just swap to the new instance under the hood.
 
 ## Project Status & Contributing
 
