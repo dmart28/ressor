@@ -32,6 +32,16 @@ allprojects {
             showStandardStreams = true
             showExceptions = true
             showStackTraces = true
+
+            events "failed"
+            exceptionFormat "short"
+
+            debug {
+                events "started", "skipped", "failed"
+                exceptionFormat "full"
+            }
+
+            info.events = ["failed", "skipped"]
         }
     }
 
