@@ -1,5 +1,7 @@
 # Ressor
 
+[![Build Status](https://travis-ci.org/dmart28/ressor.svg?branch=develop)](https://travis-ci.org/dmart28/ressor)
+
 Ressor is a framework which ease the development of resource-based Java services. It translates your static or dynamic resources (files, http endpoints, git repositories, etc) into a complete Java service instance, implicitly reloading it when the source data is changed.
 
 It supports various formats as well as different kinds of data sources.
