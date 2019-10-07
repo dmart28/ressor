@@ -1,5 +1,8 @@
 package xyz.ressor.source;
 
+/**
+ * Represents the data source
+ */
 public interface Source {
 
     /**
@@ -16,6 +19,9 @@ public interface Source {
      */
     boolean isListenable();
 
+    /**
+     * Subscribe for the change events from the Source
+     */
     Subscription subscribe(Runnable listener);
 
     String describe();

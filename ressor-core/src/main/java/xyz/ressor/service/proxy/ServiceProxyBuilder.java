@@ -6,7 +6,9 @@ import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.matcher.ElementMatcher;
+import org.jetbrains.annotations.NotNull;
 import xyz.ressor.commons.annotations.ServiceFactory;
+import xyz.ressor.commons.exceptions.RessorServiceException;
 import xyz.ressor.commons.exceptions.TypeDefinitionException;
 import xyz.ressor.commons.utils.Exceptions;
 import xyz.ressor.service.RessorService;
@@ -50,7 +52,7 @@ public class ServiceProxyBuilder {
             m = i.defineConstructor(Visibility.PUBLIC).intercept(constructor);
         }
         var f = m.defineMethod("getRessorUnderlying", context.getType(), Visibility.PUBLIC)
-                .intercept(call(serviceProxy::instance))
+                .intercept(call(() -> getInstance(context, serviceProxy)))
                 .method(isDeclaredBy(RessorService.class))
                 .intercept(to(serviceProxy))
                 .method(isDeepDeclaredBy(context.getType()))
@@ -65,6 +67,16 @@ public class ServiceProxyBuilder {
             return targetConstructor.newInstance();
         } catch (Throwable t) {
             throw Exceptions.wrap(t);
+        }
+    }
+
+    @NotNull
+    private <T> Object getInstance(ProxyContext<T> context, RessorServiceImpl<T> serviceProxy) {
+        var si = serviceProxy.instance();
+        if (si == null) {
+            throw new RessorServiceException("No " + context.getType().getSimpleName() + " instance available, please provide initialInstance during building.");
+        } else {
+            return si;
         }
     }
 
