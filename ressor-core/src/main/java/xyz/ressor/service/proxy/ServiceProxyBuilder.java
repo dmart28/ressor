@@ -42,13 +42,13 @@ public class ServiceProxyBuilder {
                 b = (DynamicType.Builder<? extends T>) ext.interceptProxy(b, context.getType());
             }
         }
-        var typeDef = TypeDefinition.of(context.getType());
+        var typeDef = TypeDefinition.of(context.getType(), context.getProxyDefaultArguments());
 
         var i = b.implement(RessorService.class);
         DynamicType.Builder<? extends T> m = i;
         if (!typeDef.isInterface() && typeDef.getDefaultArguments().length > 0) {
             var constructor = invoke(typeDef.getDefaultConstructor())
-                    .with(firstNonNull(context.getProxyDefaultArguments(), typeDef.getDefaultArguments()));
+                    .with(typeDef.getDefaultArguments());
             m = i.defineConstructor(Visibility.PUBLIC).intercept(constructor);
         }
         var f = m.defineMethod("getRessorUnderlying", context.getType(), Visibility.PUBLIC)
