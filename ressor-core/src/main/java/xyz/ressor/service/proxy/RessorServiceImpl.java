@@ -80,7 +80,7 @@ public class RessorServiceImpl<T> implements RessorService<T> {
         long stamp = lock.writeLock();
         var prevVersion = latestVersion;
         try {
-            if (prevVersion == null || prevVersion == SourceVersion.EMPTY || !prevVersion.equals(resource.getVersion())) {
+            if (isEmpty(prevVersion) || !prevVersion.equals(resource.getVersion())) {
                 // we update the current version immediately to prevent repeated reloads
                 this.latestVersion = resource.getVersion();
                 // we don't want to block an instance() method during an actual resource loading
@@ -107,12 +107,16 @@ public class RessorServiceImpl<T> implements RessorService<T> {
             if (exception != null) {
                 this.latestVersion = prevVersion;
                 throw Exceptions.wrap(exception);
-            } else if (newInstance != null && resource.getVersion().equals(latestVersion)) {
+            } else if (newInstance != null && (isEmpty(latestVersion) || resource.getVersion().equals(latestVersion))) {
                 this.underlyingInstance = newInstance;
             }
         } finally {
             lock.unlock(stamp);
         }
+    }
+
+    private boolean isEmpty(SourceVersion version) {
+        return version == null || version == SourceVersion.EMPTY;
     }
 
     public <K, V> V state(K key) {
