@@ -29,6 +29,16 @@ public class GeoServiceTest {
     }
 
     @Test
+    public void testGzipJson() {
+        checkGeoService(Ressor.service(GeoService.class)
+                .fileSource("classpath:integration/geoData.json.gz")
+                .json()
+                .gzipped()
+                .<JsonNode>factory(GeoServiceImpl::new)
+                .build());
+    }
+
+    @Test
     public void testYaml() {
         checkGeoService(Ressor.service(GeoService.class)
                 .fileSource("classpath:integration/geoData.yml")

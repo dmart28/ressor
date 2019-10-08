@@ -59,6 +59,7 @@ public class RessorBuilder<T> {
     private FileSystemWatchService fsWatchService;
     private T initialValue;
     private boolean isAsync;
+    private boolean gzipped = false;
     private ClassLoader classLoader;
     private LinkedList<ServiceExtension> extensions = new LinkedList<>();
     private Object[] proxyDefaultArguments;
@@ -192,6 +193,14 @@ public class RessorBuilder<T> {
     }
 
     /**
+     * Whether the source data is GZIP encoded
+     */
+    public RessorBuilder<T> gzipped() {
+        this.gzipped = true;
+        return this;
+    }
+
+    /**
      * The initial default instance of your service. It will be used by Ressor before the first
      * {@link Source#load()} is happened.
      *
@@ -245,6 +254,9 @@ public class RessorBuilder<T> {
         }
         if (fsWatchService != null) {
             fsWatchService.init();
+        }
+        if (gzipped) {
+            translator = Translators.gzipped(translator);
         }
         var ctx = ProxyContext.builder(type)
                 .source(source)

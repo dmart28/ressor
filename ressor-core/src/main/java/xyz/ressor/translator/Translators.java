@@ -9,8 +9,10 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.zip.GZIPInputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static xyz.ressor.commons.utils.Exceptions.catchingFunc;
 import static xyz.ressor.commons.utils.Exceptions.wrap;
 import static xyz.ressor.translator.Translator.define;
 
@@ -100,6 +102,10 @@ public abstract class Translators {
                 throw wrap(e);
             }
         }, InputStream.class, JsonParser.class);
+    }
+
+    public static <T> Translator<InputStream, T> gzipped(Translator<InputStream, T> original) {
+        return original.prepend(catchingFunc(GZIPInputStream::new), InputStream.class);
     }
 
 }
