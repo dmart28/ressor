@@ -64,7 +64,7 @@ That's all, you can continue using `bookService` instance, which will be always 
 
 ## Documentation
 
-See our [Wiki](https://github.com/dmart28/ressor/wiki).
+See our [Project Website](https://ressor.xyz).
 
 ## Requirements
 
