@@ -2,6 +2,13 @@ package xyz.ressor.translator;
 
 import java.util.function.Function;
 
+/**
+ * Responsible for translating raw data read by the {@link xyz.ressor.source.Source} to the actual
+ * format, understandable for end user services.
+ *
+ * @param <T> the input type
+ * @param <R> the output type
+ */
 public interface Translator<T, R> {
 
     R translate(T resource);

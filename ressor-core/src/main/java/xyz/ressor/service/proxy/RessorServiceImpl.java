@@ -77,6 +77,9 @@ public class RessorServiceImpl<T> implements RessorService<T> {
         try {
             this.currentVersion = resource.getVersion();
             this.underlyingInstance = factory.apply(translator.translate(resource.getInputStream()));
+            try {
+                resource.getInputStream().close();
+            } catch (Throwable ignored) { }
         } finally {
             lock.unlockWrite(stamp);
         }

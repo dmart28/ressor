@@ -8,6 +8,7 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 
 import static java.lang.reflect.Modifier.isPrivate;
+import static xyz.ressor.commons.utils.CollectionUtils.isEmpty;
 import static xyz.ressor.commons.utils.ReflectionUtils.findAnnotatedExecutable;
 import static xyz.ressor.commons.utils.RessorUtils.defaultInstance;
 
@@ -42,6 +43,10 @@ public class TypeDefinition<T> {
     }
 
     public static <T> TypeDefinition<T> of(Class<? extends T> type) {
+        return of(type, null);
+    }
+
+    public static <T> TypeDefinition<T> of(Class<? extends T> type, Object[] defaultArgs) {
         var isFinal = Modifier.isFinal(type.getModifiers());
         var isInterface = type.isInterface();
         if (!isInterface) {
@@ -50,21 +55,51 @@ public class TypeDefinition<T> {
 
             if (defaultConstructor == null) {
                 Arrays.sort(constructors, ConstructorComparator.instance());
-                if (constructors.length > 0) {
-                    defaultConstructor = constructors[0];
+                if (isEmpty(defaultArgs)) {
+                    if (constructors.length > 0) {
+                        defaultConstructor = constructors[0];
+                    } else {
+                        throw new TypeDefinitionException(type, "No constructors were found for class, unable to generate a proxy");
+                    }
                 } else {
-                    throw new TypeDefinitionException(type, "No constructors were found for class, unable to generate a proxy");
+                    Class[] types = getTypes(defaultArgs);
+                    for (var constructor : constructors) {
+                        if (matches(types, constructor.getParameterTypes())) {
+                            defaultConstructor = constructor;
+                        }
+                    }
                 }
             }
             if (isPrivate(defaultConstructor.getModifiers())) {
                 throw new TypeDefinitionException(type, "All available constructors are private, unable to define a proxy class");
             }
             defaultConstructor.setAccessible(true);
-            var defaultArguments = generateDefaultArguments(defaultConstructor);
+            var defaultArguments = isEmpty(defaultArgs) ? generateDefaultArguments(defaultConstructor) : defaultArgs;
             return new TypeDefinition<>(isFinal, false, defaultConstructor, defaultArguments);
         } else {
             return new TypeDefinition<>(isFinal, true, null, null);
         }
+    }
+
+    private static boolean matches(Class[] types, Class<?>[] parameterTypes) {
+        if (types.length != parameterTypes.length) {
+            return false;
+        } else {
+            for (var i = 0; i < types.length; i++) {
+                if (!parameterTypes[i].isAssignableFrom(types[i])) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static Class[] getTypes(Object[] defaultArgs) {
+        var r = new Class[defaultArgs.length];
+        for (int i = 0; i < defaultArgs.length; i++) {
+            r[i] = defaultArgs[i].getClass();
+        }
+        return r;
     }
 
     private static <T> Object[] generateDefaultArguments(Constructor<T> defaultConstructor) {
