@@ -73,14 +73,14 @@ public class RessorServiceImpl<T> implements RessorService<T> {
     }
 
     @Override
-    public void reload(LoadedResource resource) {
+    public void reload(LoadedResource resource, boolean force) {
         Throwable exception = null;
         T newInstance = null;
 
         long stamp = lock.writeLock();
         var prevVersion = latestVersion;
         try {
-            if (isEmpty(prevVersion) || !prevVersion.equals(resource.getVersion())) {
+            if (force || isEmpty(prevVersion) || !prevVersion.equals(resource.getVersion())) {
                 // we update the current version immediately to prevent repeated reloads
                 this.latestVersion = resource.getVersion();
                 // we don't want to block an instance() method during an actual resource loading

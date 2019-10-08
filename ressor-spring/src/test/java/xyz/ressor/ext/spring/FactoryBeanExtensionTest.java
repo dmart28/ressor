@@ -55,7 +55,7 @@ public class FactoryBeanExtensionTest {
         }
 
         @Override
-        public void reload(LoadedResource resource) {
+        public void reload(LoadedResource resource, boolean force) {
         }
     }
 

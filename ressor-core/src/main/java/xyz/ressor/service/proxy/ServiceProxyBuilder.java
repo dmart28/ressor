@@ -13,6 +13,7 @@ import xyz.ressor.commons.exceptions.TypeDefinitionException;
 import xyz.ressor.commons.utils.Exceptions;
 import xyz.ressor.service.RessorService;
 
+import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -53,7 +54,7 @@ public class ServiceProxyBuilder {
         }
         var f = m.defineMethod("getRessorUnderlying", context.getType(), Visibility.PUBLIC)
                 .intercept(call(() -> getInstance(context, serviceProxy)))
-                .method(isDeclaredBy(RessorService.class))
+                .method(isDeclaredBy(RessorService.class).and(not(isDefaultMethod())))
                 .intercept(to(serviceProxy))
                 .method(isDeepDeclaredBy(context.getType()))
                 .intercept(toMethodReturnOf("getRessorUnderlying"));
@@ -104,11 +105,11 @@ public class ServiceProxyBuilder {
     }
 
     private ElementMatcher<? super MethodDescription> isDeepDeclaredBy(Class<?> type) {
-        var is = isDeclaredBy(type);
+        var is = isDeclaredBy(type).and(not(isDefaultMethod()));
         var interfaces = type.getInterfaces();
         if (interfaces != null && interfaces.length > 0) {
             for (var ifc : interfaces) {
-                is = is.or(isDeclaredBy(ifc)).or((ElementMatcher<? super ByteCodeElement>) isDeepDeclaredBy(ifc));
+                is = is.or(isDeclaredBy(ifc)).or(isDeepDeclaredBy(ifc));
             }
         }
         if (type.getSuperclass() != null && type.getSuperclass() != Object.class) {
