@@ -61,7 +61,7 @@ public class ServiceProxyBuilderTest {
         assertThat(nestedCarRepository.finalMethod()).isEqualTo(nestedCarRepository.getManufacturer());
         assertThat(nestedCarRepository.computeClearance(2)).isEqualTo(260d);
 
-        ((RessorService<JsonNestedCarRepository>) nestedCarRepository).reload(load("classpath:proxy/car_repository.json"));
+        ((RessorService<JsonNestedCarRepository>) nestedCarRepository).reload(load("classpath:proxy/car_repository.json", true));
 
         assertThat(nestedCarRepository.getModel()).isEqualTo("Astra");
         assertThat(nestedCarRepository.getManufacturer()).isEqualTo("Opel");
