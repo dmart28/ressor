@@ -1,5 +1,6 @@
 package xyz.ressor.service.proxy;
 
+import xyz.ressor.commons.utils.Exceptions;
 import xyz.ressor.service.RessorService;
 import xyz.ressor.source.LoadedResource;
 import xyz.ressor.source.SourceVersion;
@@ -19,7 +20,7 @@ public class RessorServiceImpl<T> implements RessorService<T> {
     private final Class<? extends T> type;
     private T initialInstance;
     private T underlyingInstance;
-    private SourceVersion currentVersion;
+    private SourceVersion latestVersion;
     private final Map<Object, Object> state = new HashMap<>();
     private final StampedLock lock = new StampedLock();
 
@@ -57,13 +58,13 @@ public class RessorServiceImpl<T> implements RessorService<T> {
     }
 
     @Override
-    public SourceVersion currentVersion() {
+    public SourceVersion latestVersion() {
         var stamp = lock.tryOptimisticRead();
-        var result = currentVersion;
+        var result = latestVersion;
         if (!lock.validate(stamp)) {
             stamp = lock.readLock();
             try {
-                result = currentVersion;
+                result = latestVersion;
             } finally {
                 lock.unlockRead(stamp);
             }
@@ -73,15 +74,44 @@ public class RessorServiceImpl<T> implements RessorService<T> {
 
     @Override
     public void reload(LoadedResource resource) {
+        Throwable exception = null;
+        T newInstance = null;
+
         long stamp = lock.writeLock();
+        var prevVersion = latestVersion;
         try {
-            this.currentVersion = resource.getVersion();
-            this.underlyingInstance = factory.apply(translator.translate(resource.getInputStream()));
+            if (prevVersion == null || prevVersion == SourceVersion.EMPTY || !prevVersion.equals(resource.getVersion())) {
+                // we update the current version immediately to prevent repeated reloads
+                this.latestVersion = resource.getVersion();
+                // we don't want to block an instance() method during an actual resource loading
+                // as it might be very time-consuming
+                stamp = lock.tryConvertToReadLock(stamp);
+                try {
+                    newInstance = factory.apply(translator.translate(resource.getInputStream()));
+                } catch (Throwable t) {
+                    exception = t;
+                }
+            } else {
+                // nothing to do here
+                return;
+            }
+        } finally {
+            lock.unlock(stamp);
             try {
                 resource.getInputStream().close();
-            } catch (Throwable ignored) { }
+            } catch (Throwable ignored) {
+            }
+        }
+        stamp = lock.writeLock();
+        try {
+            if (exception != null) {
+                this.latestVersion = prevVersion;
+                throw Exceptions.wrap(exception);
+            } else if (newInstance != null && latestVersion == resource.getVersion()) {
+                this.underlyingInstance = newInstance;
+            }
         } finally {
-            lock.unlockWrite(stamp);
+            lock.unlock(stamp);
         }
     }
 

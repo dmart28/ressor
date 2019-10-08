@@ -11,7 +11,13 @@ public interface RessorService<T> {
 
     T instance();
 
-    SourceVersion currentVersion();
+    /**
+     * Returns the latest resource version which this service is aware of and is switching to.
+     *
+     * It's guaranteed that instance() and latestVersion() will be *eventually in sync* with each other at some
+     * point of time.
+     */
+    SourceVersion latestVersion();
 
     void reload(LoadedResource resource);
 
