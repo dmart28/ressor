@@ -107,7 +107,7 @@ public class RessorServiceImpl<T> implements RessorService<T> {
             if (exception != null) {
                 this.latestVersion = prevVersion;
                 throw Exceptions.wrap(exception);
-            } else if (newInstance != null && latestVersion == resource.getVersion()) {
+            } else if (newInstance != null && resource.getVersion().equals(latestVersion)) {
                 this.underlyingInstance = newInstance;
             }
         } finally {
