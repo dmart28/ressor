@@ -19,10 +19,6 @@ public interface RessorService<T> {
      */
     SourceVersion latestVersion();
 
-    default void reload(LoadedResource resource) {
-        reload(resource, false);
-    }
-
-    void reload(LoadedResource resource, boolean force);
+    void reload(LoadedResource resource);
 
 }

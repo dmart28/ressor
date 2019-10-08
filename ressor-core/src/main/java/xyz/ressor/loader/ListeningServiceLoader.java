@@ -21,10 +21,7 @@ public class ListeningServiceLoader extends ServiceLoaderBase {
             try {
                 log.debug("Reloading by notification from [{}]", source.describe());
                 synchronized (service) {
-                    var loaded = source.load();
-                    if (loaded != null) {
-                        service.reload(loaded, true);
-                    }
+                    service.reload(source.load());
                 }
             } catch (Throwable t) {
                 log.error("Failed reloading service [{}] from the [{}] source: {}", service.underlyingType(), source.describe(), t.getMessage(), t);

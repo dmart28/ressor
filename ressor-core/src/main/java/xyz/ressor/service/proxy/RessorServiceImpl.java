@@ -73,45 +73,20 @@ public class RessorServiceImpl<T> implements RessorService<T> {
     }
 
     @Override
-    public void reload(LoadedResource resource, boolean force) {
-        Throwable exception = null;
-        T newInstance = null;
-
-        long stamp = lock.writeLock();
-        var prevVersion = latestVersion;
-        try {
-            if (force || isEmpty(prevVersion) || !prevVersion.equals(resource.getVersion())) {
-                // we update the current version immediately to prevent repeated reloads
-                this.latestVersion = resource.getVersion();
-                // we don't want to block an instance() method during an actual resource loading
-                // as it might be very time-consuming
-                stamp = lock.tryConvertToReadLock(stamp);
-                try {
-                    newInstance = factory.apply(translator.translate(resource.getInputStream()));
-                } catch (Throwable t) {
-                    exception = t;
-                }
-            } else {
-                // nothing to do here
-                return;
-            }
-        } finally {
-            lock.unlock(stamp);
+    public void reload(LoadedResource resource) {
+        if (resource != null) {
+            var newResource = factory.apply(translator.translate(resource.getInputStream()));
+            long stamp = lock.writeLock();
             try {
-                resource.getInputStream().close();
-            } catch (Throwable ignored) {
+                this.latestVersion = resource.getVersion();
+                this.underlyingInstance = newResource;
+                try {
+                    resource.getInputStream().close();
+                } catch (Throwable ignored) {
+                }
+            } finally {
+                lock.unlockWrite(stamp);
             }
-        }
-        stamp = lock.writeLock();
-        try {
-            if (exception != null) {
-                this.latestVersion = prevVersion;
-                throw Exceptions.wrap(exception);
-            } else if (resource.getVersion().equals(latestVersion)) {
-                this.underlyingInstance = newInstance;
-            }
-        } finally {
-            lock.unlock(stamp);
         }
     }
 

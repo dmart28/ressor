@@ -25,6 +25,7 @@ public class QuartzLoaderJob implements Job {
 
             threadPool.submit(() -> {
                 try {
+                    // TODO consider tryLock() here to skip until next reload
                     synchronized (service) {
                         var resource = source.loadIfModified(service.latestVersion());
                         if (resource != null) {
