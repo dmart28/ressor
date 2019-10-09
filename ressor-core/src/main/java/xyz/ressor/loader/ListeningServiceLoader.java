@@ -20,7 +20,9 @@ public class ListeningServiceLoader extends ServiceLoaderBase {
         this.subscription = source.subscribe(() -> RessorGlobals.getInstance().threadPool().submit(() -> {
             try {
                 log.debug("Reloading by notification from [{}]", source.describe());
-                service.reload(source.load());
+                synchronized (service) {
+                    service.reload(source.load());
+                }
             } catch (Throwable t) {
                 log.error("Failed reloading service [{}] from the [{}] source: {}", service.underlyingType(), source.describe(), t.getMessage(), t);
             }

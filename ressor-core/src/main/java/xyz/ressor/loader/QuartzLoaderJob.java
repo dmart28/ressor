@@ -3,11 +3,15 @@ package xyz.ressor.loader;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xyz.ressor.config.RessorGlobals;
 import xyz.ressor.service.proxy.RessorServiceImpl;
 import xyz.ressor.source.Source;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class QuartzLoaderJob implements Job {
     private static final Logger log = LoggerFactory.getLogger(QuartzLoaderJob.class);
@@ -21,11 +25,14 @@ public class QuartzLoaderJob implements Job {
 
             threadPool.submit(() -> {
                 try {
-                    var resource = source.loadIfModified(service.currentVersion());
-                    if (resource != null) {
-                        service.reload(resource);
-                    } else {
-                        log.debug("{}: nothing to reload from [{}]", service.underlyingType(), source.describe());
+                    // TODO consider tryLock() here to skip until next reload
+                    synchronized (service) {
+                        var resource = source.loadIfModified(service.latestVersion());
+                        if (resource != null) {
+                            service.reload(resource);
+                        } else {
+                            log.debug("{}: nothing to reload from [{}]", service.underlyingType(), source.describe());
+                        }
                     }
                 } catch (Throwable t) {
                     log.error("Failed reloading service [{}] from the [{}] source: {}", service.underlyingType(), source.describe(), t.getMessage(), t);

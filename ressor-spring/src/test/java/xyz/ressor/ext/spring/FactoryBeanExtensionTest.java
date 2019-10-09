@@ -50,7 +50,7 @@ public class FactoryBeanExtensionTest {
         }
 
         @Override
-        public SourceVersion currentVersion() {
+        public SourceVersion latestVersion() {
             return null;
         }
 

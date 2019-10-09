@@ -1,6 +1,6 @@
 # Ressor
 
-[![Build Status](https://travis-ci.org/dmart28/ressor.svg?branch=develop)](https://travis-ci.org/dmart28/ressor) [![Join the chat at https://gitter.im/dmart28/ressor](https://badges.gitter.im/dmart28/ressor.svg)](https://gitter.im/dmart28/ressor?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://travis-ci.org/dmart28/ressor.svg?branch=develop)](https://travis-ci.org/dmart28/ressor) [![Join the chat at https://gitter.im/dmart28/ressor](https://badges.gitter.im/dmart28/ressor.svg)](https://gitter.im/dmart28/ressor?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Maven Central](https://img.shields.io/maven-central/v/xyz.ressor/ressor-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22xyz.ressor%22%20AND%20a:%22ressor-core%22)
 
 Ressor is a framework which ease the development of resource-based Java services. It translates your static or dynamic resources (files, http endpoints, git repositories, etc) into a complete Java service instance, implicitly reloading it when the source data is changed.
 
@@ -64,7 +64,7 @@ That's all, you can continue using `bookService` instance, which will be always 
 
 ## Documentation
 
-See our [Wiki](https://github.com/dmart28/ressor/wiki).
+See our [Project Website](https://ressor.xyz).
 
 ## Requirements
 

@@ -1,5 +1,6 @@
 package xyz.ressor.service.proxy;
 
+import xyz.ressor.commons.utils.Exceptions;
 import xyz.ressor.service.RessorService;
 import xyz.ressor.source.LoadedResource;
 import xyz.ressor.source.SourceVersion;
@@ -19,7 +20,7 @@ public class RessorServiceImpl<T> implements RessorService<T> {
     private final Class<? extends T> type;
     private T initialInstance;
     private T underlyingInstance;
-    private SourceVersion currentVersion;
+    private SourceVersion latestVersion;
     private final Map<Object, Object> state = new HashMap<>();
     private final StampedLock lock = new StampedLock();
 
@@ -57,13 +58,13 @@ public class RessorServiceImpl<T> implements RessorService<T> {
     }
 
     @Override
-    public SourceVersion currentVersion() {
+    public SourceVersion latestVersion() {
         var stamp = lock.tryOptimisticRead();
-        var result = currentVersion;
+        var result = latestVersion;
         if (!lock.validate(stamp)) {
             stamp = lock.readLock();
             try {
-                result = currentVersion;
+                result = latestVersion;
             } finally {
                 lock.unlockRead(stamp);
             }
@@ -73,16 +74,24 @@ public class RessorServiceImpl<T> implements RessorService<T> {
 
     @Override
     public void reload(LoadedResource resource) {
-        long stamp = lock.writeLock();
-        try {
-            this.currentVersion = resource.getVersion();
-            this.underlyingInstance = factory.apply(translator.translate(resource.getInputStream()));
+        if (resource != null) {
+            var newResource = factory.apply(translator.translate(resource.getInputStream()));
+            long stamp = lock.writeLock();
             try {
-                resource.getInputStream().close();
-            } catch (Throwable ignored) { }
-        } finally {
-            lock.unlockWrite(stamp);
+                this.latestVersion = resource.getVersion();
+                this.underlyingInstance = newResource;
+                try {
+                    resource.getInputStream().close();
+                } catch (Throwable ignored) {
+                }
+            } finally {
+                lock.unlockWrite(stamp);
+            }
         }
+    }
+
+    private boolean isEmpty(SourceVersion version) {
+        return version == null || version == SourceVersion.EMPTY;
     }
 
     public <K, V> V state(K key) {
