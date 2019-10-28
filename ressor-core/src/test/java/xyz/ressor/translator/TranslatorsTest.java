@@ -4,8 +4,12 @@ import com.fasterxml.jackson.core.JsonToken;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Random;
+import java.util.zip.GZIPOutputStream;
 
 import static java.nio.charset.StandardCharsets.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,6 +36,18 @@ public class TranslatorsTest {
         var is = new ByteArrayInputStream(bytes);
 
         assertThat(inputStream2Bytes().translate(is)).isEqualTo(bytes);
+    }
+
+    @Test
+    public void testInputStream2GzippedBytes() throws IOException {
+        var bytes = new byte[32 * 1024];
+        new Random().nextBytes(bytes);
+        var os = new ByteArrayOutputStream();
+        try (var gzip = new GZIPOutputStream(os)) {
+            gzip.write(bytes);
+        }
+
+        assertThat(gzipped(inputStream2Bytes()).translate(new ByteArrayInputStream(os.toByteArray()))).isEqualTo(bytes);
     }
 
     @Test
@@ -93,6 +109,51 @@ public class TranslatorsTest {
         var nt = translator.prepend(bytes -> ByteBuffer.wrap(bytes).getInt(), byte[].class);
 
         assertThat(nt.translate(new byte[] { 0, 0, 5, 1 })).isEqualTo("1281");
+    }
+
+    @Test
+    public void testJsonObjectTranslator() {
+        var bytes = classpath("translator/class_event.json").getBytes(UTF_8);
+        var translator = Translators.inputStream2JsonObject(Car.class);
+
+        translateAndCheckCar(bytes, translator);
+    }
+
+    @Test
+    public void testYamlObjectTranslator() {
+        var bytes = classpath("translator/class_event.yaml").getBytes(UTF_8);
+        var translator = Translators.inputStream2YamlObject(Car.class);
+
+        translateAndCheckCar(bytes, translator);
+    }
+
+    @Test
+    public void testJsonObjectListTranslator() {
+        var bytes = classpath("translator/class_events.json").getBytes(UTF_8);
+        var i = Translators.inputStream2JsonObjectList(Car.class).translate(new ByteArrayInputStream(bytes));
+
+        assertThat(i).hasSize(1);
+        checkCar(i.get(0));
+    }
+
+    @Test
+    public void testYamlObjectListTranslator() {
+        var bytes = classpath("translator/class_events.yaml").getBytes(UTF_8);
+        var i = Translators.inputStream2YamlObjectList(Car.class).translate(new ByteArrayInputStream(bytes));
+
+        assertThat(i).hasSize(1);
+        checkCar(i.get(0));
+    }
+
+    private void translateAndCheckCar(byte[] bytes, Translator<InputStream, Car> translator) {
+        checkCar(translator.translate(new ByteArrayInputStream(bytes)));
+    }
+
+    private void checkCar(Car car) {
+        assertThat(car).isNotNull();
+        assertThat(car.getModel()).isEqualTo("Model S");
+        assertThat(car.getManufacturer()).isEqualTo("Tesla");
+        assertThat(car.getWeight()).isEqualByComparingTo(4647d);
     }
 
 }

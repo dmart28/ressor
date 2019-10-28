@@ -6,12 +6,14 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import xyz.ressor.Ressor;
+import xyz.ressor.integration.model.geo.GeoData;
 import xyz.ressor.integration.model.geo.GeoService;
 import xyz.ressor.integration.model.geo.GeoServiceImpl;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,6 +50,24 @@ public class GeoServiceTest {
     }
 
     @Test
+    public void testYamlObject() {
+        checkGeoService(Ressor.service(GeoService.class)
+                .fileSource("classpath:integration/geoData.yml")
+                .yamlList(GeoData.class)
+                .<List<GeoData>>factory(GeoServiceImpl::new)
+                .build());
+    }
+
+    @Test
+    public void testJsonObject() {
+        checkGeoService(Ressor.service(GeoService.class)
+                .fileSource("classpath:integration/geoData.json")
+                .jsonList(GeoData.class)
+                .<List<GeoData>>factory(GeoServiceImpl::new)
+                .build());
+    }
+
+    @Test
     public void testString() {
         checkGeoService(Ressor.service(GeoService.class)
                 .fileSource("classpath:integration/geoData.csv")
@@ -70,6 +90,24 @@ public class GeoServiceTest {
         checkGeoService(Ressor.service(GeoServiceImpl.class)
                 .fileSource("classpath:integration/geoData.json")
                 .json()
+                .proxyDefaultArguments(MissingNode.getInstance())
+                .build());
+    }
+
+    @Test
+    public void testJsonObjectImplementationOnly() {
+        checkGeoService(Ressor.service(GeoServiceImpl.class)
+                .fileSource("classpath:integration/geoData.json")
+                .jsonList(GeoData.class)
+                .proxyDefaultArguments(MissingNode.getInstance())
+                .build());
+    }
+
+    @Test
+    public void testYamlObjectImplementationOnly() {
+        checkGeoService(Ressor.service(GeoServiceImpl.class)
+                .fileSource("classpath:integration/geoData.yml")
+                .yamlList(GeoData.class)
                 .proxyDefaultArguments(MissingNode.getInstance())
                 .build());
     }

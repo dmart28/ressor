@@ -9,6 +9,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -64,6 +65,18 @@ public abstract class Translators {
         return inputStream2Json(JSON_MAPPER);
     }
 
+    public static <T> Translator<InputStream, T> inputStream2JsonObject(Class<T> type) {
+        return inputStream2Object(JSON_MAPPER, type);
+    }
+
+    public static <T> Translator<InputStream, List<T>> inputStream2JsonObjectList(Class<T> type) {
+        return inputStream2ObjectList(JSON_MAPPER, type);
+    }
+
+    public static <T> Translator<InputStream, List<T>> inputStream2YamlObjectList(Class<T> type) {
+        return inputStream2ObjectList(YAML_MAPPER, type);
+    }
+
     public static Translator<InputStream, JsonNode> inputStream2Json(ObjectMapper mapper) {
         return define(s -> {
             try {
@@ -84,6 +97,10 @@ public abstract class Translators {
         }, InputStream.class, JsonNode.class);
     }
 
+    public static <T> Translator<InputStream, T> inputStream2YamlObject(Class<T> type) {
+        return inputStream2Object(YAML_MAPPER, type);
+    }
+
     public static Translator<InputStream, JsonParser> inputStream2JsonParser() {
         return define(s -> {
             try {
@@ -102,6 +119,27 @@ public abstract class Translators {
                 throw wrap(e);
             }
         }, InputStream.class, JsonParser.class);
+    }
+
+    public static <T> Translator<InputStream, T> inputStream2Object(ObjectMapper mapper, Class<T> type) {
+        return define(s -> {
+            try {
+                return mapper.readValue(s, type);
+            } catch (IOException e) {
+                throw wrap(e);
+            }
+        }, InputStream.class, type);
+    }
+
+    public static <T> Translator<InputStream, List<T>> inputStream2ObjectList(ObjectMapper mapper, Class<T> type) {
+        return define(s -> {
+            try {
+                var t = mapper.getTypeFactory().constructCollectionType(List.class, type);
+                return mapper.readValue(s, t);
+            } catch (IOException e) {
+                throw wrap(e);
+            }
+        }, InputStream.class, (Class<List<T>>) (Class<?>) List.class);
     }
 
     public static <T> Translator<InputStream, T> gzipped(Translator<InputStream, T> original) {

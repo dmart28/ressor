@@ -78,6 +78,26 @@ public class RessorBuilder<T> {
     }
 
     /**
+     * Expect YAML data format from the source, will provide {@param entityType} instance to the service factory
+     *
+     * @param entityType the target type class
+     */
+    public RessorBuilder<T> yaml(Class<?> entityType) {
+        this.translator = Translators.inputStream2YamlObject(entityType);
+        return this;
+    }
+
+    /**
+     * Same as {@link RessorBuilder#yaml(Class)}, but providing {@link java.util.List} of entityType class instances
+     *
+     * @param entityType the target type class
+     */
+    public RessorBuilder<T> yamlList(Class<?> entityType) {
+        this.translator = Translators.inputStream2YamlObjectList(entityType);
+        return this;
+    }
+
+    /**
      * Expect YAML data format from the source, will provide {@link com.fasterxml.jackson.core.JsonParser} instance
      * to the service factory
      */
@@ -92,6 +112,26 @@ public class RessorBuilder<T> {
      */
     public RessorBuilder<T> json() {
         this.translator = Translators.inputStream2Json();
+        return this;
+    }
+
+    /**
+     * Expect JSON data format from the source, will provide {@param entityType} instance to the service factory
+     *
+     * @param entityType the target type class
+     */
+    public RessorBuilder<T> json(Class<?> entityType) {
+        this.translator = Translators.inputStream2JsonObject(entityType);
+        return this;
+    }
+
+    /**
+     * Same as {@link RessorBuilder#json(Class)}, but providing {@link java.util.List} of entityType class instances
+     *
+     * @param entityType the target type class
+     */
+    public RessorBuilder<T> jsonList(Class<?> entityType) {
+        this.translator = Translators.inputStream2JsonObjectList(entityType);
         return this;
     }
 
