@@ -1,5 +1,6 @@
 package xyz.ressor.commons.utils;
 
+import java.io.InputStream;
 import java.lang.reflect.Array;
 
 /**
@@ -34,6 +35,12 @@ public class RessorUtils {
         } else {
             return null;
         }
+    }
+
+    public static void silentlyClose(InputStream stream) {
+        try {
+            stream.close();
+        } catch (Throwable ignored) { }
     }
 
 }

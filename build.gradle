@@ -4,8 +4,7 @@ allprojects {
     apply plugin: 'java'
     group = 'xyz.ressor'
     
-    sourceCompatibility = 1.11
-    targetCompatibility = 1.11
+    sourceCompatibility = 11
 
     dependencies {
         compileOnly group: 'org.jetbrains', name: 'annotations', version: '17.0.0'

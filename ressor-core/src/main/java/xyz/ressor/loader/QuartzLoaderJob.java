@@ -25,14 +25,15 @@ public class QuartzLoaderJob implements Job {
 
             threadPool.submit(() -> {
                 try {
-                    // TODO consider tryLock() here to skip until next reload
-                    synchronized (service) {
+                    if (!service.isReloading()) {
                         var resource = source.loadIfModified(service.latestVersion());
                         if (resource != null) {
                             service.reload(resource);
                         } else {
                             log.debug("{}: nothing to reload from [{}]", service.underlyingType(), source.describe());
                         }
+                    } else {
+                        log.debug("Service {} is already reloading, skipping until the next trigger execution ...", service.underlyingType());
                     }
                 } catch (Throwable t) {
                     log.error("Failed reloading service [{}] from the [{}] source: {}", service.underlyingType(), source.describe(), t.getMessage(), t);
