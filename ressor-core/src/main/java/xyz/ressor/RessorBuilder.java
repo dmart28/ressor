@@ -69,6 +69,47 @@ public class RessorBuilder<T> {
     }
 
     /**
+     * Expect XML data format from the source, will provide {@link com.fasterxml.jackson.databind.JsonNode} instance
+     * to the service factory.
+     *
+     * Please note that by default parser will not wrap root element and duplicate elements will be combined under
+     * {@link com.fasterxml.jackson.databind.node.ArrayNode}, so no data is lost
+     */
+    public RessorBuilder<T> xml() {
+        this.translator = Translators.inputStream2Xml();
+        return this;
+    }
+
+    /**
+     * Expect XML data format from the source, will provide {@param entityType} instance to the service factory
+     *
+     * @param entityType the target type class
+     */
+    public RessorBuilder<T> xml(Class<?> entityType) {
+        this.translator = Translators.inputStream2XmlObject(entityType);
+        return this;
+    }
+
+    /**
+     * Same as {@link RessorBuilder#xml(Class)}, but providing {@link java.util.List} of entityType class instances
+     *
+     * @param entityType the target type class
+     */
+    public RessorBuilder<T> xmlList(Class<?> entityType) {
+        this.translator = Translators.inputStream2XmlObjectList(entityType);
+        return this;
+    }
+
+    /**
+     * Expect XML data format from the source, will provide {@link com.fasterxml.jackson.core.JsonParser} instance
+     * to the service factory
+     */
+    public RessorBuilder<T> xmlParser() {
+        this.translator = Translators.inputStream2XmlParser();
+        return this;
+    }
+
+    /**
      * Expect YAML data format from the source, will provide {@link com.fasterxml.jackson.databind.JsonNode} instance
      * to the service factory
      */

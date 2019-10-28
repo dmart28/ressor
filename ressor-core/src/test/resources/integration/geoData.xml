@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <geoData>
+        <country>RU</country>
+        <ip>193.124.4.85</ip>
+        <lat>55.7522</lat>
+        <lon>37.6156</lon>
+    </geoData>
+    <geoData>
+        <country>NL</country>
+        <ip>145.123.3.5</ip>
+        <lat>52.3824</lat>
+        <lon>4.8995</lon>
+    </geoData>
+    <geoData>
+        <country>FR</country>
+        <ip>92.154.89.56</ip>
+        <lat>48.8543</lat>
+        <lon>2.3527</lon>
+    </geoData>
+</root>

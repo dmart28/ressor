@@ -11,6 +11,9 @@ public class GeoServiceImpl implements GeoService {
 
     public GeoServiceImpl(JsonNode data) {
         var geoInfoMap = new HashMap<String, GeoInfo>();
+        if (!data.isArray()) {
+            data = data.path("geoData");
+        }
         data.forEach(n -> {
             if (n.has("ip")) {
                 var ip = n.get("ip").asText();

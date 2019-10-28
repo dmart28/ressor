@@ -59,30 +59,46 @@ public class TranslatorsTest {
     }
 
     @Test
+    public void testInputStream2Xml() {
+        var bytes = classpath("translator/event.xml").getBytes(UTF_8);
+        var xml = inputStream2Xml().translate(new ByteArrayInputStream(bytes));
+
+        assertThat(xml.has("to")).isTrue();
+    }
+
+    @Test
     public void testInputStream2Json() {
         var bytes = classpath("translator/test.json").getBytes(UTF_8);
-        var is = new ByteArrayInputStream(bytes);
+        var json = inputStream2Json().translate(new ByteArrayInputStream(bytes));
 
-        var json = inputStream2Json().translate(is);
         assertThat(json.has("glossary")).isTrue();
     }
 
     @Test
     public void testInputStream2Yaml() {
         var bytes = classpath("translator/event.yaml").getBytes(UTF_8);
-        var is = new ByteArrayInputStream(bytes);
+        var yaml = inputStream2Yaml().translate(new ByteArrayInputStream(bytes));
 
-        var yaml = inputStream2Yaml().translate(is);
         assertThat(yaml.get("invoice").asInt()).isEqualTo(34843);
         assertThat(yaml.get("comments").asText()).isEqualTo("Late afternoon is best. Backup contact is Nancy Billsmer @ 338-4338.");
     }
 
     @Test
+    public void testInputStream2XmlParser() throws Exception {
+        var bytes = classpath("translator/event.xml").getBytes(UTF_8);
+        var parser = inputStream2XmlParser().translate(new ByteArrayInputStream(bytes));
+
+        assertThat(parser.nextToken()).isEqualTo(JsonToken.START_OBJECT);
+        assertThat(parser.nextToken()).isEqualTo(JsonToken.FIELD_NAME);
+        assertThat(parser.currentName()).isEqualTo("to");
+        assertThat(parser.nextToken()).isEqualTo(JsonToken.VALUE_STRING);
+    }
+
+    @Test
     public void testInputStream2JsonParser() throws Exception {
         var bytes = classpath("translator/test.json").getBytes(UTF_8);
-        var is = new ByteArrayInputStream(bytes);
+        var parser = inputStream2JsonParser().translate(new ByteArrayInputStream(bytes));
 
-        var parser = inputStream2JsonParser().translate(is);
         assertThat(parser.nextToken()).isEqualTo(JsonToken.START_OBJECT);
         assertThat(parser.nextToken()).isEqualTo(JsonToken.FIELD_NAME);
         assertThat(parser.currentName()).isEqualTo("glossary");
@@ -92,9 +108,8 @@ public class TranslatorsTest {
     @Test
     public void testInputStream2YamlParser() throws Exception {
         var bytes = classpath("translator/event.yaml").getBytes(UTF_8);
-        var is = new ByteArrayInputStream(bytes);
+        var parser = inputStream2YamlParser().translate(new ByteArrayInputStream(bytes));
 
-        var parser = inputStream2YamlParser().translate(is);
         assertThat(parser.nextToken()).isEqualTo(JsonToken.START_OBJECT);
         assertThat(parser.nextToken()).isEqualTo(JsonToken.FIELD_NAME);
         assertThat(parser.currentName()).isEqualTo("invoice");
@@ -105,10 +120,17 @@ public class TranslatorsTest {
     @Test
     public void testPrependingTranslator() {
         var translator = define(i -> Integer.toString(i), Integer.class, String.class);
-
         var nt = translator.prepend(bytes -> ByteBuffer.wrap(bytes).getInt(), byte[].class);
 
         assertThat(nt.translate(new byte[] { 0, 0, 5, 1 })).isEqualTo("1281");
+    }
+
+    @Test
+    public void testXmlObjectTranslator() {
+        var bytes = classpath("translator/class_event.xml").getBytes(UTF_8);
+        var translator = Translators.inputStream2XmlObject(Car.class);
+
+        translateAndCheckCar(bytes, translator);
     }
 
     @Test
@@ -125,6 +147,15 @@ public class TranslatorsTest {
         var translator = Translators.inputStream2YamlObject(Car.class);
 
         translateAndCheckCar(bytes, translator);
+    }
+
+    @Test
+    public void testXmlObjectListTranslator() {
+        var bytes = classpath("translator/class_events.xml").getBytes(UTF_8);
+        var i = Translators.inputStream2XmlObjectList(Car.class).translate(new ByteArrayInputStream(bytes));
+
+        assertThat(i).hasSize(1);
+        checkCar(i.get(0));
     }
 
     @Test

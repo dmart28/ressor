@@ -22,6 +22,24 @@ import static org.awaitility.Awaitility.await;
 public class GeoServiceTest {
 
     @Test
+    public void testXml() {
+        checkGeoService(Ressor.service(GeoService.class)
+                .fileSource("classpath:integration/geoData.xml")
+                .xml()
+                .<JsonNode>factory(GeoServiceImpl::new)
+                .build());
+    }
+
+    @Test
+    public void testXmlObject() {
+        checkGeoService(Ressor.service(GeoService.class)
+                .fileSource("classpath:integration/geoData.xml")
+                .xmlList(GeoData.class)
+                .<List<GeoData>>factory(GeoServiceImpl::new)
+                .build());
+    }
+
+    @Test
     public void testJson() {
         checkGeoService(Ressor.service(GeoService.class)
                 .fileSource("classpath:integration/geoData.json")
