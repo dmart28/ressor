@@ -26,11 +26,8 @@ Let's suppose you have a service which provides book titles by the ISBN:
 public class BookRepository {
   private final Map<String, String> data = new HashMap<>();
 
-  public BookRepository(JsonNode node) {
-    if (node != null) {
-      node.forEach(n -> data.put(n.get("isbn").asText(),
-                        n.get("title").asText()));
-    }
+  public BookRepository(List<Book> node) {
+      node.forEach(b -> data.put(b.getIsbn(), b.getTitle()));
   }
 
   public String getTitle(String isbn) {
@@ -44,7 +41,7 @@ Also, there is a `/etc/books.json` file with all the data. Now we can simply tel
 ```java
 var bookService = Ressor.service(BookRepository.class)
         .fileSource("/etc/books.json")
-        .json()
+        .jsonList(Book.class)
         .build();
 ```
 

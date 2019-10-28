@@ -9,10 +9,12 @@ import java.util.concurrent.Executors;
 public class RessorGlobals {
     private static final Object lock = new Object();
     private static volatile RessorGlobals instance;
-    private volatile int pollingThreads = Runtime.getRuntime().availableProcessors();
-    private volatile ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    private volatile int pollingThreads;
+    private volatile ExecutorService threadPool;
 
     private RessorGlobals() {
+        this.pollingThreads = Runtime.getRuntime().availableProcessors();
+        this.threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     }
 
     /**
