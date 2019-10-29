@@ -51,31 +51,36 @@ public class TypeDefinition<T> {
         var isInterface = type.isInterface();
         if (!isInterface) {
             Constructor<T>[] constructors = (Constructor<T>[]) type.getDeclaredConstructors();
-            Constructor<T> defaultConstructor = findAnnotatedExecutable(constructors, ProxyConstructor.class);
+            Arrays.sort(constructors, ConstructorComparator.instance());
+            var hasEmptyConstructor = constructors.length > 0 && constructors[0].getParameterCount() == 0;
 
-            if (defaultConstructor == null) {
-                Arrays.sort(constructors, ConstructorComparator.instance());
-                if (isEmpty(defaultArgs)) {
-                    if (constructors.length > 0) {
-                        defaultConstructor = constructors[0];
+            if (!hasEmptyConstructor) {
+                Constructor<T> defaultConstructor = findAnnotatedExecutable(constructors, ProxyConstructor.class);
+                if (defaultConstructor == null) {
+                    if (isEmpty(defaultArgs)) {
+                        if (constructors.length > 0) {
+                            defaultConstructor = constructors[0];
+                        } else {
+                            throw new TypeDefinitionException(type, "No constructors were found for class, unable to generate a proxy");
+                        }
                     } else {
-                        throw new TypeDefinitionException(type, "No constructors were found for class, unable to generate a proxy");
-                    }
-                } else {
-                    Class[] types = getTypes(defaultArgs);
-                    for (var constructor : constructors) {
-                        if (matches(types, constructor.getParameterTypes())) {
-                            defaultConstructor = constructor;
+                        Class[] types = getTypes(defaultArgs);
+                        for (var constructor : constructors) {
+                            if (matches(types, constructor.getParameterTypes())) {
+                                defaultConstructor = constructor;
+                            }
                         }
                     }
                 }
+                if (isPrivate(defaultConstructor.getModifiers())) {
+                    throw new TypeDefinitionException(type, "All available constructors are private, unable to define a proxy class");
+                }
+                defaultConstructor.setAccessible(true);
+                var defaultArguments = isEmpty(defaultArgs) ? generateDefaultArguments(defaultConstructor) : defaultArgs;
+                return new TypeDefinition<>(isFinal, false, defaultConstructor, defaultArguments);
+            } else {
+                return new TypeDefinition<>(isFinal, false, constructors[0], new Object[0]);
             }
-            if (isPrivate(defaultConstructor.getModifiers())) {
-                throw new TypeDefinitionException(type, "All available constructors are private, unable to define a proxy class");
-            }
-            defaultConstructor.setAccessible(true);
-            var defaultArguments = isEmpty(defaultArgs) ? generateDefaultArguments(defaultConstructor) : defaultArgs;
-            return new TypeDefinition<>(isFinal, false, defaultConstructor, defaultArguments);
         } else {
             return new TypeDefinition<>(isFinal, true, null, null);
         }

@@ -1,12 +1,17 @@
 package xyz.ressor;
 
-import xyz.ressor.config.RessorGlobals;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import xyz.ressor.commons.watch.fs.FileSystemWatchService;
+import xyz.ressor.config.RessorConfig;
 import xyz.ressor.loader.ListeningServiceLoader;
+import xyz.ressor.loader.QuartzManager;
 import xyz.ressor.loader.ServiceLoaderBase;
 import xyz.ressor.service.RessorService;
 import xyz.ressor.service.proxy.RessorServiceImpl;
 import xyz.ressor.source.Source;
 
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -20,14 +25,26 @@ import static xyz.ressor.service.proxy.StateVariables.SOURCE;
  * It supports various formats as well as different kinds of data sources.
  */
 public class Ressor {
+    private static final Logger log = LoggerFactory.getLogger(Ressor.class);
+    private final QuartzManager quartzManager;
+    private final FileSystemWatchService fsWatchService;
+    private final RessorConfig config;
 
-    /**
-     * Ressor global configuration, shared by all internal components.
-     * If global properties are being changed after calling methods like {@link #poll(Object)},
-     * {@link #listen(Object)}, etc. it's not guaranteed that they will be applied after all.
-     */
-    public static RessorGlobals globals() {
-        return RessorGlobals.getInstance();
+    public static Ressor create() {
+        return create(new RessorConfig());
+    }
+
+    public static Ressor create(RessorConfig config) {
+        return new Ressor(config);
+    }
+
+    private Ressor(RessorConfig c) {
+        this.config = new RessorConfig(c);
+        if (config.threadPool() == null) {
+            config.threadPool(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
+        }
+        this.quartzManager = new QuartzManager(config.pollingThreads());
+        this.fsWatchService = new FileSystemWatchService().init();
     }
 
     /**
@@ -38,8 +55,8 @@ public class Ressor {
      * @param <T> the public service type
      * @return proxy class instance
      */
-    public static <T> RessorBuilder<T> service(Class<T> type) {
-        return new RessorBuilder<>(type);
+    public <T> RessorBuilder<T> service(Class<T> type) {
+        return new RessorBuilder<>(type, config, fsWatchService);
     }
 
     /**
@@ -52,10 +69,11 @@ public class Ressor {
      * @param service Ressor proxy service instance
      * @param <T> service public type
      */
-    public static <T> void listen(T service) {
+    public <T> void listen(T service) {
         checkRessorService(service, ressorService -> {
             checkAndStopLoaderIfRequired(ressorService);
-            var loader = new ListeningServiceLoader(ressorService, (Source) ressorService.state(SOURCE));
+            var loader = new ListeningServiceLoader(ressorService, (Source) ressorService.state(SOURCE), config.threadPool(),
+                    config.reloadRetryMaxMillis());
             ressorService.state(LOADER, loader);
         });
     }
@@ -70,10 +88,10 @@ public class Ressor {
      * @param <T> service public type
      * @return Polling builder
      */
-    public static <T> PollingBuilder poll(T service) {
+    public <T> PollingBuilder poll(T service) {
         return checkRessorService(service, ressorService -> {
             checkAndStopLoaderIfRequired(ressorService);
-            return new PollingBuilder(ressorService);
+            return new PollingBuilder(ressorService, config.threadPool(), quartzManager);
         });
     }
 
@@ -83,8 +101,18 @@ public class Ressor {
      * @param service Ressor proxy service instance
      * @param <T> service public type
      */
-    public static <T> void stop(T service) {
+    public <T> void stop(T service) {
         checkRessorService(service, Ressor::checkAndStopLoaderIfRequired);
+    }
+
+    public void shutdown() {
+        try {
+            quartzManager.scheduler().shutdown();
+            fsWatchService.destroy();
+            config.threadPool().shutdownNow();
+        } catch (Throwable t) {
+            log.error("Failed to completely shutdown Ressor: {}", t.getMessage(), t);
+        }
     }
 
     private static <T> void checkRessorService(T service, Consumer<RessorServiceImpl> action) {

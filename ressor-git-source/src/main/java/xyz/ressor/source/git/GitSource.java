@@ -19,7 +19,6 @@ import xyz.ressor.source.version.LastModified;
 
 import java.io.InputStream;
 import java.util.concurrent.ForkJoinPool;
-import java.util.function.Consumer;
 
 import static xyz.ressor.source.git.GitRev.exact;
 

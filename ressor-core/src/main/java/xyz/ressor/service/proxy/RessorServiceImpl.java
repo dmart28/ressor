@@ -47,7 +47,11 @@ public class RessorServiceImpl<T> implements RessorService<T> {
 
     @Override
     public T instance() {
-        return firstNonNull(underlyingInstance, initialInstance);
+        var val = firstNonNull(underlyingInstance, initialInstance);
+        if (val == null) {
+            throw new IllegalStateException("The service wasn't loaded yet, please provide service initial instance.");
+        }
+        return val;
     }
 
     @Override

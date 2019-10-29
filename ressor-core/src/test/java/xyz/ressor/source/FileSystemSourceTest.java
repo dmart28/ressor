@@ -17,6 +17,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.copy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -101,7 +102,7 @@ public class FileSystemSourceTest {
         var subscription = source.subscribe(() -> {});
         source.subscribe(() -> {});
 
-        verify(watchService).registerJob(any(), any());
+        verify(watchService, times(2)).registerJob(any(), any());
 
         subscription.unsubscribe();
     }

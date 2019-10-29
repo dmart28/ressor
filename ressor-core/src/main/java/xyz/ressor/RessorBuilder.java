@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import xyz.ressor.commons.exceptions.RessorBuilderException;
 import xyz.ressor.commons.utils.Exceptions;
 import xyz.ressor.commons.watch.fs.FileSystemWatchService;
+import xyz.ressor.config.RessorConfig;
 import xyz.ressor.ext.ServiceExtension;
 import xyz.ressor.service.RessorService;
 import xyz.ressor.service.proxy.ProxyContext;
@@ -18,7 +19,6 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.LinkedList;
-import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -51,12 +51,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class RessorBuilder<T> {
     private static final Logger log = LoggerFactory.getLogger(RessorBuilder.class);
-    private static final ServiceProxyBuilder proxyBuilder = new ServiceProxyBuilder();
+    private final ServiceProxyBuilder proxyBuilder;
     private final Class<T> type;
+    private final RessorConfig config;
+    private final FileSystemWatchService fsWatchService;
     private Translator<InputStream, ?> translator;
     private Function<?, ? extends T> factory;
     private Source source;
-    private FileSystemWatchService fsWatchService;
     private T initialValue;
     private boolean isAsync;
     private boolean gzipped = false;
@@ -64,8 +65,11 @@ public class RessorBuilder<T> {
     private LinkedList<ServiceExtension> extensions = new LinkedList<>();
     private Object[] proxyDefaultArguments;
 
-    public RessorBuilder(Class<T> type) {
+    public RessorBuilder(Class<T> type, RessorConfig config, FileSystemWatchService fsWatchService) {
         this.type = type;
+        this.config = config;
+        this.fsWatchService = fsWatchService;
+        this.proxyBuilder = new ServiceProxyBuilder(config.isCacheClasses());
     }
 
     /**
@@ -249,9 +253,6 @@ public class RessorBuilder<T> {
      * @param resourcePath the FS path to the resource
      */
     public RessorBuilder<T> fileSource(String resourcePath) {
-        if (fsWatchService == null) {
-            fsWatchService = new FileSystemWatchService();
-        }
         this.source = new FileSystemSource(resourcePath, fsWatchService);
         return this;
     }
@@ -333,9 +334,6 @@ public class RessorBuilder<T> {
         if (translator == null) {
             throw new RessorBuilderException("The data format of the source is unknown, please provide a translator");
         }
-        if (fsWatchService != null) {
-            fsWatchService.init();
-        }
         if (gzipped) {
             translator = Translators.gzipped(translator);
         }
@@ -351,7 +349,7 @@ public class RessorBuilder<T> {
         }
         var proxy = (RessorService<T>) proxyBuilder.buildProxy(ctx.build());
         if (isAsync) {
-            Ressor.globals().threadPool().submit(() -> reload(proxy));
+            config.threadPool().submit(() -> reload(proxy));
         } else {
             reload(proxy);
         }

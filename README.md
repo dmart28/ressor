@@ -39,7 +39,8 @@ public class BookRepository {
 Also, there is a `/etc/books.json` file with all the data. Now we can simply tell Ressor to create a service instance, based on that file and use JSON format:
 
 ```java
-var bookService = Ressor.service(BookRepository.class)
+var ressor = Ressor.create();
+var bookService = ressor.service(BookRepository.class)
         .fileSource("/etc/books.json")
         .jsonList(Book.class)
         .build();
@@ -54,7 +55,7 @@ var title = bookService.getTitle("0679760806"); // The Master and Margarita
 What will happen if the `books.json` file will be changed? In case of file on local File System you can just subscribe for the changes:
 
 ```java
-Ressor.listen(bookService);
+ressor.listen(bookService);
 ```
 
 That's all, you can continue using `bookService` instance, which will be always up-to-date with the `books.json` file contents.

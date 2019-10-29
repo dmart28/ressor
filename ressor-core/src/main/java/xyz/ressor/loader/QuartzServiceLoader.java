@@ -1,12 +1,17 @@
 package xyz.ressor.loader;
 
-import org.quartz.*;
+import org.quartz.JobDataMap;
+import org.quartz.JobKey;
+import org.quartz.SchedulerException;
+import org.quartz.Trigger;
 import xyz.ressor.commons.utils.Exceptions;
 import xyz.ressor.service.RessorService;
 import xyz.ressor.source.Source;
 
+import java.lang.ref.WeakReference;
 import java.time.ZoneOffset;
 import java.util.TimeZone;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static org.quartz.CronScheduleBuilder.cronSchedule;
@@ -16,12 +21,18 @@ import static org.quartz.TriggerBuilder.newTrigger;
 
 public class QuartzServiceLoader extends ServiceLoaderBase {
     private static final TimeZone UTC = TimeZone.getTimeZone(ZoneOffset.UTC);
-    protected static final String SERVICE_KEY = "__rs";
-    protected static final String SOURCE_KEY = "__sk";
+    static final String THREAD_POOL_KEY = "__tpk";
+    static final String SERVICE_KEY = "__rs";
+    static final String SOURCE_KEY = "__sk";
+    private final QuartzManager manager;
+    private final ExecutorService threadPool;
     private JobKey jobKey;
 
-    public QuartzServiceLoader(RessorService service, Source source) {
+    public QuartzServiceLoader(RessorService service, Source source, ExecutorService threadPool,
+                               QuartzManager manager) {
         super(service, source);
+        this.threadPool = threadPool;
+        this.manager = manager;
     }
 
     public void start(String expression) {
@@ -41,10 +52,11 @@ public class QuartzServiceLoader extends ServiceLoaderBase {
     }
 
     private void start(Trigger trigger) {
-        var scheduler = QuartzManager.getInstance().scheduler();
+        var scheduler = manager.scheduler();
         var dataMap = new JobDataMap();
-        dataMap.put(SERVICE_KEY, service);
-        dataMap.put(SOURCE_KEY, source);
+        dataMap.put(THREAD_POOL_KEY, threadPool);
+        dataMap.put(SERVICE_KEY, new WeakReference<>(service));
+        dataMap.put(SOURCE_KEY, new WeakReference<>(source));
         var job = newJob(QuartzLoaderJob.class)
                 .usingJobData(dataMap)
                 .build();
@@ -60,7 +72,7 @@ public class QuartzServiceLoader extends ServiceLoaderBase {
     public void stop() {
         if (jobKey != null) {
             try {
-                QuartzManager.getInstance().scheduler().deleteJob(jobKey);
+                manager.scheduler().deleteJob(jobKey);
             } catch (SchedulerException e) {
                 throw Exceptions.wrap(e);
             }

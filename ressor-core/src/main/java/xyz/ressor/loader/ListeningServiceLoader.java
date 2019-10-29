@@ -2,22 +2,24 @@ package xyz.ressor.loader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import xyz.ressor.config.RessorGlobals;
 import xyz.ressor.service.RessorService;
 import xyz.ressor.source.Source;
 import xyz.ressor.source.Subscription;
+
+import java.util.concurrent.ExecutorService;
 
 public class ListeningServiceLoader extends ServiceLoaderBase {
     private static final Logger log = LoggerFactory.getLogger(ListeningServiceLoader.class);
     private final Subscription subscription;
 
-    public ListeningServiceLoader(RessorService service, Source source) {
+    public ListeningServiceLoader(RessorService service, Source source, ExecutorService threadPool,
+                                  int reloadRetryMaxMillis) {
         super(service, source);
         if (!source.isListenable()) {
             throw new IllegalArgumentException("Service source doesn't support listening, use polling instead");
         }
         log.debug("Subscribing {} to [{}] source", service.underlyingType(), source.describe());
-        this.subscription = source.subscribe(() -> RessorGlobals.getInstance().threadPool().submit(() -> {
+        this.subscription = source.subscribe(() -> threadPool.submit(() -> {
             try {
                 long timeToWait = 1000;
                 var reloaded = false;
@@ -28,7 +30,7 @@ public class ListeningServiceLoader extends ServiceLoaderBase {
                         Thread.sleep(timeToWait);
                         timeToWait *= 2;
                     }
-                } while(!reloaded);
+                } while(!reloaded && timeToWait <= reloadRetryMaxMillis);
             } catch (Throwable t) {
                 log.error("Failed reloading service [{}] from the [{}] source: {}", service.underlyingType(), source.describe(), t.getMessage(), t);
             }

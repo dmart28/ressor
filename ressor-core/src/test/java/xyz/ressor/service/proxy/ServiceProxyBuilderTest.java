@@ -5,9 +5,11 @@ import org.junit.jupiter.api.Test;
 import xyz.ressor.commons.exceptions.TypeDefinitionException;
 import xyz.ressor.service.RessorService;
 import xyz.ressor.service.proxy.model.*;
-import xyz.ressor.source.LoadedResource;
+import xyz.ressor.translator.Translator;
 
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -16,7 +18,7 @@ import static xyz.ressor.utils.TestUtils.json;
 import static xyz.ressor.utils.TestUtils.load;
 
 public class ServiceProxyBuilderTest {
-    private ServiceProxyBuilder proxyBuilder = new ServiceProxyBuilder();
+    private ServiceProxyBuilder proxyBuilder = new ServiceProxyBuilder(true);
 
     @Test
     public void testVeryBasicClass() {
@@ -120,6 +122,47 @@ public class ServiceProxyBuilderTest {
         assertThat(personInfo.firstName()).isEqualTo("John");
         assertThat(personInfo.lastName()).isEqualTo("Doe");
         assertThat(personInfo).isNotInstanceOf(PersonInfoImpl.class);
+    }
+
+    @Test
+    public void testProxyClassCaching() {
+        Function<ServiceProxyBuilder, PersonInfo> f = pb -> pb.buildProxy(ProxyContext.builder(PersonInfo.class)
+                .translator(inputStream2Json())
+                .factory(n -> new PersonInfoImpl(null, null)).build());
+
+        var p1 = f.apply(proxyBuilder);
+        var p2 = f.apply(proxyBuilder);
+
+        assertThat(p1).isNotEqualTo(p2);
+        assertThat(p1.getClass()).isSameAs(p2.getClass());
+
+        var noCacheProxyBuilder = new ServiceProxyBuilder(false);
+
+        p1 = f.apply(noCacheProxyBuilder);
+        p2 = f.apply(noCacheProxyBuilder);
+
+        assertThat(p1).isNotEqualTo(p2);
+        assertThat(p1.getClass()).isNotSameAs(p2.getClass());
+    }
+
+    @Test
+    public void testProxyClassCachingConditions() {
+        Function<Object[], PublicClassConstructorAnnotated> f = dpa -> proxyBuilder.buildProxy(ProxyContext.builder(PublicClassConstructorAnnotated.class)
+                .translator(Translator.define(s -> 5, InputStream.class, int.class))
+                .proxyDefaultArguments(dpa)
+                .build());
+
+        var p1 = f.apply(new Object[] { 0, 0L });
+        var p2 = f.apply(new Object[] { 0, 0L });
+
+        assertThat(p1).isNotEqualTo(p2);
+        assertThat(p1.getClass()).isSameAs(p2.getClass());
+
+        p1 = f.apply(new Object[] { 0, 0L });
+        p2 = f.apply(new Object[] { 1, 1L });
+
+        assertThat(p1).isNotEqualTo(p2);
+        assertThat(p1.getClass()).isNotSameAs(p2.getClass());
     }
 
 }

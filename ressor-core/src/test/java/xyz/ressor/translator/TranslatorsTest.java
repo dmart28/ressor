@@ -11,7 +11,8 @@ import java.nio.ByteBuffer;
 import java.util.Random;
 import java.util.zip.GZIPOutputStream;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static xyz.ressor.commons.utils.FileUtils.classpath;
 import static xyz.ressor.translator.Translator.define;

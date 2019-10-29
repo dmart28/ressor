@@ -9,12 +9,15 @@ import java.util.Map;
 public class QuickStart {
 
     public static void main(String[] args) {
-        var bookService = Ressor.service(BookRepository.class)
+        var ressor = Ressor.create();
+        var bookService = ressor.service(BookRepository.class)
                 .fileSource("classpath:quickstart/data.json")
                 .jsonList(Book.class)
                 .build();
 
         System.out.println(bookService.getTitle("0679760806"));
+
+        ressor.shutdown();
     }
 
     public static class Book {
