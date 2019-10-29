@@ -75,11 +75,11 @@ Java 8 special binaries might be supported, in case of such demand from the comm
 Releases are available via Maven Central.
 
 ```
-  implementation 'xyz.ressor:ressor-core:1.0.0-beta.3'
+  implementation 'xyz.ressor:ressor-core:1.0.0-beta.4'
   // For Git source implementation
-  implementation 'xyz.ressor:ressor-git-source:1.0.0-beta.3'
+  implementation 'xyz.ressor:ressor-git-source:1.0.0-beta.4'
   // For HTTP source implementation
-  implementation 'xyz.ressor:ressor-http-source:1.0.0-beta.3'
+  implementation 'xyz.ressor:ressor-http-source:1.0.0-beta.4'
 ```
 
 ## Versioning
