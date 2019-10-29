@@ -1,17 +1,16 @@
 package xyz.ressor.source.fs;
 
 import xyz.ressor.commons.watch.fs.FileSystemWatchService;
-import xyz.ressor.source.SourceVersion;
-import xyz.ressor.source.Subscription;
 import xyz.ressor.source.LoadedResource;
 import xyz.ressor.source.Source;
+import xyz.ressor.source.SourceVersion;
+import xyz.ressor.source.Subscription;
 import xyz.ressor.source.version.LastModified;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static java.nio.file.Files.newInputStream;
@@ -23,10 +22,9 @@ public class FileSystemSource implements Source {
     private final String rawResourcePath;
     private final Path resourcePath;
     private final boolean isClasspath;
-    private final List<Runnable> listeners = new CopyOnWriteArrayList<>();
-    private final AtomicBoolean isSubscribed = new AtomicBoolean();
+    private final FileSystemWatchService watchService;
+    private final List<Consumer<Path>> listeners = new CopyOnWriteArrayList<>();
     private volatile long classpathLastModified = -1;
-    private FileSystemWatchService watchService;
 
     public FileSystemSource(Path resourcePath) {
         this(resourcePath.toString(), null);
@@ -86,15 +84,16 @@ public class FileSystemSource implements Source {
     @Override
     public Subscription subscribe(Runnable listener) {
         if (!isListenable()) {
-            throw new UnsupportedOperationException("The source is not listenable.");
+            throw new UnsupportedOperationException("You can't listen to classpath resources!");
         }
-        listeners.add(listener);
-        if (!isSubscribed.compareAndExchange(false, true)) {
-            watchService.registerJob(resourcePath, p -> {
-                listeners.forEach(Runnable::run);
-            });
-        }
-        return () -> listeners.remove(listener);
+        final Consumer<Path> l = p -> listener.run();
+        listeners.add(l);
+        watchService.registerJob(resourcePath, l);
+        return () -> {
+            if (listeners.remove(l)) {
+                watchService.unregisterJob(resourcePath, l);
+            }
+        };
     }
 
     @Override
@@ -109,10 +108,6 @@ public class FileSystemSource implements Source {
 
     public boolean isClasspath() {
         return isClasspath;
-    }
-
-    public Path getResourcePath() {
-        return resourcePath;
     }
 
     private boolean isClasspath(String resourcePath) {

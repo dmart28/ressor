@@ -1,28 +1,28 @@
 package xyz.ressor.service.proxy;
 
 import net.bytebuddy.ByteBuddy;
-import net.bytebuddy.description.ByteCodeElement;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.DynamicType;
+import net.bytebuddy.implementation.bytecode.assign.Assigner;
 import net.bytebuddy.matcher.ElementMatcher;
-import org.jetbrains.annotations.NotNull;
 import xyz.ressor.commons.annotations.ServiceFactory;
-import xyz.ressor.commons.exceptions.RessorServiceException;
 import xyz.ressor.commons.exceptions.TypeDefinitionException;
 import xyz.ressor.commons.utils.Exceptions;
 import xyz.ressor.service.RessorService;
 
-import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 import static net.bytebuddy.dynamic.loading.ClassLoadingStrategy.Default.INJECTION;
-import static net.bytebuddy.implementation.MethodCall.call;
 import static net.bytebuddy.implementation.MethodCall.invoke;
-import static net.bytebuddy.implementation.MethodDelegation.to;
+import static net.bytebuddy.implementation.MethodDelegation.toField;
 import static net.bytebuddy.implementation.MethodDelegation.toMethodReturnOf;
 import static net.bytebuddy.matcher.ElementMatchers.*;
 import static xyz.ressor.commons.utils.CollectionUtils.isNotEmpty;
@@ -32,11 +32,49 @@ import static xyz.ressor.commons.utils.ReflectionUtils.findExecutable;
 import static xyz.ressor.commons.utils.RessorUtils.firstNonNull;
 
 public class ServiceProxyBuilder {
+    private static final String RS_VAR = "__$$rs";
+    private static final String RS_METHOD = "__$$grs";
     private final ByteBuddy byteBuddy = new ByteBuddy();
+    private final boolean isCacheClasses;
+    private final Map<Class<?>, GeneratedClassInfo> classCache = new HashMap<>();
 
-    public <T> T buildProxy(ProxyContext<T> context) {
+    public ServiceProxyBuilder(boolean isCacheClasses) {
+        this.isCacheClasses = isCacheClasses;
+    }
+
+    public synchronized <T> T buildProxy(ProxyContext<T> context) {
         var serviceProxy = new RessorServiceImpl<>(context.getType(), getFactory(context), context.getTranslator(), context.getInitialInstance())
                 .state(StateVariables.SOURCE, context.getSource());
+        Class<? extends T> loadedClass = null;
+        if (isCachePossible(context)) {
+            var gci = classCache.computeIfAbsent(context.getType(),
+                    k -> new GeneratedClassInfo(generateProxyClass(context), context.getProxyDefaultArguments(), context.getClassLoader()));
+            if (gci.isMatches(context)) {
+                loadedClass = (Class<? extends T>) gci.loadedClass;
+            }
+        }
+        if (loadedClass == null) {
+            loadedClass = generateProxyClass(context);
+        }
+
+        try {
+            var targetConstructor = loadedClass.getDeclaredConstructor();
+            targetConstructor.setAccessible(true);
+            var instance = targetConstructor.newInstance();
+            var mf = instance.getClass().getDeclaredField(RS_VAR);
+            mf.setAccessible(true);
+            mf.set(instance, serviceProxy);
+            return instance;
+        } catch (Throwable t) {
+            throw Exceptions.wrap(t);
+        }
+    }
+
+    private <T> boolean isCachePossible(ProxyContext<T> context) {
+        return isCacheClasses && context.getExtensions().size() == 0;
+    }
+
+    private <T> Class<? extends T> generateProxyClass(ProxyContext<T> context) {
         var b = byteBuddy.subclass(context.getType());
         if (isNotEmpty(context.getExtensions())) {
             for (var ext : context.getExtensions()) {
@@ -52,33 +90,16 @@ public class ServiceProxyBuilder {
                     .with(typeDef.getDefaultArguments());
             m = i.defineConstructor(Visibility.PUBLIC).intercept(constructor);
         }
-        var f = m.defineMethod("getRessorUnderlying", context.getType(), Visibility.PUBLIC)
-                .intercept(call(() -> getInstance(context, serviceProxy)))
+        var f = m.defineField(RS_VAR, RessorServiceImpl.class, Visibility.PRIVATE)
+                .defineMethod(RS_METHOD, context.getType(), Visibility.PRIVATE)
+                .intercept(invoke(named("instance")).onField(RS_VAR).withAssigner(Assigner.DEFAULT, Assigner.Typing.DYNAMIC))
                 .method(isDeclaredBy(RessorService.class).and(not(isDefaultMethod())))
-                .intercept(to(serviceProxy))
+                .intercept(toField(RS_VAR))
                 .method(isDeepDeclaredBy(context.getType()))
-                .intercept(toMethodReturnOf("getRessorUnderlying"));
-
-        try {
-            var loaded = f.make()
-                    .load(firstNonNull(context.getClassLoader(), getClass().getClassLoader()), INJECTION)
-                    .getLoaded();
-            var targetConstructor = loaded.getDeclaredConstructor();
-            targetConstructor.setAccessible(true);
-            return targetConstructor.newInstance();
-        } catch (Throwable t) {
-            throw Exceptions.wrap(t);
-        }
-    }
-
-    @NotNull
-    private <T> Object getInstance(ProxyContext<T> context, RessorServiceImpl<T> serviceProxy) {
-        var si = serviceProxy.instance();
-        if (si == null) {
-            throw new RessorServiceException("No " + context.getType().getSimpleName() + " instance available, please provide initialInstance during building.");
-        } else {
-            return si;
-        }
+                .intercept(toMethodReturnOf(RS_METHOD));
+        return f.make()
+                .load(firstNonNull(context.getClassLoader(), getClass().getClassLoader()), INJECTION)
+                .getLoaded();
     }
 
     private <T> Function<Object, ? extends T> getFactory(ProxyContext<T> context) {
@@ -116,6 +137,22 @@ public class ServiceProxyBuilder {
             return is.or(isDeepDeclaredBy(type.getSuperclass()));
         } else {
             return is;
+        }
+    }
+
+    private static class GeneratedClassInfo {
+        private final Class<?> loadedClass;
+        private final Object[] defaultArguments;
+        private final ClassLoader classLoader;
+
+        public GeneratedClassInfo(Class<?> loadedClass, Object[] defaultArguments, ClassLoader classLoader) {
+            this.loadedClass = loadedClass;
+            this.defaultArguments = defaultArguments;
+            this.classLoader = classLoader;
+        }
+
+        public boolean isMatches(ProxyContext<?> ctx) {
+            return Arrays.equals(defaultArguments, ctx.getProxyDefaultArguments()) && Objects.equals(classLoader, ctx.getClassLoader());
         }
     }
 

@@ -33,10 +33,8 @@ public class TypeDefinitionTest {
     public void testPublicClassConstructorAnnotated() {
         var td = TypeDefinition.of(PublicClassConstructorAnnotated.class);
         assertThat(td).isNotNull();
-        assertThat(td.getDefaultConstructor().getParameterCount()).isEqualTo(2);
-        assertThat(td.getDefaultArguments()).hasSize(2);
-        assertThat(td.getDefaultArguments()[0]).isEqualTo(0);
-        assertThat(td.getDefaultArguments()[1]).isEqualTo(0L);
+        assertThat(td.getDefaultConstructor().getParameterCount()).isEqualTo(0);
+        assertThat(td.getDefaultArguments()).hasSize(0);
     }
 
     @Test

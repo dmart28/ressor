@@ -7,7 +7,8 @@ dependencies {
     compile project(":ressor-commons")
     compile "net.bytebuddy:byte-buddy:$bytebuddyVersion"
     compile "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
-    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonYamlVersion"
+    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
+    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$jacksonVersion"
     compile "org.quartz-scheduler:quartz:$quartzVersion"
 
     testCompile group: 'commons-io', name: 'commons-io', version: '2.6'

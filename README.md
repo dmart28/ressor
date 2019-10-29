@@ -1,6 +1,6 @@
 # Ressor
 
-[![Build Status](https://travis-ci.org/dmart28/ressor.svg?branch=develop)](https://travis-ci.org/dmart28/ressor) [![Join the chat at https://gitter.im/dmart28/ressor](https://badges.gitter.im/dmart28/ressor.svg)](https://gitter.im/dmart28/ressor?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Maven Central](https://img.shields.io/maven-central/v/xyz.ressor/ressor-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22xyz.ressor%22%20AND%20a:%22ressor-core%22)
+![GitHub](https://img.shields.io/github/license/dmart28/ressor) [![Build Status](https://travis-ci.org/dmart28/ressor.svg?branch=develop)](https://travis-ci.org/dmart28/ressor) [![Join the chat at https://gitter.im/dmart28/ressor](https://badges.gitter.im/dmart28/ressor.svg)](https://gitter.im/dmart28/ressor?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Maven Central](https://img.shields.io/maven-central/v/xyz.ressor/ressor-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22xyz.ressor%22%20AND%20a:%22ressor-core%22)
 
 Ressor is a framework which ease the development of resource-based Java services. It translates your static or dynamic resources (files, http endpoints, git repositories, etc) into a complete Java service instance, implicitly reloading it when the source data is changed.
 
@@ -26,11 +26,8 @@ Let's suppose you have a service which provides book titles by the ISBN:
 public class BookRepository {
   private final Map<String, String> data = new HashMap<>();
 
-  public BookRepository(JsonNode node) {
-    if (node != null) {
-      node.forEach(n -> data.put(n.get("isbn").asText(),
-                        n.get("title").asText()));
-    }
+  public BookRepository(List<Book> node) {
+      node.forEach(b -> data.put(b.getIsbn(), b.getTitle()));
   }
 
   public String getTitle(String isbn) {
@@ -42,9 +39,10 @@ public class BookRepository {
 Also, there is a `/etc/books.json` file with all the data. Now we can simply tell Ressor to create a service instance, based on that file and use JSON format:
 
 ```java
-var bookService = Ressor.service(BookRepository.class)
+var ressor = Ressor.create();
+var bookService = ressor.service(BookRepository.class)
         .fileSource("/etc/books.json")
-        .json()
+        .jsonList(Book.class)
         .build();
 ```
 
@@ -57,7 +55,7 @@ var title = bookService.getTitle("0679760806"); // The Master and Margarita
 What will happen if the `books.json` file will be changed? In case of file on local File System you can just subscribe for the changes:
 
 ```java
-Ressor.listen(bookService);
+ressor.listen(bookService);
 ```
 
 That's all, you can continue using `bookService` instance, which will be always up-to-date with the `books.json` file contents.
@@ -77,11 +75,11 @@ Java 8 special binaries might be supported, in case of such demand from the comm
 Releases are available via Maven Central.
 
 ```
-  implementation 'xyz.ressor:ressor-core:1.0.0-beta.2'
+  implementation 'xyz.ressor:ressor-core:1.0.0-beta.4'
   // For Git source implementation
-  implementation 'xyz.ressor:ressor-git-source:1.0.0-beta.2'
+  implementation 'xyz.ressor:ressor-git-source:1.0.0-beta.4'
   // For HTTP source implementation
-  implementation 'xyz.ressor:ressor-http-source:1.0.0-beta.2'
+  implementation 'xyz.ressor:ressor-http-source:1.0.0-beta.4'
 ```
 
 ## Versioning

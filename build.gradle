@@ -1,11 +1,11 @@
-import org.gradle.api.tasks.testing.logging.*;
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent;
 
 allprojects {
     apply plugin: 'java'
     group = 'xyz.ressor'
     
-    sourceCompatibility = 1.11
-    targetCompatibility = 1.11
+    sourceCompatibility = 11
 
     dependencies {
         compileOnly group: 'org.jetbrains', name: 'annotations', version: '17.0.0'

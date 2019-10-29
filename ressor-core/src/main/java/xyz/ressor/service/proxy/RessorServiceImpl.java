@@ -1,28 +1,31 @@
 package xyz.ressor.service.proxy;
 
-import xyz.ressor.commons.utils.Exceptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import xyz.ressor.service.RessorService;
 import xyz.ressor.source.LoadedResource;
 import xyz.ressor.source.SourceVersion;
 import xyz.ressor.translator.Translator;
 
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.locks.StampedLock;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import static xyz.ressor.commons.utils.RessorUtils.firstNonNull;
+import static xyz.ressor.commons.utils.RessorUtils.silentlyClose;
 
 public class RessorServiceImpl<T> implements RessorService<T> {
+    private static final Logger log = LoggerFactory.getLogger(RessorServiceImpl.class);
     private final Function<Object, ? extends T> factory;
     private final Translator<InputStream, ?> translator;
     private final Class<? extends T> type;
-    private T initialInstance;
-    private T underlyingInstance;
-    private SourceVersion latestVersion;
-    private final Map<Object, Object> state = new HashMap<>();
-    private final StampedLock lock = new StampedLock();
+    private final Map<Object, Object> state = new ConcurrentHashMap<>();
+    private final T initialInstance;
+    private volatile T underlyingInstance;
+    private volatile SourceVersion latestVersion;
+    private volatile AtomicBoolean isReloading = new AtomicBoolean(false);
 
     public RessorServiceImpl(Class<? extends T> type, Function<Object, ? extends T> factory,
                              Translator<InputStream, ?> translator, T initialInstance) {
@@ -44,54 +47,41 @@ public class RessorServiceImpl<T> implements RessorService<T> {
 
     @Override
     public T instance() {
-        var stamp = lock.tryOptimisticRead();
-        var instance = underlyingInstance;
-        if (!lock.validate(stamp)) {
-            stamp = lock.readLock();
-            try {
-                instance = underlyingInstance;
-            } finally {
-                lock.unlockRead(stamp);
-            }
+        var val = firstNonNull(underlyingInstance, initialInstance);
+        if (val == null) {
+            throw new IllegalStateException("The service wasn't loaded yet, please provide service initial instance.");
         }
-        return firstNonNull(instance, initialInstance);
+        return val;
     }
 
     @Override
     public SourceVersion latestVersion() {
-        var stamp = lock.tryOptimisticRead();
-        var result = latestVersion;
-        if (!lock.validate(stamp)) {
-            stamp = lock.readLock();
-            try {
-                result = latestVersion;
-            } finally {
-                lock.unlockRead(stamp);
-            }
-        }
-        return result;
+        return latestVersion;
     }
 
     @Override
-    public void reload(LoadedResource resource) {
+    public boolean reload(LoadedResource resource) {
         if (resource != null) {
-            var newResource = factory.apply(translator.translate(resource.getInputStream()));
-            long stamp = lock.writeLock();
-            try {
-                this.latestVersion = resource.getVersion();
-                this.underlyingInstance = newResource;
+            if (!isReloading.compareAndExchange(false, true)) {
                 try {
-                    resource.getInputStream().close();
-                } catch (Throwable ignored) {
+                    var newResource = factory.apply(translator.translate(resource.getInputStream()));
+                    this.latestVersion = resource.getVersion();
+                    this.underlyingInstance = newResource;
+                    silentlyClose(resource.getInputStream());
+                    return true;
+                } finally {
+                    isReloading.set(false);
                 }
-            } finally {
-                lock.unlockWrite(stamp);
+            } else {
+                log.debug("Unable to reload service {}, since it's already reloading", type);
             }
         }
+        return false;
     }
 
-    private boolean isEmpty(SourceVersion version) {
-        return version == null || version == SourceVersion.EMPTY;
+    @Override
+    public boolean isReloading() {
+        return isReloading.get();
     }
 
     public <K, V> V state(K key) {
@@ -99,7 +89,9 @@ public class RessorServiceImpl<T> implements RessorService<T> {
     }
 
     public RessorServiceImpl<T> state(Object key, Object value) {
-        state.put(key, value);
+        if (key != null && value != null) {
+            state.put(key, value);
+        }
         return this;
     }
 
