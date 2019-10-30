@@ -64,6 +64,8 @@ That's all, you can continue using `bookService` instance, which will be always 
 
 See our [Project Website](https://ressor.xyz).
 
+Javadoc is [here](https://javadoc.ressor.xyz).
+
 ## Requirements
 
 - Java 11
