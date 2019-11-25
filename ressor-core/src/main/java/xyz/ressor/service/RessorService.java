@@ -1,12 +1,13 @@
 package xyz.ressor.service;
 
+import xyz.ressor.service.error.ErrorHandler;
 import xyz.ressor.source.LoadedResource;
 import xyz.ressor.source.SourceVersion;
 
 public interface RessorService<T> {
 
     /**
-     * Returns the original instance, which implements {@link RessorService} instance, since actual services doesn't
+     * Returns the original instance, which extends {@link RessorService} subclass, since actual service proxies don't
      * directly extend them.
      */
     RessorService<T> unwrap();
@@ -17,7 +18,10 @@ public interface RessorService<T> {
     Class<? extends T> underlyingType();
 
     /**
-     * Unwrapped latest instance of the user service.
+     * Latest non-proxied instance of the user service.
+     *
+     * Important! This method is used implicitly by {@link xyz.ressor.service.proxy.ServiceProxyBuilder} while building
+     * service proxy instance.
      */
     T instance();
 
@@ -30,7 +34,12 @@ public interface RessorService<T> {
     SourceVersion latestVersion();
 
     /**
-     * Attempts to reload the service with the given {@param resource}.
+     * Error handler which should be used for this service in case of exceptions
+     */
+    ErrorHandler errorHandler();
+
+    /**
+     * Attempts to reload the service with the given resource.
      *
      * @param resource the new version of the resource
      * @return true if the resource was successfully applied, unless false

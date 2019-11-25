@@ -8,9 +8,10 @@ allprojects {
     sourceCompatibility = 11
 
     dependencies {
-        compileOnly group: 'org.jetbrains', name: 'annotations', version: '17.0.0'
+        compileOnly "org.jetbrains:annotations:$annotationsVersion"
         compile "org.slf4j:slf4j-api:$slf4jVersion"
 
+        testCompileOnly "org.jetbrains:annotations:$annotationsVersion"
         testCompile "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
         testCompile "org.apache.logging.log4j:log4j-core:$log4jVersion"
         testCompile "org.junit.jupiter:junit-jupiter-engine:$junitVersion"

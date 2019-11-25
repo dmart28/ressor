@@ -8,6 +8,8 @@ import xyz.ressor.source.Subscription;
 
 import java.util.concurrent.ExecutorService;
 
+import static xyz.ressor.loader.LoaderHelper.loadFromSource;
+
 public class ListeningServiceLoader extends ServiceLoaderBase {
     private static final Logger log = LoggerFactory.getLogger(ListeningServiceLoader.class);
     private final Subscription subscription;
@@ -47,7 +49,7 @@ public class ListeningServiceLoader extends ServiceLoaderBase {
     private boolean reload() {
         if (!service.isReloading()) {
             log.debug("Reloading by notification from [{}]", source.describe());
-            return service.reload(source.load());
+            return LoaderHelper.reload(service, source);
         } else {
             return false;
         }

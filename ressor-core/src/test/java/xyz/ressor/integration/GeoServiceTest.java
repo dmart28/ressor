@@ -6,18 +6,24 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import xyz.ressor.Ressor;
+import xyz.ressor.config.RessorConfig;
 import xyz.ressor.integration.model.geo.GeoData;
 import xyz.ressor.integration.model.geo.GeoService;
 import xyz.ressor.integration.model.geo.GeoServiceImpl;
 
+import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static xyz.ressor.utils.TestUtils.simpleErrorHandler;
 
 public class GeoServiceTest {
 
@@ -149,6 +155,15 @@ public class GeoServiceTest {
     }
 
     @Test
+    public void testFileNotExists() {
+        assertThrows(FileNotFoundException.class, () -> Ressor.create().service(GeoServiceImpl.class)
+                .fileSource("classpath:integration/fileNotExists.csv")
+                .lines()
+                .proxyDefaultArguments(MissingNode.getInstance())
+                .build());
+    }
+
+    @Test
     public void testListenLoader(@TempDir Path tempDir) throws Exception {
         IOUtils.copy(getClass().getClassLoader().getResourceAsStream("integration/geoData.yml"),
                 Files.newOutputStream(tempDir.resolve("file.yml"), StandardOpenOption.CREATE));
@@ -189,6 +204,38 @@ public class GeoServiceTest {
         await().atMost(10, TimeUnit.SECONDS)
                 .pollInterval(1, TimeUnit.SECONDS)
                 .until(() -> geoService.detect("193.124.4.85").getCountryCode().equals("CN"));
+    }
+
+    @Test
+    public void testServiceErrorHandler() {
+        var reloadFailed = new AtomicInteger();
+        var translateFailed = new AtomicInteger();
+
+        var errorHandler = simpleErrorHandler(reloadFailed::incrementAndGet, translateFailed::incrementAndGet);
+        BiConsumer<String, RessorConfig> createService = (path, config) -> Ressor.create(config).service(GeoService.class)
+                .fileSource(path)
+                .json()
+                .<JsonNode>factory(GeoServiceImpl::new)
+                .errorHandler(errorHandler)
+                .build();
+
+        createService.accept("classpath:integration/fileNotExist.json", new RessorConfig());
+        assertThat(reloadFailed.getAndSet(0)).isOne();
+        assertThat(translateFailed.getAndSet(0)).isZero();
+
+        createService.accept("classpath:integration/geoDataBroken.json", new RessorConfig());
+        assertThat(reloadFailed.getAndSet(0)).isZero();
+        assertThat(translateFailed.getAndSet(0)).isOne();
+
+        var globalConfig = new RessorConfig().errorHandler(errorHandler);
+
+        createService.accept("classpath:integration/fileNotExist.json", globalConfig);
+        assertThat(reloadFailed.getAndSet(0)).isOne();
+        assertThat(translateFailed.getAndSet(0)).isZero();
+
+        createService.accept("classpath:integration/geoDataBroken.json", globalConfig);
+        assertThat(reloadFailed.getAndSet(0)).isZero();
+        assertThat(translateFailed.getAndSet(0)).isOne();
     }
 
     private void checkGeoService(GeoService geoService) {

@@ -6,9 +6,10 @@ package xyz.ressor.source;
 public interface Source {
 
     /**
-     * Loads the contents of the resource if it was modified since the {@param version} version
+     * Loads the contents of the resource if it was modified since the provided version
      *
      * @param version the last modified version prior which the resource shouldn't be loaded
+     * @throws RuntimeException or its subclass in case of any error
      * @return the loaded resource or null
      */
     LoadedResource loadIfModified(SourceVersion version);

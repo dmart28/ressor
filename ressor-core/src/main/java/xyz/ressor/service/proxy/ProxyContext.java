@@ -1,6 +1,7 @@
 package xyz.ressor.service.proxy;
 
 import xyz.ressor.ext.ServiceExtension;
+import xyz.ressor.service.error.ErrorHandler;
 import xyz.ressor.source.Source;
 import xyz.ressor.translator.Translator;
 
@@ -19,14 +20,16 @@ public class ProxyContext<T> {
     private final ClassLoader classLoader;
     private final T initialInstance;
     private final Object[] proxyDefaultArguments;
+    private final ErrorHandler errorHandler;
 
     public static <T> ProxyContextBuilder<T> builder(Class<? extends T> type) {
         return new ProxyContextBuilder<>(type);
     }
 
     private ProxyContext(Class<? extends T> type, Source source, Translator<InputStream, ?> translator,
-                        Function<Object, ? extends T> factory, List<ServiceExtension> extensions,
-                        ClassLoader classLoader, T initialInstance, Object[] proxyDefaultArguments) {
+                         Function<Object, ? extends T> factory, List<ServiceExtension> extensions,
+                         ClassLoader classLoader, T initialInstance, Object[] proxyDefaultArguments,
+                         ErrorHandler errorHandler) {
         this.type = type;
         this.source = source;
         this.translator = translator;
@@ -35,6 +38,7 @@ public class ProxyContext<T> {
         this.classLoader = classLoader;
         this.initialInstance = initialInstance;
         this.proxyDefaultArguments = proxyDefaultArguments;
+        this.errorHandler = errorHandler;
     }
 
     public Class<? extends T> getType() {
@@ -69,6 +73,10 @@ public class ProxyContext<T> {
         return proxyDefaultArguments;
     }
 
+    public ErrorHandler getErrorHandler() {
+        return errorHandler;
+    }
+
     public static class ProxyContextBuilder<T> {
         private final Class<? extends T> type;
         private Source source;
@@ -78,6 +86,7 @@ public class ProxyContext<T> {
         private ClassLoader classLoader;
         private T initialInstance;
         private Object[] proxyDefaultArguments;
+        private ErrorHandler errorHandler;
 
         private ProxyContextBuilder(Class<? extends T> type) {
             this.type = type;
@@ -121,9 +130,14 @@ public class ProxyContext<T> {
             return this;
         }
 
+        public ProxyContextBuilder<T> errorHandler(ErrorHandler errorHandler) {
+            this.errorHandler = errorHandler;
+            return this;
+        }
+
         public ProxyContext<T> build() {
             return new ProxyContext<>(type, source, translator, factory, extensions, classLoader,
-                    initialInstance, proxyDefaultArguments);
+                    initialInstance, proxyDefaultArguments, errorHandler);
         }
     }
 }
