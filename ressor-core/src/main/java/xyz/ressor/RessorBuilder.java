@@ -7,7 +7,9 @@ import xyz.ressor.commons.utils.Exceptions;
 import xyz.ressor.commons.watch.fs.FileSystemWatchService;
 import xyz.ressor.config.RessorConfig;
 import xyz.ressor.ext.ServiceExtension;
+import xyz.ressor.loader.LoaderHelper;
 import xyz.ressor.service.RessorService;
+import xyz.ressor.service.error.ErrorHandler;
 import xyz.ressor.service.proxy.ProxyContext;
 import xyz.ressor.service.proxy.ServiceProxyBuilder;
 import xyz.ressor.source.Source;
@@ -22,28 +24,30 @@ import java.util.LinkedList;
 import java.util.function.Function;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static xyz.ressor.commons.utils.RessorUtils.firstNonNull;
+import static xyz.ressor.loader.LoaderHelper.loadFromSource;
 
 /**
  * The builder for the Ressor proxy class, which will be created and loaded by a ClassLoader.
- *
- *
- * If {@param <T>} is a class, it will be extended by our proxy class.
- * If {@param <T>} doesn't have a default constructor, Ressor will scan it for the mostly short and public constructor available, which will be used
+ * <p/>
+ * <p/>
+ * If <b>T</b> is a class, it will be extended by our proxy class.
+ * If <b>T</b> doesn't have a default constructor, Ressor will scan it for the mostly short and public constructor available, which will be used
  * for the proxy instance creation (which happens once).
- *
+ * <p/>
  * This can't be avoided since this is how the JVM inheritance mechanism works - we should call at least one constructor of super type, even though
  * we are creating an instance of our own new proxy class.
- *
+ * <p/>
  * Otherwise, you can mark your constructor with {@link xyz.ressor.commons.annotations.ProxyConstructor} annotation, which will tell Ressor
- * to use it explicitly. If constructor has parameters, Ressor will guess and pass the default ones, based on the underlying parameter type ({@link null} for objects,
- * 0 for ints, etc). Alternatively, you can provide your own param values with {@link #proxyDefaultArguments(Object...)}.
- *
+ * to use it explicitly. If constructor has parameters, Ressor will guess and pass the default ones, based on the underlying parameter type
+ * (<b>null</b> for object references, 0 for ints, etc). Alternatively, you can provide your own param values with {@link #proxyDefaultArguments(Object...)}.
+ * <p/>
  * By default, Ressor will also find the constructor to create the actual instances of your service. You can alternatively mark
  * the desired constructor/factory method with {@link xyz.ressor.commons.annotations.ServiceFactory} annotation. It must have a single parameter,
  * which will be of type of your selected {@link Translator} ({@link #yaml()}, {@link #json()}, etc).
- *
- *
- * If {@param <T>} is an interface, it will be implemented by our proxy class.
+ * <p/>
+ * <p/>
+ * If <b>T</b> is an interface, it will be implemented by our proxy class.
  * In that case you should provide a {@link #factory(Function)} which will be in charge of creating the actual instances of your service based
  * on the {@link Source} ({@link #yaml()}, {@link #json()}, etc).
  *
@@ -64,6 +68,7 @@ public class RessorBuilder<T> {
     private ClassLoader classLoader;
     private LinkedList<ServiceExtension> extensions = new LinkedList<>();
     private Object[] proxyDefaultArguments;
+    private ErrorHandler errorHandler;
 
     public RessorBuilder(Class<T> type, RessorConfig config, FileSystemWatchService fsWatchService) {
         this.type = type;
@@ -77,7 +82,7 @@ public class RessorBuilder<T> {
      * to the service factory.
      *
      * Please note that by default parser will not wrap root element and duplicate elements will be combined under
-     * {@link com.fasterxml.jackson.databind.node.ArrayNode}, so no data is lost
+     * {@link com.fasterxml.jackson.databind.node.ArrayNode}, so no data is lost.
      */
     public RessorBuilder<T> xml() {
         this.translator = Translators.inputStream2Xml();
@@ -85,7 +90,7 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Expect XML data format from the source, will provide {@param entityType} instance to the service factory
+     * Expect XML data format from the source, will provide entityType instance to the service factory.
      *
      * @param entityType the target type class
      */
@@ -95,7 +100,7 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Same as {@link RessorBuilder#xml(Class)}, but providing {@link java.util.List} of entityType class instances
+     * Same as {@link RessorBuilder#xml(Class)}, but providing {@link java.util.List} of entityType class instances.
      *
      * @param entityType the target type class
      */
@@ -115,7 +120,7 @@ public class RessorBuilder<T> {
 
     /**
      * Expect YAML data format from the source, will provide {@link com.fasterxml.jackson.databind.JsonNode} instance
-     * to the service factory
+     * to the service factory.
      */
     public RessorBuilder<T> yaml() {
         this.translator = Translators.inputStream2Yaml();
@@ -123,7 +128,7 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Expect YAML data format from the source, will provide {@param entityType} instance to the service factory
+     * Expect YAML data format from the source, will provide entityType instance to the service factory.
      *
      * @param entityType the target type class
      */
@@ -133,7 +138,7 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Same as {@link RessorBuilder#yaml(Class)}, but providing {@link java.util.List} of entityType class instances
+     * Same as {@link RessorBuilder#yaml(Class)}, but providing {@link java.util.List} of entityType class instances.
      *
      * @param entityType the target type class
      */
@@ -144,7 +149,7 @@ public class RessorBuilder<T> {
 
     /**
      * Expect YAML data format from the source, will provide {@link com.fasterxml.jackson.core.JsonParser} instance
-     * to the service factory
+     * to the service factory.
      */
     public RessorBuilder<T> yamlParser() {
         this.translator = Translators.inputStream2YamlParser();
@@ -153,7 +158,7 @@ public class RessorBuilder<T> {
 
     /**
      * Expect JSON data format from the source, will provide {@link com.fasterxml.jackson.databind.JsonNode} instance
-     * to the service factory
+     * to the service factory.
      */
     public RessorBuilder<T> json() {
         this.translator = Translators.inputStream2Json();
@@ -161,7 +166,7 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Expect JSON data format from the source, will provide {@param entityType} instance to the service factory
+     * Expect JSON data format from the source, will provide entityType instance to the service factory.
      *
      * @param entityType the target type class
      */
@@ -171,7 +176,7 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Same as {@link RessorBuilder#json(Class)}, but providing {@link java.util.List} of entityType class instances
+     * Same as {@link RessorBuilder#json(Class)}, but providing {@link java.util.List} of entityType class instances.
      *
      * @param entityType the target type class
      */
@@ -182,7 +187,7 @@ public class RessorBuilder<T> {
 
     /**
      * Expect JSON data format from the source, will provide {@link com.fasterxml.jackson.core.JsonParser} instance
-     * to the service factory
+     * to the service factory.
      */
     public RessorBuilder<T> jsonParser() {
         this.translator = Translators.inputStream2JsonParser();
@@ -190,7 +195,7 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Fetches the raw byte array from the source and pass it to the service factory
+     * Fetches the raw byte array from the source and pass it to the service factory.
      */
     public RessorBuilder<T> bytes() {
         this.translator = Translators.inputStream2Bytes();
@@ -198,14 +203,15 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Read the source data as a single string and pass it to the service factory
+     * Read the source data as a single string and pass it to the service factory.
      */
     public RessorBuilder<T> string() {
         return string(UTF_8);
     }
 
     /**
-     * Read the source data as a single string and pass it to the service factory
+     * Read the source data as a single string and pass it to the service factory.
+     *
      * @param charset the charset used to decode data
      */
     public RessorBuilder<T> string(Charset charset) {
@@ -221,8 +227,9 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Read the source data as string lines (separated by System.lineSeparator) and pass it to the service factory
-     * @param charset the charset used to decode data
+     * Read the source data as string lines (separated by {@link System#lineSeparator()}) and pass it to the service factory
+     *
+     * @param charset the charset used to decode data.
      */
     public RessorBuilder<T> lines(Charset charset) {
         this.translator = Translators.inputStream2Lines(charset);
@@ -230,8 +237,8 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Your custom data translator implementation. The resulting type of {@param translator} will be provided
-     * to your service factory
+     * Your custom data translator implementation. The resulting type of translator will be provided
+     * to your service factory.
      */
     public RessorBuilder<T> translator(Translator<InputStream, ?> translator) {
         this.translator = translator;
@@ -267,7 +274,7 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Provide your custom data {@param source} to the Ressor to use for your service
+     * Provide your custom data source to the Ressor to use for your service.
      */
     public RessorBuilder<T> source(Source source) {
         this.source = source;
@@ -275,7 +282,7 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Whether the source data is GZIP encoded
+     * Whether the source data is expected to be GZIP encoded.
      */
     public RessorBuilder<T> gzipped() {
         this.gzipped = true;
@@ -302,7 +309,7 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * ClassLoader to use for loading the Ressor generated service proxy class
+     * ClassLoader to use for loading the Ressor generated service proxy class.
      */
     public RessorBuilder<T> classLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
@@ -315,8 +322,18 @@ public class RessorBuilder<T> {
     }
 
     /**
+     * Dedicated error handler for the given service
+     *
+     * @param errorHandler error handler
+     */
+    public RessorBuilder<T> errorHandler(ErrorHandler errorHandler) {
+        this.errorHandler = errorHandler;
+        return this;
+    }
+
+    /**
      * The default arguments for the constructor, which service proxy class will be calling as
-     * super(...)
+     * super(proxyDefaultArguments).
      */
     public RessorBuilder<T> proxyDefaultArguments(Object... proxyDefaultArguments) {
         this.proxyDefaultArguments = proxyDefaultArguments;
@@ -343,7 +360,8 @@ public class RessorBuilder<T> {
                 .factory(factory)
                 .proxyDefaultArguments(proxyDefaultArguments)
                 .initialInstance(initialValue)
-                .translator(translator);
+                .translator(translator)
+                .errorHandler(firstNonNull(errorHandler, config.errorHandler()));
         if (extensions.size() > 0) {
             extensions.forEach(ctx::addExtension);
         }
@@ -359,7 +377,7 @@ public class RessorBuilder<T> {
     private void reload(RessorService<T> proxy) {
         try {
             log.debug("Loading {} with initial instance from source [{}]", type, source.describe());
-            proxy.reload(source.load());
+            LoaderHelper.reload(proxy, source);
         } catch (Throwable t) {
             if (isAsync) {
                 log.error("Failed reloading service [{}] from the [{}] source: {}", type, source.describe(), t.getMessage(), t);

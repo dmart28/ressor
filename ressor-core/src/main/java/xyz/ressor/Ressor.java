@@ -48,7 +48,7 @@ public class Ressor {
     }
 
     /**
-     * Creates a new service builder for the given {@param type}, which can be either interface or class.
+     * Creates a new service builder for the given type, which can be either interface or class.
      *
      * @param type the public type of your service for which proxy class would be generated and
      *            which instance would be created as a result
@@ -60,8 +60,8 @@ public class Ressor {
     }
 
     /**
-     * Starts listening the {@link Source} of the underlying {@param service} for changes. When the change event is fired,
-     * the {@param service} will be implicitly reloaded with the new data.
+     * Starts listening the {@link Source} of the underlying service for changes. When the change event is fired,
+     * the service will be implicitly reloaded with the new data.
      *
      * Please note that for now listening is supported only by {@link xyz.ressor.source.fs.FileSystemSource},
      * otherwise the appropriate exception would be thrown
@@ -79,7 +79,7 @@ public class Ressor {
     }
 
     /**
-     * Starts polling the {@link Source} of the underlying {@param service} for the incoming changes, and in case of any, reloading the {@param service}.
+     * Starts polling the {@link Source} of the underlying service for the incoming changes, and in case of any, reloading the service.
      *
      * Polling is supported by every {@link Source}, and have different approaches based on the implementation. Please
      * read the documentation of child classes.

@@ -1,5 +1,7 @@
 package xyz.ressor.config;
 
+import xyz.ressor.service.error.ErrorHandler;
+
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -10,6 +12,7 @@ public class RessorConfig {
     private ExecutorService threadPool;
     private Integer reloadRetryMaxMillis;
     private Boolean cacheClasses;
+    private ErrorHandler errorHandler;
 
     public RessorConfig() {
     }
@@ -19,6 +22,7 @@ public class RessorConfig {
         this.threadPool = other.threadPool;
         this.reloadRetryMaxMillis = other.reloadRetryMaxMillis == null ? 64_000 : other.reloadRetryMaxMillis;
         this.cacheClasses = other.cacheClasses == null ? true : other.cacheClasses;
+        this.errorHandler = other.errorHandler;
     }
 
     /**
@@ -59,6 +63,13 @@ public class RessorConfig {
         return cacheClasses;
     }
 
+    /**
+     * Global error handler, which will be used in the absence of per-service error handler
+     */
+    public ErrorHandler errorHandler() {
+        return errorHandler;
+    }
+
     public RessorConfig pollingThreads(int pollingThreads) {
         this.pollingThreads = pollingThreads;
         return this;
@@ -76,6 +87,11 @@ public class RessorConfig {
 
     public RessorConfig cacheClasses(boolean cacheClasses) {
         this.cacheClasses = cacheClasses;
+        return this;
+    }
+
+    public RessorConfig errorHandler(ErrorHandler errorHandler) {
+        this.errorHandler = errorHandler;
         return this;
     }
 }
