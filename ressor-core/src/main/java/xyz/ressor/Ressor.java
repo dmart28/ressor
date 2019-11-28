@@ -20,9 +20,10 @@ import static xyz.ressor.service.proxy.StateVariables.SOURCE;
 
 /**
  * Public API of the Ressor framework.
- *
- * Ressor is a framework which ease the development of resource-based Java services. It translates your static or dynamic resources (files, http endpoints, git repositories, etc) into a complete Java service instance, implicitly reloading it when the source data is changed.
- * It supports various formats as well as different kinds of data sources.
+ * <p/>
+ * Ressor instances can be created using default configuration with {@link #create()} or a custom one with {@link #create(RessorConfig)}.
+ * <p/>
+ * It's recommended (though not restricted) to have a single Ressor instance per running VM and re-use it everywhere.
  */
 public class Ressor {
     private static final Logger log = LoggerFactory.getLogger(Ressor.class);
@@ -48,23 +49,22 @@ public class Ressor {
     }
 
     /**
-     * Creates a new service builder for the given {@param type}, which can be either interface or class.
+     * Creates a new service builder for the given type, which can be either interface or class.
      *
-     * @param type the public type of your service for which proxy class would be generated and
-     *            which instance would be created as a result
+     * @param type the public type of your service for which proxy instance would be generated and returned as a result
      * @param <T> the public service type
-     * @return proxy class instance
+     * @return service builder instance
      */
     public <T> RessorBuilder<T> service(Class<T> type) {
         return new RessorBuilder<>(type, config, fsWatchService);
     }
 
     /**
-     * Starts listening the {@link Source} of the underlying {@param service} for changes. When the change event is fired,
-     * the {@param service} will be implicitly reloaded with the new data.
+     * Starts listening the {@link Source} of the underlying service for the changes. When the change event is received,
+     * the service will implicitly reload itself with the new resource.
      *
-     * Please note that for now listening is supported only by {@link xyz.ressor.source.fs.FileSystemSource},
-     * otherwise the appropriate exception would be thrown
+     * Please note that for now listening is supported only by {@link xyz.ressor.source.fs.FileSystemSource}.
+     * Unless, an appropriate exception would be thrown.
      *
      * @param service Ressor proxy service instance
      * @param <T> service public type
@@ -79,14 +79,15 @@ public class Ressor {
     }
 
     /**
-     * Starts polling the {@link Source} of the underlying {@param service} for the incoming changes, and in case of any, reloading the {@param service}.
+     * Starts polling the {@link Source} of the underlying service for incoming changes. When resource is detected to be
+     * changed, the service will implicitly reload itself with the new resource.
      *
      * Polling is supported by every {@link Source}, and have different approaches based on the implementation. Please
-     * read the documentation of child classes.
+     * read documentation of each source implementation.
      *
      * @param service Ressor proxy service instance
      * @param <T> service public type
-     * @return Polling builder
+     * @return poller builder instance
      */
     public <T> PollingBuilder poll(T service) {
         return checkRessorService(service, ressorService -> {
@@ -96,9 +97,9 @@ public class Ressor {
     }
 
     /**
-     * Stop any periodic activity on the service (polling or listening)
+     * Stops any periodic activity on the service (polling or listening).
      *
-     * @param service Ressor proxy service instance
+     * @param service Ressor service proxy instance
      * @param <T> service public type
      */
     public <T> void stop(T service) {

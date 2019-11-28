@@ -11,6 +11,9 @@ import xyz.ressor.source.Source;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ExecutorService;
 
+import static xyz.ressor.loader.LoaderHelper.loadFromSource;
+import static xyz.ressor.loader.LoaderHelper.reload;
+
 public class QuartzLoaderJob implements Job {
     private static final Logger log = LoggerFactory.getLogger(QuartzLoaderJob.class);
 
@@ -21,18 +24,18 @@ public class QuartzLoaderJob implements Job {
             var serviceR = (WeakReference<RessorServiceImpl>) ctx.getMergedJobDataMap().get(QuartzServiceLoader.SERVICE_KEY);
             var sourceR = (WeakReference<Source>) ctx.getMergedJobDataMap().get(QuartzServiceLoader.SOURCE_KEY);
 
-            if (serviceR.get() == null) {
+            final var service = serviceR.get();
+            final var source = sourceR.get();
+
+            if (service == null || source == null) {
                 ctx.getScheduler().deleteJob(ctx.getJobDetail().getKey());
             } else {
-                final var service = serviceR.get();
-                final var source = sourceR.get();
-
                 threadPool.submit(() -> {
                     try {
                         if (!service.isReloading()) {
-                            var resource = source.loadIfModified(service.latestVersion());
+                            var resource = loadFromSource(service, source, (src, svc) -> src.loadIfModified(svc.latestVersion()));
                             if (resource != null) {
-                                service.reload(resource);
+                                reload(service, resource);
                             } else {
                                 log.debug("{}: nothing to reload from [{}]", service.underlyingType(), source.describe());
                             }

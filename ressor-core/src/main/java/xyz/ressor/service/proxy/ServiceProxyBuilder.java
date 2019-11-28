@@ -43,7 +43,8 @@ public class ServiceProxyBuilder {
     }
 
     public synchronized <T> T buildProxy(ProxyContext<T> context) {
-        var serviceProxy = new RessorServiceImpl<>(context.getType(), getFactory(context), context.getTranslator(), context.getInitialInstance())
+        var serviceProxy = new RessorServiceImpl<>(context.getType(), getFactory(context), context.getTranslator(), context.getErrorHandler(),
+                context.getInitialInstance())
                 .state(StateVariables.SOURCE, context.getSource());
         Class<? extends T> loadedClass = null;
         if (isCachePossible(context)) {

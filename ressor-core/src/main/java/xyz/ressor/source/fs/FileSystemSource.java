@@ -7,15 +7,20 @@ import xyz.ressor.source.SourceVersion;
 import xyz.ressor.source.Subscription;
 import xyz.ressor.source.version.LastModified;
 
+import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
+import static java.lang.String.format;
 import static java.nio.file.Files.newInputStream;
 import static xyz.ressor.commons.utils.Exceptions.wrap;
 
+/**
+ *
+ */
 public class FileSystemSource implements Source {
     private static final SourceVersion EMPTY = new LastModified(-1L);
     private static final String CLASSPATH_PREFIX = "classpath:";
@@ -62,6 +67,8 @@ public class FileSystemSource implements Source {
                     var resourceURI = getClass().getClassLoader().getResource(rawResourcePath);
                     if (resourceURI != null) {
                         classpathLastModified = (currentLastModified = resourceURI.openConnection().getLastModified());
+                    } else {
+                        throw new FileNotFoundException(format("Can't find %s file on classpath", rawResourcePath));
                     }
                 }
                 if (currentLastModified > lastModifiedMillis) {

@@ -47,7 +47,7 @@ public class ListeningServiceLoader extends ServiceLoaderBase {
     private boolean reload() {
         if (!service.isReloading()) {
             log.debug("Reloading by notification from [{}]", source.describe());
-            return service.reload(source.load());
+            return LoaderHelper.reload(service, source);
         } else {
             return false;
         }

@@ -5,6 +5,7 @@ import net.bytebuddy.dynamic.DynamicType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.FactoryBean;
 import xyz.ressor.service.RessorService;
+import xyz.ressor.service.error.ErrorHandler;
 import xyz.ressor.source.LoadedResource;
 import xyz.ressor.source.SourceVersion;
 
@@ -51,6 +52,11 @@ public class FactoryBeanExtensionTest {
 
         @Override
         public SourceVersion latestVersion() {
+            return null;
+        }
+
+        @Override
+        public ErrorHandler errorHandler() {
             return null;
         }
 

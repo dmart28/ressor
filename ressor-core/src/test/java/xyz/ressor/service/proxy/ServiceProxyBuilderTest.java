@@ -1,5 +1,6 @@
 package xyz.ressor.service.proxy;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 import xyz.ressor.commons.exceptions.TypeDefinitionException;
@@ -7,6 +8,7 @@ import xyz.ressor.service.RessorService;
 import xyz.ressor.service.proxy.model.*;
 import xyz.ressor.translator.Translator;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.function.Function;
@@ -14,8 +16,7 @@ import java.util.function.Function;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static xyz.ressor.translator.Translators.inputStream2Json;
-import static xyz.ressor.utils.TestUtils.json;
-import static xyz.ressor.utils.TestUtils.load;
+import static xyz.ressor.utils.TestUtils.*;
 
 public class ServiceProxyBuilderTest {
     private ServiceProxyBuilder proxyBuilder = new ServiceProxyBuilder(true);
@@ -40,7 +41,7 @@ public class ServiceProxyBuilderTest {
         assertThat(carRepository.getModel()).isEqualTo("-");
         assertThat(carRepository.getManufacturer()).isEqualTo("-");
 
-        ((RessorService<JsonCarRepository>) carRepository).reload(load("classpath:proxy/car_repository.json"));
+        ressorService(carRepository).reload(load("classpath:proxy/car_repository.json"));
 
         assertThat(carRepository.getModel()).isEqualTo("Astra");
         assertThat(carRepository.getManufacturer()).isEqualTo("Opel");
@@ -54,7 +55,7 @@ public class ServiceProxyBuilderTest {
 
         assertThat(nestedCarRepository).isNotNull();
 
-        ((RessorService<JsonNestedCarRepository>) nestedCarRepository).reload(load("classpath:proxy/nested_car_repository.json"));
+        ressorService(nestedCarRepository).reload(load("classpath:proxy/nested_car_repository.json"));
 
         assertThat(nestedCarRepository.getModel()).isEqualTo("Scirocco");
         assertThat(nestedCarRepository.getManufacturer()).isEqualTo("Volkswagen");
@@ -63,7 +64,7 @@ public class ServiceProxyBuilderTest {
         assertThat(nestedCarRepository.finalMethod()).isEqualTo(nestedCarRepository.getManufacturer());
         assertThat(nestedCarRepository.computeClearance(2)).isEqualTo(260d);
 
-        ((RessorService<JsonNestedCarRepository>) nestedCarRepository).reload(load("classpath:proxy/car_repository.json", true));
+        ressorService(nestedCarRepository).reload(load("classpath:proxy/car_repository.json", true));
 
         assertThat(nestedCarRepository.getModel()).isEqualTo("Astra");
         assertThat(nestedCarRepository.getManufacturer()).isEqualTo("Opel");
@@ -78,7 +79,7 @@ public class ServiceProxyBuilderTest {
 
         assertThat(carRepository).isNotNull();
 
-        ((RessorService<JsonConstructorOnlyCarRepository>) carRepository).reload(load("classpath:proxy/car_repository.json"));
+        ressorService(carRepository).reload(load("classpath:proxy/car_repository.json"));
 
         assertThat(carRepository.getModel()).isEqualTo("Astra");
         assertThat(carRepository.getManufacturer()).isEqualTo("Opel");
@@ -117,7 +118,7 @@ public class ServiceProxyBuilderTest {
 
         assertThat(personInfo).isNotNull();
 
-        ((RessorService<PersonInfo>) personInfo).reload(load("classpath:proxy/person_info.json"));
+        ressorService(personInfo).reload(load("classpath:proxy/person_info.json"));
 
         assertThat(personInfo.firstName()).isEqualTo("John");
         assertThat(personInfo.lastName()).isEqualTo("Doe");
@@ -163,6 +164,22 @@ public class ServiceProxyBuilderTest {
 
         assertThat(p1).isNotEqualTo(p2);
         assertThat(p1.getClass()).isNotSameAs(p2.getClass());
+    }
+
+    @Test
+    public void testReloadErrorHandler() {
+        var carRepository = proxyBuilder.buildProxy(ProxyContext
+                .builder(JsonCarRepository.class)
+                .translator(inputStream2Json())
+                .build());
+
+        assertThrows(IOException.class, () -> ressorService(carRepository).reload(throwingResource()));
+        assertThrows(JsonParseException.class, () ->
+                ressorService(carRepository).reload(load("classpath:proxy/car_repository_broken.json")));
+    }
+
+    private <T> RessorService<T> ressorService(Object service) {
+        return (RessorService<T>) service;
     }
 
 }

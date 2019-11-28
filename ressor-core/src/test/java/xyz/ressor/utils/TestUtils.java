@@ -3,7 +3,9 @@ package xyz.ressor.utils;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jetbrains.annotations.Nullable;
 import xyz.ressor.commons.utils.Exceptions;
+import xyz.ressor.service.error.ErrorHandler;
 import xyz.ressor.source.LoadedResource;
 import xyz.ressor.source.SourceVersion;
 import xyz.ressor.source.fs.FileSystemSource;
@@ -21,8 +23,19 @@ public class TestUtils {
     }
 
     public static LoadedResource load(String path, boolean force) {
-        var r = new FileSystemSource(path).load();
-        return force ? new LoadedResource(r.getInputStream(), SourceVersion.EMPTY, r.getResourceId()) : r;
+        try {
+            return new FileSystemSource(path).load();
+        } catch (Throwable t) {
+            if (force) {
+                throw t;
+            } else {
+                return null;
+            }
+        }
+    }
+
+    public static LoadedResource throwingResource() {
+        return new LoadedResource(new ThrowingInputStream(), SourceVersion.EMPTY, "");
     }
 
     public static JsonNode json(String jsonValue) {
@@ -31,6 +44,20 @@ public class TestUtils {
         } catch (IOException e) {
             throw Exceptions.wrap(e);
         }
+    }
+
+    public static ErrorHandler simpleErrorHandler(Runnable failedReload, Runnable translateFailed) {
+        return new ErrorHandler() {
+            @Override
+            public void onSourceFailed(Throwable exception, @Nullable Object service) {
+                failedReload.run();
+            }
+
+            @Override
+            public void onTranslateFailed(Throwable exception, LoadedResource resource, @Nullable Object service) {
+                translateFailed.run();
+            }
+        };
     }
 
 }
