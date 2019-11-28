@@ -28,19 +28,16 @@ import static xyz.ressor.commons.utils.RessorUtils.firstNonNull;
 import static xyz.ressor.loader.LoaderHelper.loadFromSource;
 
 /**
- * The builder for the Ressor proxy class, which will be created and loaded by a ClassLoader.
+ * The builder for the Ressor service proxy class, which will be built and loaded by a {@link ClassLoader} at runtime.
  * <p/>
  * <p/>
  * If <b>T</b> is a class, it will be extended by our proxy class.
  * If <b>T</b> doesn't have a default constructor, Ressor will scan it for the mostly short and public constructor available, which will be used
- * for the proxy instance creation (which happens once).
- * <p/>
- * This can't be avoided since this is how the JVM inheritance mechanism works - we should call at least one constructor of super type, even though
- * we are creating an instance of our own new proxy class.
+ * for the proxy instance creation (which happens once). This can't be avoided since this is how the JVM inheritance mechanism works - we should call at least one constructor of a super type.
  * <p/>
  * Otherwise, you can mark your constructor with {@link xyz.ressor.commons.annotations.ProxyConstructor} annotation, which will tell Ressor
  * to use it explicitly. If constructor has parameters, Ressor will guess and pass the default ones, based on the underlying parameter type
- * (<b>null</b> for object references, 0 for ints, etc). Alternatively, you can provide your own param values with {@link #proxyDefaultArguments(Object...)}.
+ * (<b>null</b> for object references, 0 for numbers, empty collections, etc). Alternatively, you can provide your own param values with {@link #proxyDefaultArguments(Object...)}.
  * <p/>
  * By default, Ressor will also find the constructor to create the actual instances of your service. You can alternatively mark
  * the desired constructor/factory method with {@link xyz.ressor.commons.annotations.ServiceFactory} annotation. It must have a single parameter,
@@ -49,7 +46,7 @@ import static xyz.ressor.loader.LoaderHelper.loadFromSource;
  * <p/>
  * If <b>T</b> is an interface, it will be implemented by our proxy class.
  * In that case you should provide a {@link #factory(Function)} which will be in charge of creating the actual instances of your service based
- * on the {@link Source} ({@link #yaml()}, {@link #json()}, etc).
+ * on the {@link Translator} ({@link #yaml()}, {@link #json()}, etc).
  *
  * @param <T> service public type
  */
@@ -90,7 +87,7 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Expect XML data format from the source, will provide entityType instance to the service factory.
+     * Expect XML data format from the source, will provide instance of entityType class to the service factory.
      *
      * @param entityType the target type class
      */
@@ -100,7 +97,7 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Same as {@link RessorBuilder#xml(Class)}, but providing {@link java.util.List} of entityType class instances.
+     * Same as {@link RessorBuilder#xml(Class)}, but providing {@link java.util.List<?>} of entityType class instances.
      *
      * @param entityType the target type class
      */
@@ -128,7 +125,7 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Expect YAML data format from the source, will provide entityType instance to the service factory.
+     * Expect YAML data format from the source, will provide instance of entityType class to the service factory.
      *
      * @param entityType the target type class
      */
@@ -138,7 +135,7 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Same as {@link RessorBuilder#yaml(Class)}, but providing {@link java.util.List} of entityType class instances.
+     * Same as {@link RessorBuilder#yaml(Class)}, but providing {@link java.util.List<?>} of entityType class instances.
      *
      * @param entityType the target type class
      */
@@ -166,7 +163,7 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Expect JSON data format from the source, will provide entityType instance to the service factory.
+     * Expect JSON data format from the source, will provide instance of entityType class to the service factory.
      *
      * @param entityType the target type class
      */
@@ -176,7 +173,7 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Same as {@link RessorBuilder#json(Class)}, but providing {@link java.util.List} of entityType class instances.
+     * Same as {@link RessorBuilder#json(Class)}, but providing {@link java.util.List<?>} of entityType class instances.
      *
      * @param entityType the target type class
      */

@@ -1,5 +1,6 @@
 package xyz.ressor.service;
 
+import org.jetbrains.annotations.Nullable;
 import xyz.ressor.service.error.ErrorHandler;
 import xyz.ressor.source.LoadedResource;
 import xyz.ressor.source.SourceVersion;
@@ -44,8 +45,11 @@ public interface RessorService<T> {
      * @param resource the new version of the resource
      * @return true if the resource was successfully applied, unless false
      */
-    boolean reload(LoadedResource resource);
+    boolean reload(@Nullable LoadedResource resource);
 
+    /**
+     * Is service currently reloading.
+     */
     boolean isReloading();
 
 }

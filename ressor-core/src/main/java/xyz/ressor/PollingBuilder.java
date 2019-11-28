@@ -11,6 +11,9 @@ import java.util.concurrent.TimeUnit;
 import static xyz.ressor.service.proxy.StateVariables.LOADER;
 import static xyz.ressor.service.proxy.StateVariables.SOURCE;
 
+/**
+ * This class is responsible for building polling-based service loaders.
+ */
 public class PollingBuilder {
     private final RessorServiceImpl service;
     private final ExecutorService threadPool;

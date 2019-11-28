@@ -4,7 +4,7 @@ import xyz.ressor.source.LoadedResource;
 
 /**
  * The exception handler for such Ressor activities like loading data from {@link xyz.ressor.source.Source},
- * translating binary data, etc.
+ * translation of the loaded data, etc.
  */
 public interface ErrorHandler {
 
