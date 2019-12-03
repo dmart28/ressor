@@ -3,7 +3,7 @@ package xyz.ressor.translator;
 import java.util.function.Function;
 
 /**
- * Responsible for translating data instance of type <b>T</b> to the instance of type <b>R</b>, which is consumed by the end user services.
+ * Responsible for translating data value of type <b>T</b> to the value of type <b>R</b>, which is then consumed by the end user services.
  *
  * @param <T> the input type
  * @param <R> the output type
@@ -88,7 +88,7 @@ public interface Translator<T, R> {
     /**
      * Prepends the provided factory to the current translator <b>T->R</b>.
      * <p/>
-     * Thre resulting translator is <b>T1->T->R</b>.
+     * The resulting translator is <b>T1->T->R</b>.
      *
      * @param factory prepending translator function
      * @param inputType input <b>T1</b> class
