@@ -68,7 +68,7 @@ Javadoc is [here](https://javadoc.ressor.xyz).
 
 ## Requirements
 
-- Java 11
+- Java 11+
 
 Java 8 special binaries might be supported, in case of such demand from the community.
 
