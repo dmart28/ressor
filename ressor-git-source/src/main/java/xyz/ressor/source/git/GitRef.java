@@ -11,7 +11,7 @@ public class GitRef {
 
     public GitRef(String refName) {
         this.fullName = refName;
-        var split = refName.split("/");
+        String[] split = refName.split("/");
         this.name = split[split.length - 1];
         if (ObjectId.isId(refName)) {
             this.type = RefType.HASH;
@@ -29,7 +29,7 @@ public class GitRef {
 
     public GitRef(String refName, RefType type) {
         this.fullName = refName;
-        var split = refName.split("/");
+        String[] split = refName.split("/");
         this.name = split[split.length - 1];
         this.type = type;
     }

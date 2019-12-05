@@ -9,7 +9,7 @@ public class TypeDefinitionTest {
 
     @Test
     public void testVeryBasicClass() {
-        var td = TypeDefinition.of(VeryBasicClass.class);
+        TypeDefinition td = TypeDefinition.of(VeryBasicClass.class);
         assertThat(td).isNotNull();
         assertThat(td.getDefaultConstructor()).isNotNull();
         assertThat(td.isInterface()).isFalse();
@@ -20,7 +20,7 @@ public class TypeDefinitionTest {
 
     @Test
     public void testPublicClassMultipleConstructors() {
-        var td = TypeDefinition.of(PublicClassMultipleConstructors.class);
+        TypeDefinition td = TypeDefinition.of(PublicClassMultipleConstructors.class);
         assertThat(td).isNotNull();
         assertThat(td.getDefaultConstructor()).isNotNull();
         assertThat(td.isInterface()).isFalse();
@@ -31,7 +31,7 @@ public class TypeDefinitionTest {
 
     @Test
     public void testPublicClassConstructorAnnotated() {
-        var td = TypeDefinition.of(PublicClassConstructorAnnotated.class);
+        TypeDefinition td = TypeDefinition.of(PublicClassConstructorAnnotated.class);
         assertThat(td).isNotNull();
         assertThat(td.getDefaultConstructor().getParameterCount()).isEqualTo(0);
         assertThat(td.getDefaultArguments()).hasSize(0);
@@ -39,7 +39,7 @@ public class TypeDefinitionTest {
 
     @Test
     public void testInnerClass() {
-        var td = TypeDefinition.of(TestInnerClass.class);
+        TypeDefinition td = TypeDefinition.of(TestInnerClass.class);
         assertThat(td.getDefaultConstructor()).isNotNull();
         assertThat(td.getDefaultConstructor().getParameterCount()).isOne();
         assertThat(td.isFinal()).isFalse();
@@ -48,7 +48,7 @@ public class TypeDefinitionTest {
 
     @Test
     public void testPackagePrivateClass() throws Exception {
-        var td = TypeDefinition.of(Class.forName("xyz.ressor.service.proxy.model.PackagePrivateClass"));
+        TypeDefinition td = TypeDefinition.of(Class.forName("xyz.ressor.service.proxy.model.PackagePrivateClass"));
         assertThat(td.getDefaultConstructor()).isNotNull();
         assertThat(td.getDefaultConstructor().getParameterCount()).isZero();
         assertThat(td.isFinal()).isFalse();
@@ -57,14 +57,14 @@ public class TypeDefinitionTest {
 
     @Test
     public void testInnerStaticClass() {
-        var td = TypeDefinition.of(TestInnerStaticClass.class);
+        TypeDefinition td = TypeDefinition.of(TestInnerStaticClass.class);
         assertThat(td.getDefaultConstructor()).isNotNull();
         assertThat(td.getDefaultConstructor().getParameterCount()).isZero();
     }
 
     @Test
     public void testAbstractClass() {
-        var td = TypeDefinition.of(TestAbstractConstructor.class);
+        TypeDefinition td = TypeDefinition.of(TestAbstractConstructor.class);
         assertThat(td).isNotNull();
         assertThat(td.getDefaultConstructor()).isNotNull();
         assertThat(td.getDefaultConstructor().getParameterCount()).isEqualTo(2);
@@ -74,14 +74,14 @@ public class TypeDefinitionTest {
 
     @Test
     public void testFinalClass() {
-        var td = TypeDefinition.of(FinalClass.class);
+        TypeDefinition td = TypeDefinition.of(FinalClass.class);
         assertThat(td.isFinal()).isTrue();
         assertThat(td.isInterface()).isFalse();
     }
 
     @Test
     public void testInterface() {
-        var td = TypeDefinition.of(Interface.class);
+        TypeDefinition td = TypeDefinition.of(Interface.class);
         assertThat(td.isFinal()).isFalse();
         assertThat(td.isInterface()).isTrue();
     }

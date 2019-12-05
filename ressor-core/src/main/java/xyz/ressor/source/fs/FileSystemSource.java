@@ -8,6 +8,8 @@ import xyz.ressor.source.Subscription;
 import xyz.ressor.source.version.LastModified;
 
 import java.io.FileNotFoundException;
+import java.net.URL;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -45,7 +47,7 @@ public class FileSystemSource implements Source {
 
     public FileSystemSource(String resourcePath, FileSystemWatchService watchService) {
         this.isClasspath = isClasspath(resourcePath);
-        this.resourcePath = isClasspath ? null : Path.of(resourcePath);
+        this.resourcePath = isClasspath ? null : FileSystems.getDefault().getPath(resourcePath);
         this.rawResourcePath = resourcePath.replaceFirst(CLASSPATH_PREFIX, "");
         this.watchService = watchService;
     }
@@ -55,16 +57,16 @@ public class FileSystemSource implements Source {
         final long lastModifiedMillis = version.val();
         try {
             if (!isClasspath) {
-                var currentLastModified = Files.getLastModifiedTime(resourcePath).toMillis();
+                long currentLastModified = Files.getLastModifiedTime(resourcePath).toMillis();
                 if (currentLastModified > lastModifiedMillis) {
                     return new LoadedResource(newInputStream(resourcePath), new LastModified(currentLastModified), rawResourcePath);
                 } else {
                     return null;
                 }
             } else {
-                var currentLastModified = classpathLastModified;
+                long currentLastModified = classpathLastModified;
                 if (currentLastModified < 0) {
-                    var resourceURI = getClass().getClassLoader().getResource(rawResourcePath);
+                    URL resourceURI = getClass().getClassLoader().getResource(rawResourcePath);
                     if (resourceURI != null) {
                         classpathLastModified = (currentLastModified = resourceURI.openConnection().getLastModified());
                     } else {

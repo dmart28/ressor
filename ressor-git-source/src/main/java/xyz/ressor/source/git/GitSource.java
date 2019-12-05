@@ -2,11 +2,16 @@ package xyz.ressor.source.git;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand;
+import org.eclipse.jgit.api.LogCommand;
 import org.eclipse.jgit.api.TransportConfigCallback;
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectLoader;
+import org.eclipse.jgit.lib.ObjectReader;
+import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.filter.AndRevFilter;
 import org.eclipse.jgit.revwalk.filter.CommitTimeRevFilter;
+import org.eclipse.jgit.revwalk.filter.RevFilter;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +23,7 @@ import xyz.ressor.source.Subscription;
 import xyz.ressor.source.version.LastModified;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
 import static xyz.ressor.source.git.GitRev.exact;
@@ -39,14 +45,14 @@ public class GitSource implements Source {
         this.git = git;
         this.transportConfig = transportConfig;
         this.filePath = filePath;
-        var refValue = ref;
+        GitRef refValue = ref;
         try {
             this.objectId = git.getRepository().resolve(refValue.getFullName());
             if (objectId == null) {
                 throw new IllegalArgumentException("Unable to find a ref with id [" + refValue.getFullName() + "]," +
                         " try passing a full ref name (like 'refs/heads/develop', 'refs/tags/tag-1', etc) or another one.");
             } else if (refValue.isShort() && refValue.isBranch()) {
-                var isBranch = git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call()
+                boolean isBranch = git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call()
                         .stream()
                         .map(r -> new GitRef(r.getName()))
                         .anyMatch(r -> r.isConnectedWith(ref));
@@ -66,29 +72,29 @@ public class GitSource implements Source {
     public LoadedResource loadIfModified(SourceVersion version) {
         try {
             pull();
-            var filter = CommitTimeRevFilter.after((long) version.val());
-            var logsCmd = git.log().all();
+            RevFilter filter = CommitTimeRevFilter.after((long) version.val());
+            LogCommand logsCmd = git.log().all();
 
             if (refValue.isHash()) {
                 logsCmd.add(objectId).setRevFilter(AndRevFilter.create(filter, exact(objectId)));
             } else {
                 if (refValue.isTag()) {
-                    var objectId = git.getRepository().findRef(refValue.getFullName()).getPeeledObjectId();
+                    ObjectId objectId = git.getRepository().findRef(refValue.getFullName()).getPeeledObjectId();
                     logsCmd.setRevFilter(AndRevFilter.create(filter, exact(objectId)));
                 } else {
                     logsCmd.addPath(filePath).setRevFilter(filter);
                 }
             }
 
-            for (var commit : logsCmd.call()) {
+            for (RevCommit commit : logsCmd.call()) {
                 if (refValue.isBranchType()) {
-                    var branches = git.branchList()
+                    List<Ref> branches = git.branchList()
                             .setListMode(ListBranchCommand.ListMode.ALL)
                             .setContains(commit.getId().name())
                             .call();
 
-                    for (var branchRefValue : branches) {
-                        var branchRef = new GitRef(branchRefValue.getName());
+                    for (Ref branchRefValue : branches) {
+                        GitRef branchRef = new GitRef(branchRefValue.getName());
                         if (refValue.isConnectedWith(branchRef)) {
                             return loadFromCommit(commit);
                         }
@@ -143,16 +149,16 @@ public class GitSource implements Source {
     }
 
     protected LoadedResource loadFromCommit(RevCommit commit) {
-        var stream = getContent(commit, filePath);
+        InputStream stream = getContent(commit, filePath);
         return stream == null ? null : new LoadedResource(stream, new LastModified(commit.getCommitTime() * 1000L), filePath);
     }
 
     protected InputStream getContent(RevCommit commit, String path) {
-        try (var treeWalk = TreeWalk.forPath(git.getRepository(), path, commit.getTree())) {
+        try (TreeWalk treeWalk = TreeWalk.forPath(git.getRepository(), path, commit.getTree())) {
             if (treeWalk != null) {
-                var blobId = treeWalk.getObjectId(0);
-                try (var objectReader = git.getRepository().newObjectReader()) {
-                    var objectLoader = objectReader.open(blobId);
+                ObjectId blobId = treeWalk.getObjectId(0);
+                try (ObjectReader objectReader = git.getRepository().newObjectReader()) {
+                    ObjectLoader objectLoader = objectReader.open(blobId);
                     return objectLoader.openStream();
                 }
             } else {

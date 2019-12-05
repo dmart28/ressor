@@ -29,8 +29,8 @@ public class ServiceProxyBuilderTest {
 
     @Test
     public void testJsonCarRepository() {
-        var initialInstance = new JsonCarRepository("-", "-");
-        var carRepository = proxyBuilder.buildProxy(ProxyContext
+        JsonCarRepository initialInstance = new JsonCarRepository("-", "-");
+        JsonCarRepository carRepository = proxyBuilder.buildProxy(ProxyContext
                 .builder(JsonCarRepository.class)
                 .translator(inputStream2Json())
                 .initialInstance(initialInstance)
@@ -49,7 +49,7 @@ public class ServiceProxyBuilderTest {
 
     @Test
     public void testNestedJsonCarRepository() {
-        var nestedCarRepository = proxyBuilder.buildProxy(ProxyContext
+        JsonNestedCarRepository nestedCarRepository = proxyBuilder.buildProxy(ProxyContext
                 .builder(JsonNestedCarRepository.class)
                 .translator(inputStream2Json()).build());
 
@@ -73,7 +73,7 @@ public class ServiceProxyBuilderTest {
 
     @Test
     public void testConstructorOnlyCarRepository() {
-        var carRepository = proxyBuilder.buildProxy(ProxyContext
+        JsonConstructorOnlyCarRepository carRepository = proxyBuilder.buildProxy(ProxyContext
                 .builder(JsonConstructorOnlyCarRepository.class)
                 .translator(inputStream2Json()).build());
 
@@ -87,7 +87,7 @@ public class ServiceProxyBuilderTest {
 
     @Test
     public void testDefaultArgumentsJsonCarRepository() {
-        var carRepository = proxyBuilder.buildProxy(ProxyContext
+        DefaultArgumentsJsonCarRepository carRepository = proxyBuilder.buildProxy(ProxyContext
                 .builder(DefaultArgumentsJsonCarRepository.class)
                 .translator(inputStream2Json())
                 .proxyDefaultArguments(json("{\"model\":\"None\",\"manufacturer\":\"None\"}"))
@@ -110,7 +110,7 @@ public class ServiceProxyBuilderTest {
 
     @Test
     public void testInterfaceRepository() {
-        var personInfo = proxyBuilder.buildProxy(ProxyContext
+        PersonInfo personInfo = proxyBuilder.buildProxy(ProxyContext
                 .builder(PersonInfo.class)
                 .translator(inputStream2Json())
                 .factory((JsonNode n) -> new PersonInfoImpl(n.path("first_name").asText(), n.path("last_name").asText()))
@@ -131,13 +131,13 @@ public class ServiceProxyBuilderTest {
                 .translator(inputStream2Json())
                 .factory(n -> new PersonInfoImpl(null, null)).build());
 
-        var p1 = f.apply(proxyBuilder);
-        var p2 = f.apply(proxyBuilder);
+        PersonInfo p1 = f.apply(proxyBuilder);
+        PersonInfo p2 = f.apply(proxyBuilder);
 
         assertThat(p1).isNotEqualTo(p2);
         assertThat(p1.getClass()).isSameAs(p2.getClass());
 
-        var noCacheProxyBuilder = new ServiceProxyBuilder(false);
+        ServiceProxyBuilder noCacheProxyBuilder = new ServiceProxyBuilder(false);
 
         p1 = f.apply(noCacheProxyBuilder);
         p2 = f.apply(noCacheProxyBuilder);
@@ -153,8 +153,8 @@ public class ServiceProxyBuilderTest {
                 .proxyDefaultArguments(dpa)
                 .build());
 
-        var p1 = f.apply(new Object[] { 0, 0L });
-        var p2 = f.apply(new Object[] { 0, 0L });
+        PublicClassConstructorAnnotated p1 = f.apply(new Object[] { 0, 0L });
+        PublicClassConstructorAnnotated p2 = f.apply(new Object[] { 0, 0L });
 
         assertThat(p1).isNotEqualTo(p2);
         assertThat(p1.getClass()).isSameAs(p2.getClass());
@@ -168,7 +168,7 @@ public class ServiceProxyBuilderTest {
 
     @Test
     public void testReloadErrorHandler() {
-        var carRepository = proxyBuilder.buildProxy(ProxyContext
+        JsonCarRepository carRepository = proxyBuilder.buildProxy(ProxyContext
                 .builder(JsonCarRepository.class)
                 .translator(inputStream2Json())
                 .build());

@@ -1,9 +1,6 @@
 package xyz.ressor.loader;
 
-import org.quartz.JobDataMap;
-import org.quartz.JobKey;
-import org.quartz.SchedulerException;
-import org.quartz.Trigger;
+import org.quartz.*;
 import xyz.ressor.commons.utils.Exceptions;
 import xyz.ressor.service.RessorService;
 import xyz.ressor.source.Source;
@@ -36,14 +33,14 @@ public class QuartzServiceLoader extends ServiceLoaderBase {
     }
 
     public void start(String expression) {
-        var trigger = newTrigger()
+        Trigger trigger = newTrigger()
                 .withSchedule(cronSchedule(expression).inTimeZone(UTC))
                 .build();
         start(trigger);
     }
 
     public void start(int every, TimeUnit unit) {
-        var trigger = newTrigger()
+        Trigger trigger = newTrigger()
                 .withSchedule(simpleSchedule()
                         .withIntervalInMilliseconds(unit.toMillis(every))
                         .repeatForever())
@@ -52,12 +49,12 @@ public class QuartzServiceLoader extends ServiceLoaderBase {
     }
 
     private void start(Trigger trigger) {
-        var scheduler = manager.scheduler();
-        var dataMap = new JobDataMap();
+        Scheduler scheduler = manager.scheduler();
+        JobDataMap dataMap = new JobDataMap();
         dataMap.put(THREAD_POOL_KEY, threadPool);
         dataMap.put(SERVICE_KEY, new WeakReference<>(service));
         dataMap.put(SOURCE_KEY, new WeakReference<>(source));
-        var job = newJob(QuartzLoaderJob.class)
+        JobDetail job = newJob(QuartzLoaderJob.class)
                 .usingJobData(dataMap)
                 .build();
         try {

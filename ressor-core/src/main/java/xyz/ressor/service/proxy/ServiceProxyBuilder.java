@@ -4,20 +4,18 @@ import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.DynamicType;
+import net.bytebuddy.dynamic.DynamicType.Builder.MethodDefinition.ImplementationDefinition.Optional;
+import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
 import net.bytebuddy.matcher.ElementMatcher;
 import xyz.ressor.commons.annotations.ServiceFactory;
 import xyz.ressor.commons.exceptions.TypeDefinitionException;
 import xyz.ressor.commons.utils.Exceptions;
+import xyz.ressor.ext.ServiceExtension;
 import xyz.ressor.service.RessorService;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.lang.reflect.*;
+import java.util.*;
 import java.util.function.Function;
 
 import static net.bytebuddy.dynamic.loading.ClassLoadingStrategy.Default.INJECTION;
@@ -43,12 +41,12 @@ public class ServiceProxyBuilder {
     }
 
     public synchronized <T> T buildProxy(ProxyContext<T> context) {
-        var serviceProxy = new RessorServiceImpl<>(context.getType(), getFactory(context), context.getTranslator(), context.getErrorHandler(),
+        RessorServiceImpl<T> serviceProxy = new RessorServiceImpl<>(context.getType(), getFactory(context), context.getTranslator(), context.getErrorHandler(),
                 context.getInitialInstance())
                 .state(StateVariables.SOURCE, context.getSource());
         Class<? extends T> loadedClass = null;
         if (isCachePossible(context)) {
-            var gci = classCache.computeIfAbsent(context.getType(),
+            GeneratedClassInfo gci = classCache.computeIfAbsent(context.getType(),
                     k -> new GeneratedClassInfo(generateProxyClass(context), context.getProxyDefaultArguments(), context.getClassLoader()));
             if (gci.isMatches(context)) {
                 loadedClass = (Class<? extends T>) gci.loadedClass;
@@ -59,10 +57,10 @@ public class ServiceProxyBuilder {
         }
 
         try {
-            var targetConstructor = loadedClass.getDeclaredConstructor();
+            Constructor<? extends T> targetConstructor = loadedClass.getDeclaredConstructor();
             targetConstructor.setAccessible(true);
-            var instance = targetConstructor.newInstance();
-            var mf = instance.getClass().getDeclaredField(RS_VAR);
+            T instance = targetConstructor.newInstance();
+            Field mf = instance.getClass().getDeclaredField(RS_VAR);
             mf.setAccessible(true);
             mf.set(instance, serviceProxy);
             return instance;
@@ -76,22 +74,22 @@ public class ServiceProxyBuilder {
     }
 
     private <T> Class<? extends T> generateProxyClass(ProxyContext<T> context) {
-        var b = byteBuddy.subclass(context.getType());
+        DynamicType.Builder<? extends T> b = byteBuddy.subclass(context.getType());
         if (isNotEmpty(context.getExtensions())) {
-            for (var ext : context.getExtensions()) {
+            for (ServiceExtension ext : context.getExtensions()) {
                 b = (DynamicType.Builder<? extends T>) ext.interceptProxy(b, context.getType());
             }
         }
-        var typeDef = TypeDefinition.of(context.getType(), context.getProxyDefaultArguments());
+        TypeDefinition typeDef = TypeDefinition.of(context.getType(), context.getProxyDefaultArguments());
 
-        var i = b.implement(RessorService.class);
+        Optional<? extends T> i = b.implement(RessorService.class);
         DynamicType.Builder<? extends T> m = i;
         if (!typeDef.isInterface() && typeDef.getDefaultArguments().length > 0) {
-            var constructor = invoke(typeDef.getDefaultConstructor())
+            MethodCall constructor = invoke(typeDef.getDefaultConstructor())
                     .with(typeDef.getDefaultArguments());
             m = i.defineConstructor(Visibility.PUBLIC).intercept(constructor);
         }
-        var f = m.defineField(RS_VAR, RessorServiceImpl.class, Visibility.PRIVATE)
+        DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends T> f = m.defineField(RS_VAR, RessorServiceImpl.class, Visibility.PRIVATE)
                 .defineMethod(RS_METHOD, context.getType(), Visibility.PRIVATE)
                 .intercept(invoke(named("instance")).onField(RS_VAR).withAssigner(Assigner.DEFAULT, Assigner.Typing.DYNAMIC))
                 .method(isDeclaredBy(RessorService.class).and(not(isDefaultMethod())))
@@ -107,8 +105,8 @@ public class ServiceProxyBuilder {
         if (context.getFactory() != null) {
             return context.getFactory();
         } else {
-            var type = context.getType();
-            var factoryExecutable = findAnnotatedExecutables(type, ServiceFactory.class).stream()
+            Class<? extends T> type = context.getType();
+            Executable factoryExecutable = findAnnotatedExecutables(type, ServiceFactory.class).stream()
                     .filter(e -> e.getParameterCount() == 1)
                     .filter(e -> e.getParameterTypes()[0].isAssignableFrom(context.getTranslator().outputType()))
                     .filter(e -> !(e instanceof Method) || Modifier.isStatic(e.getModifiers()))
@@ -127,10 +125,10 @@ public class ServiceProxyBuilder {
     }
 
     private ElementMatcher<? super MethodDescription> isDeepDeclaredBy(Class<?> type) {
-        var is = isDeclaredBy(type).and(not(isDefaultMethod()));
-        var interfaces = type.getInterfaces();
+        ElementMatcher.Junction<MethodDescription> is = isDeclaredBy(type).and(not(isDefaultMethod()));
+        Class<?>[] interfaces = type.getInterfaces();
         if (interfaces != null && interfaces.length > 0) {
-            for (var ifc : interfaces) {
+            for (Class<?> ifc : interfaces) {
                 is = is.or(isDeclaredBy(ifc)).or(isDeepDeclaredBy(ifc));
             }
         }

@@ -2,6 +2,7 @@ package xyz.ressor.source.http;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
+import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.core.Options;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -9,6 +10,8 @@ import org.apache.http.impl.client.HttpClients;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import xyz.ressor.source.LoadedResource;
+import xyz.ressor.source.Source;
 import xyz.ressor.source.SourceVersion;
 import xyz.ressor.source.http.version.ETag;
 import xyz.ressor.source.version.LastModified;
@@ -40,7 +43,7 @@ public class HttpSourceTest {
                 .willReturn(aResponse()
                         .withStatus(200).withBody("one")));
 
-        var source = Http.source(defaultURL()).cacheControlStrategy(NONE).build();
+        Source source = Http.source(defaultURL()).cacheControlStrategy(NONE).build();
         assertThat(IOUtils.toString(source.load().getInputStream(), UTF_8)).isEqualTo("one");
         assertThat(IOUtils.toString(source.loadIfModified(new LastModified(System.currentTimeMillis()))
                 .getInputStream(), UTF_8)).isEqualTo("one");
@@ -56,8 +59,8 @@ public class HttpSourceTest {
                 .willReturn(aResponse().withStatus(200).withHeader("Last-Modified", "Fri, 4 Oct 2019 18:58:32 GMT")
                         .withBody("one")));
 
-        var source = Http.source(defaultURL()).cacheControlStrategy(IF_MODIFIED_SINCE).pool(5, 10000).build();
-        var loadedResource = source.load();
+        Source source = Http.source(defaultURL()).cacheControlStrategy(IF_MODIFIED_SINCE).pool(5, 10000).build();
+        LoadedResource loadedResource = source.load();
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
 
         assertThat(source.loadIfModified(loadedResource.getVersion())).isNull();
@@ -77,8 +80,8 @@ public class HttpSourceTest {
         stubFor(getPath().withHeader("If-None-Match", equalTo("1ac")).willReturn(aResponse().withStatus(200)
                 .withHeader("ETag", "1ad").withBody("one")));
 
-        var source = Http.source(defaultURL()).cacheControlStrategy(ETAG).socketTimeoutMs(10000).connectTimeoutMs(10000).build();
-        var loadedResource = source.load();
+        Source source = Http.source(defaultURL()).cacheControlStrategy(ETAG).socketTimeoutMs(10000).connectTimeoutMs(10000).build();
+        LoadedResource loadedResource = source.load();
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
 
         assertThat(source.loadIfModified(loadedResource.getVersion())).isNull();
@@ -92,12 +95,12 @@ public class HttpSourceTest {
 
     @Test
     public void testIfModifiedHeadScenario() throws Exception {
-        var response = aResponse().withStatus(200).withHeader("Last-Modified", "Fri, 4 Oct 2019 18:58:30 GMT");
+        ResponseDefinitionBuilder response = aResponse().withStatus(200).withHeader("Last-Modified", "Fri, 4 Oct 2019 18:58:30 GMT");
         stubFor(headPath().willReturn(response));
         stubFor(getPath().willReturn(response.withBody("init")));
 
-        var source = new HttpSource(client(), defaultURL(), CacheControlStrategy.LAST_MODIFIED_HEAD);
-        var loadedResource = source.load();
+        Source source = new HttpSource(client(), defaultURL(), CacheControlStrategy.LAST_MODIFIED_HEAD);
+        LoadedResource loadedResource = source.load();
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
         verify(exactly(0), headRequestedFor(urlPathEqualTo(PATH)));
         verify(exactly(1), getRequestedFor(urlPathEqualTo(PATH)));
@@ -119,12 +122,12 @@ public class HttpSourceTest {
 
     @Test
     public void testETagHeadScenario() throws Exception {
-        var response = aResponse().withStatus(200).withHeader("ETag", "1ab");
+        ResponseDefinitionBuilder response = aResponse().withStatus(200).withHeader("ETag", "1ab");
         stubFor(headPath().willReturn(response));
         stubFor(getPath().willReturn(response.withBody("init")));
 
-        var source = Http.source(defaultURL()).cacheControlStrategy(ETAG_HEAD).receiveBufferSize(5).build();
-        var loadedResource = source.load();
+        Source source = Http.source(defaultURL()).cacheControlStrategy(ETAG_HEAD).receiveBufferSize(5).build();
+        LoadedResource loadedResource = source.load();
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
         verify(exactly(0), headRequestedFor(urlPathEqualTo(PATH)));
         verify(exactly(1), getRequestedFor(urlPathEqualTo(PATH)));
@@ -149,8 +152,8 @@ public class HttpSourceTest {
         stubFor(getPath().willReturn(aResponse().withStatus(200).withBody("init")
                 .withHeader("Last-Modified", "Fri, 4 Oct 2019 18:58:30 GMT")));
 
-        var source = new HttpSource(client(), defaultURL(), CacheControlStrategy.ETAG);
-        var loadedResource = source.load();
+        Source source = new HttpSource(client(), defaultURL(), CacheControlStrategy.ETAG);
+        LoadedResource loadedResource = source.load();
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
         assertThat(loadedResource.getVersion()).isSameAs(SourceVersion.EMPTY);
 

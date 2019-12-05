@@ -63,7 +63,7 @@ public abstract class RepositoryBuilderBase<T extends RepositoryBuilderBase> {
 
     protected TransportConfigCallback createTransportConfig() {
         return privateKeyPath == null ? GitSource.EMPTY_TRANSPORT_CONFIG : transport -> {
-            var ssh = (SshTransport) transport;
+            SshTransport ssh = (SshTransport) transport;
             ssh.setSshSessionFactory(new JschConfigSessionFactory() {
                 @Override
                 protected void configure(OpenSshConfig.Host hc, Session session) {
@@ -72,7 +72,7 @@ public abstract class RepositoryBuilderBase<T extends RepositoryBuilderBase> {
 
                 @Override
                 protected JSch createDefaultJSch(FS fs) throws JSchException {
-                    var jSch = super.createDefaultJSch(fs);
+                    JSch jSch = super.createDefaultJSch(fs);
                     jSch.addIdentity(privateKeyPath, privateKeyPassphrase);
                     return jSch;
                 }

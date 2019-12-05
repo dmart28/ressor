@@ -14,8 +14,8 @@ public class ConstructorComparator implements Comparator<Constructor> {
 
     @Override
     public int compare(Constructor a, Constructor b) {
-        var wa = weight(a);
-        var wb = weight(b);
+        int wa = weight(a);
+        int wb = weight(b);
         if (wa == wb) {
             return Integer.compare(b.getParameterCount(), a.getParameterCount());
         } else {
@@ -24,8 +24,8 @@ public class ConstructorComparator implements Comparator<Constructor> {
     }
 
     private int weight(Constructor constructor) {
-        var mult = 2;
-        var modifiers = constructor.getModifiers();
+        int mult = 2;
+        int modifiers = constructor.getModifiers();
         if (isPrivate(modifiers)) {
             mult = 1;
         } else if (isProtected(modifiers)) {

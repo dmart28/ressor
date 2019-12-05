@@ -12,13 +12,13 @@ public class QuartzManager {
 
     public QuartzManager(int pollingThreads) {
         try {
-            var schedulerFactory = new StdSchedulerFactory();
-            var props = new Properties();
+            StdSchedulerFactory schedulerFactory = new StdSchedulerFactory();
+            Properties props = new Properties();
             props.setProperty(StdSchedulerFactory.PROP_SCHED_INSTANCE_NAME, "RessorScheduler");
             props.setProperty(StdSchedulerFactory.PROP_THREAD_POOL_PREFIX + ".threadCount", Integer.toString(pollingThreads));
             props.setProperty(StdSchedulerFactory.PROP_JOB_STORE_CLASS, RAMJobStore.class.getName());
             schedulerFactory.initialize(props);
-            var scheduler = schedulerFactory.getScheduler();
+            Scheduler scheduler = schedulerFactory.getScheduler();
             scheduler.start();
 
             this.scheduler = scheduler;

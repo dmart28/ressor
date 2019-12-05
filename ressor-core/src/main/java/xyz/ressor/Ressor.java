@@ -72,7 +72,7 @@ public class Ressor {
     public <T> void listen(T service) {
         checkRessorService(service, ressorService -> {
             checkAndStopLoaderIfRequired(ressorService);
-            var loader = new ListeningServiceLoader(ressorService, (Source) ressorService.state(SOURCE), config.threadPool(),
+            ListeningServiceLoader loader = new ListeningServiceLoader(ressorService, (Source) ressorService.state(SOURCE), config.threadPool(),
                     config.reloadRetryMaxMillis());
             ressorService.state(LOADER, loader);
         });
@@ -124,9 +124,9 @@ public class Ressor {
     }
 
     private static void checkAndStopLoaderIfRequired(RessorServiceImpl ressorService) {
-        var loader = ressorService.state(LOADER);
+        ServiceLoaderBase loader = (ServiceLoaderBase) ressorService.state(LOADER);
         if (loader != null) {
-            ((ServiceLoaderBase) loader).stop();
+            loader.stop();
             ressorService.state(LOADER, null);
         }
     }

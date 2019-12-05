@@ -32,7 +32,7 @@ public class PollingBuilder {
      * @param unit the unit of time
      */
     public void every(int timeValue, TimeUnit unit) {
-        var loader = new QuartzServiceLoader(service, (Source) service.state(SOURCE), threadPool, manager);
+        QuartzServiceLoader loader = new QuartzServiceLoader(service, (Source) service.state(SOURCE), threadPool, manager);
         loader.start(timeValue, unit);
         service.state(LOADER, loader);
     }
@@ -47,7 +47,7 @@ public class PollingBuilder {
      * @param expression the cron expression
      */
     public void cron(String expression) {
-        var loader = new QuartzServiceLoader(service, (Source) service.state(SOURCE), threadPool, manager);
+        QuartzServiceLoader loader = new QuartzServiceLoader(service, (Source) service.state(SOURCE), threadPool, manager);
         loader.start(expression);
         service.state(LOADER, loader);
     }

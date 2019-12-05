@@ -21,16 +21,16 @@ public class FileSystemWatchServiceTest {
 
     @Test
     public void test(@TempDir Path tempDir1) throws Exception {
-        var tempDir2 = Files.createTempDirectory("");
-        var file1 = createFile(tempDir1.resolve("myfile.txt"));
-        var file2 = createFile(tempDir2.resolve("myfile.txt"));
-        var ws = new FileSystemWatchService();
+        Path tempDir2 = Files.createTempDirectory("");
+        Path file1 = createFile(tempDir1.resolve("myfile.txt"));
+        Path file2 = createFile(tempDir2.resolve("myfile.txt"));
+        FileSystemWatchService ws = new FileSystemWatchService();
 
         try {
             ws.init();
 
-            var firstJobAlerted = new AtomicBoolean();
-            var secondJobAlerted = new AtomicBoolean();
+            AtomicBoolean firstJobAlerted = new AtomicBoolean();
+            AtomicBoolean secondJobAlerted = new AtomicBoolean();
             ws.registerJob(file1, p -> {
                 if (p != null && p.equals(file1)) {
                     firstJobAlerted.set(true);
@@ -53,7 +53,7 @@ public class FileSystemWatchServiceTest {
     }
 
     private void writeLinesToFile(Path f) throws IOException {
-        try (var os = new FileOutputStream(f.toFile())) {
+        try (FileOutputStream os = new FileOutputStream(f.toFile())) {
             writeLines(asList("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
                     "labore et dolore magna aliqua. Ut enim ad minim veniam, quis",
                     "nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure",

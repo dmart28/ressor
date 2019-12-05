@@ -22,7 +22,7 @@ public class ListeningServiceLoader extends ServiceLoaderBase {
         this.subscription = source.subscribe(() -> threadPool.submit(() -> {
             try {
                 long timeToWait = 1000;
-                var reloaded = false;
+                boolean reloaded = false;
                 do {
                     reloaded = reload();
                     if (!reloaded) {

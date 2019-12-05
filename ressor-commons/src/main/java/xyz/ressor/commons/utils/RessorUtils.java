@@ -1,5 +1,6 @@
 package xyz.ressor.commons.utils;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.util.*;
@@ -9,6 +10,7 @@ import java.util.*;
  * save on dependency tree size of Ressor
  */
 public class RessorUtils {
+    private static InputStream EMPTY_STREAM = new ByteArrayInputStream(new byte[0]);
 
     public static <T> T firstNonNull(T first, T last) {
         return first == null ? last : first;
@@ -62,6 +64,10 @@ public class RessorUtils {
         try {
             stream.close();
         } catch (Throwable ignored) { }
+    }
+
+    public static InputStream emptyInputStream() {
+        return EMPTY_STREAM;
     }
 
 }

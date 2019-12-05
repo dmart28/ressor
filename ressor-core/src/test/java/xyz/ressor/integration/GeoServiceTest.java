@@ -8,8 +8,10 @@ import org.junit.jupiter.api.io.TempDir;
 import xyz.ressor.Ressor;
 import xyz.ressor.config.RessorConfig;
 import xyz.ressor.integration.model.geo.GeoData;
+import xyz.ressor.integration.model.geo.GeoInfo;
 import xyz.ressor.integration.model.geo.GeoService;
 import xyz.ressor.integration.model.geo.GeoServiceImpl;
+import xyz.ressor.service.error.ErrorHandler;
 
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
@@ -167,8 +169,8 @@ public class GeoServiceTest {
     public void testListenLoader(@TempDir Path tempDir) throws Exception {
         IOUtils.copy(getClass().getClassLoader().getResourceAsStream("integration/geoData.yml"),
                 Files.newOutputStream(tempDir.resolve("file.yml"), StandardOpenOption.CREATE));
-        var ressor = Ressor.create();
-        var geoService = ressor.service(GeoService.class)
+        Ressor ressor = Ressor.create();
+        GeoService geoService = ressor.service(GeoService.class)
                 .fileSource(tempDir.resolve("file.yml"))
                 .yaml()
                 .<JsonNode>factory(GeoServiceImpl::new)
@@ -208,10 +210,10 @@ public class GeoServiceTest {
 
     @Test
     public void testServiceErrorHandler() {
-        var reloadFailed = new AtomicInteger();
-        var translateFailed = new AtomicInteger();
+        AtomicInteger reloadFailed = new AtomicInteger();
+        AtomicInteger translateFailed = new AtomicInteger();
 
-        var errorHandler = simpleErrorHandler(reloadFailed::incrementAndGet, translateFailed::incrementAndGet);
+        ErrorHandler errorHandler = simpleErrorHandler(reloadFailed::incrementAndGet, translateFailed::incrementAndGet);
         BiConsumer<String, RessorConfig> createService = (path, config) -> Ressor.create(config).service(GeoService.class)
                 .fileSource(path)
                 .json()
@@ -227,7 +229,7 @@ public class GeoServiceTest {
         assertThat(reloadFailed.getAndSet(0)).isZero();
         assertThat(translateFailed.getAndSet(0)).isOne();
 
-        var globalConfig = new RessorConfig().errorHandler(errorHandler);
+        RessorConfig globalConfig = new RessorConfig().errorHandler(errorHandler);
 
         createService.accept("classpath:integration/fileNotExist.json", globalConfig);
         assertThat(reloadFailed.getAndSet(0)).isOne();
@@ -240,7 +242,7 @@ public class GeoServiceTest {
 
     private void checkGeoService(GeoService geoService) {
         assertThat(geoService).isNotNull();
-        var ipInfo = geoService.detect("92.154.89.56");
+        GeoInfo ipInfo = geoService.detect("92.154.89.56");
         assertThat(ipInfo).isNotNull();
         assertThat(ipInfo.getCountryCode()).isEqualTo("FR");
         assertThat(ipInfo.getLatitude()).isEqualTo(48.8543);

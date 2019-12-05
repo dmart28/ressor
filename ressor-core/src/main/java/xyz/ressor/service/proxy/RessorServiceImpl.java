@@ -50,7 +50,7 @@ public class RessorServiceImpl<T> implements RessorService<T> {
 
     @Override
     public T instance() {
-        var val = firstNonNull(underlyingInstance, initialInstance);
+        T val = firstNonNull(underlyingInstance, initialInstance);
         if (val == null) {
             throw new IllegalStateException("The service wasn't loaded yet, please provide service initial instance.");
         }
@@ -65,9 +65,9 @@ public class RessorServiceImpl<T> implements RessorService<T> {
     @Override
     public boolean reload(LoadedResource resource) {
         if (resource != null) {
-            if (!isReloading.compareAndExchange(false, true)) {
+            if (isReloading.compareAndSet(false, true)) {
                 try {
-                    var newResource = factory.apply(translator.translate(resource.getInputStream()));
+                    T newResource = factory.apply(translator.translate(resource.getInputStream()));
                     this.latestVersion = resource.getVersion();
                     this.underlyingInstance = newResource;
                     silentlyClose(resource.getInputStream());

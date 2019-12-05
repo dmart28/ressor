@@ -39,7 +39,7 @@ public interface Translator<T, R> {
      * @return complete <b>T->R</b> translator
      */
     static <T, R> Translator<T, R> define(Function<T, R> translate, Class<T> inputType, Class<R> outputType) {
-        return new Translator<>() {
+        return new Translator<T, R>() {
             @Override
             public R translate(T resource) {
                 return translate.apply(resource);
@@ -67,7 +67,7 @@ public interface Translator<T, R> {
      * @return the chained translator
      */
     default <R1> Translator<T, R1> chain(Translator<R, R1> translator) {
-        return new Translator<>() {
+        return new Translator<T, R1>() {
             @Override
             public R1 translate(T resource) {
                 return translator.translate(Translator.this.translate(resource));
@@ -96,7 +96,7 @@ public interface Translator<T, R> {
      * @return the prepended translator
      */
     default <T1> Translator<T1, R> prepend(Function<T1, T> factory, Class<T1> inputType) {
-        return new Translator<>() {
+        return new Translator<T1, R>() {
             @Override
             public R translate(T1 resource) {
                 return Translator.this.translate(factory.apply(resource));

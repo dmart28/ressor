@@ -5,8 +5,10 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.apache.commons.io.IOUtils;
 import xyz.ressor.translator.xml.DuplicateToArrayJsonNodeDeserializer;
 
 import java.io.IOException;
@@ -46,7 +48,7 @@ public abstract class Translators {
     public static Translator<InputStream, byte[]> inputStream2Bytes() {
         return define(s -> {
             try {
-                return s.readAllBytes();
+                return IOUtils.toByteArray(s);
             } catch (IOException e) {
                 throw wrap(e);
             }
@@ -134,7 +136,7 @@ public abstract class Translators {
     private static <T> Translator<InputStream, List<T>> inputStream2ObjectList(ObjectMapper mapper, Class<T> type) {
         return define(s -> {
             try {
-                var t = mapper.getTypeFactory().constructCollectionType(List.class, type);
+                CollectionType t = mapper.getTypeFactory().constructCollectionType(List.class, type);
                 return mapper.readValue(s, t);
             } catch (IOException e) {
                 throw wrap(e);

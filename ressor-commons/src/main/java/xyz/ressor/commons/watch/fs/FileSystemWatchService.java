@@ -32,10 +32,10 @@ public class FileSystemWatchService {
                 WatchKey key;
                 while ((key = watchService.take()) != null && !Thread.currentThread().isInterrupted()) {
                     for (WatchEvent<?> event : key.pollEvents()) {
-                        var path = (Path) event.context();
+                        Path path = (Path) event.context();
                         if (path != null) {
-                            var resolvedPath = ((Path) key.watchable()).resolve(path);
-                            var ls = listeners.get(resolvedPath);
+                            Path resolvedPath = ((Path) key.watchable()).resolve(path);
+                            Set<Consumer<Path>> ls = listeners.get(resolvedPath);
                             if (ls != null) {
                                 try {
                                     ls.forEach(l -> l.accept(resolvedPath));
@@ -72,7 +72,7 @@ public class FileSystemWatchService {
     }
 
     public void registerJob(Path path, Consumer<Path> listener) {
-        var watchPath = path;
+        Path watchPath = path;
         if (!Files.isDirectory(watchPath)) {
             watchPath = watchPath.getParent();
         }

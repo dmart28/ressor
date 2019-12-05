@@ -1,6 +1,7 @@
 package xyz.ressor.source.git.builder;
 
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.TransportConfigCallback;
 import xyz.ressor.commons.utils.Exceptions;
 import xyz.ressor.source.git.GitSource;
 
@@ -32,7 +33,7 @@ public class RemoteRepositoryBuilder extends RepositoryBuilderBase<RemoteReposit
             if (repositoryDirectory == null) {
                 repositoryDirectory = Files.createTempDirectory("git_source").toFile().getAbsolutePath();
             }
-            var transportConfig = createTransportConfig();
+            TransportConfigCallback transportConfig = createTransportConfig();
             return new GitSource(Git.cloneRepository()
                     .setURI(repositoryURI)
                     .setBranch(ref)

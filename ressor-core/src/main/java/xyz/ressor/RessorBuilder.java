@@ -351,7 +351,7 @@ public class RessorBuilder<T> {
         if (gzipped) {
             translator = Translators.gzipped(translator);
         }
-        var ctx = ProxyContext.builder(type)
+        ProxyContext.ProxyContextBuilder<T> ctx = ProxyContext.builder(type)
                 .source(source)
                 .classLoader(classLoader)
                 .factory(factory)
@@ -362,7 +362,7 @@ public class RessorBuilder<T> {
         if (extensions.size() > 0) {
             extensions.forEach(ctx::addExtension);
         }
-        var proxy = (RessorService<T>) proxyBuilder.buildProxy(ctx.build());
+        RessorService<T> proxy = (RessorService<T>) proxyBuilder.buildProxy(ctx.build());
         if (isAsync) {
             config.threadPool().submit(() -> reload(proxy));
         } else {

@@ -12,6 +12,7 @@ import xyz.ressor.source.version.LastModified;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -41,7 +42,7 @@ public class GitSourceTest {
 
     @Test
     public void test() throws Exception {
-        var source = new GitSource(git, EMPTY_TRANSPORT_CONFIG, "data.txt", new GitRef("master"), false);
+        GitSource source = new GitSource(git, EMPTY_TRANSPORT_CONFIG, "data.txt", new GitRef("master"), false);
 
         assertThat(toString(source)).isEqualTo("master data");
 
@@ -56,7 +57,7 @@ public class GitSourceTest {
 
     @Test
     public void testPredefinedRepository() throws Exception {
-        var source = local().filePath("data.txt").build();
+        Source source = local().filePath("data.txt").build();
         assertThat(source).isNotNull();
         assertThat(toString(source)).isEqualTo("One");
 
@@ -95,7 +96,7 @@ public class GitSourceTest {
     }
 
     private LocalRepositoryBuilder local() throws URISyntaxException {
-        var repositoryDirectory = classpath("repository/test/HEAD").getParent().toFile().getAbsolutePath();
+        String repositoryDirectory = classpath("repository/test/HEAD").getParent().toFile().getAbsolutePath();
         return GitRepository.local().repositoryDirectory(repositoryDirectory);
     }
 
@@ -108,7 +109,7 @@ public class GitSourceTest {
     }
 
     private Path classpath(String name) throws URISyntaxException {
-        return Path.of(getClass().getClassLoader().getResource(name).toURI());
+        return FileSystems.getDefault().provider().getPath(getClass().getClassLoader().getResource(name).toURI());
     }
 
 }

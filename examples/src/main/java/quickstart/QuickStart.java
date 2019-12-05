@@ -9,8 +9,8 @@ import java.util.Map;
 public class QuickStart {
 
     public static void main(String[] args) {
-        var ressor = Ressor.create();
-        var bookService = ressor.service(BookRepository.class)
+        Ressor ressor = Ressor.create();
+        BookRepository bookService = ressor.service(BookRepository.class)
                 .fileSource("classpath:quickstart/data.json")
                 .jsonList(Book.class)
                 .build();

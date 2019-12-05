@@ -80,8 +80,8 @@ public class HttpSourceBuilder {
 
     public HttpSource build() {
         if (client == null) {
-            var client = HttpClients.custom();
-            var socketConfig = SocketConfig.custom();
+            HttpClientBuilder client = HttpClients.custom();
+            SocketConfig.Builder socketConfig = SocketConfig.custom();
             if (receiveBufferSize != null) {
                 socketConfig.setRcvBufSize(receiveBufferSize);
             }
@@ -108,7 +108,7 @@ public class HttpSourceBuilder {
                         .setConnectionReuseStrategy(DefaultClientConnectionReuseStrategy.INSTANCE);
             }
             if (maxTotalConnections != null) {
-                var cm = new PoolingHttpClientConnectionManager(inactiveTtlMs, TimeUnit.MILLISECONDS);
+                PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager(inactiveTtlMs, TimeUnit.MILLISECONDS);
                 cm.setMaxTotal(maxTotalConnections);
                 client.setConnectionManager(cm);
             }

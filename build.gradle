@@ -5,7 +5,7 @@ allprojects {
     apply plugin: 'java'
     group = 'xyz.ressor'
     
-    sourceCompatibility = 11
+    sourceCompatibility = 1.8
 
     dependencies {
         compileOnly "org.jetbrains:annotations:$annotationsVersion"
@@ -80,7 +80,7 @@ task aggregatedJavadocs(type: Javadoc, description: 'Generate javadocs from all 
     title = "$project.name $version API"
     failOnError = false
     options.author true
-    options.links 'https://docs.oracle.com/en/java/javase/11/docs/api/index.html'
+    options.links 'https://docs.oracle.com/javase/8/docs/api/'
     options.addStringOption 'Xdoclint:none', '-quiet'
 
     subprojects.each { p ->

@@ -43,7 +43,7 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             groupId 'xyz.ressor'
-            artifactId 'ressor-http-source'
+            artifactId 'ressor-http-source-jdk8'
             from components.java
 
             artifact sourcesJar

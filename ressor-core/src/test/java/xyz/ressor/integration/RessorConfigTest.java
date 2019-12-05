@@ -11,13 +11,13 @@ public class RessorConfigTest {
 
     @Test
     public void configTest() {
-        var rc = new RessorConfig();
+        RessorConfig rc = new RessorConfig();
         assertThat(rc.threadPool()).isNull();
         assertThat(rc.pollingThreads()).isNull();
         assertThat(rc.isCacheClasses()).isNull();
         assertThat(rc.reloadRetryMaxMillis()).isNull();
 
-        var nrc = new RessorConfig(rc);
+        RessorConfig nrc = new RessorConfig(rc);
         assertThat(nrc.threadPool()).isNull();
         assertThat(nrc.pollingThreads()).isEqualTo(Runtime.getRuntime().availableProcessors());
         assertThat(nrc.isCacheClasses()).isTrue();

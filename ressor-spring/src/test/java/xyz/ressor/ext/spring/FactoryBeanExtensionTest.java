@@ -16,11 +16,11 @@ public class FactoryBeanExtensionTest {
 
     @Test
     public void test() throws Exception {
-        var ext = new FactoryBeanExtension();
-        var bb = new ByteBuddy();
+        FactoryBeanExtension ext = new FactoryBeanExtension();
+        ByteBuddy bb = new ByteBuddy();
         DynamicType.Builder<TestRessorService> b = bb.subclass(TestRessorService.class);
 
-        var instance = ext.interceptProxy(b, TestRessorService.class)
+        Object instance = ext.interceptProxy(b, TestRessorService.class)
                 .make()
                 .load(getClass().getClassLoader(), INJECTION)
                 .getLoaded()

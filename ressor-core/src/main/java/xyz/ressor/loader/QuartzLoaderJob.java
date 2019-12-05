@@ -6,6 +6,7 @@ import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xyz.ressor.service.proxy.RessorServiceImpl;
+import xyz.ressor.source.LoadedResource;
 import xyz.ressor.source.Source;
 
 import java.lang.ref.WeakReference;
@@ -20,12 +21,12 @@ public class QuartzLoaderJob implements Job {
     @Override
     public void execute(JobExecutionContext ctx) throws JobExecutionException {
         try {
-            var threadPool = (ExecutorService) ctx.getMergedJobDataMap().get(QuartzServiceLoader.THREAD_POOL_KEY);
-            var serviceR = (WeakReference<RessorServiceImpl>) ctx.getMergedJobDataMap().get(QuartzServiceLoader.SERVICE_KEY);
-            var sourceR = (WeakReference<Source>) ctx.getMergedJobDataMap().get(QuartzServiceLoader.SOURCE_KEY);
+            ExecutorService threadPool = (ExecutorService) ctx.getMergedJobDataMap().get(QuartzServiceLoader.THREAD_POOL_KEY);
+            WeakReference<RessorServiceImpl> serviceR = (WeakReference<RessorServiceImpl>) ctx.getMergedJobDataMap().get(QuartzServiceLoader.SERVICE_KEY);
+            WeakReference<Source> sourceR = (WeakReference<Source>) ctx.getMergedJobDataMap().get(QuartzServiceLoader.SOURCE_KEY);
 
-            final var service = serviceR.get();
-            final var source = sourceR.get();
+            final RessorServiceImpl service = serviceR.get();
+            final Source source = sourceR.get();
 
             if (service == null || source == null) {
                 ctx.getScheduler().deleteJob(ctx.getJobDetail().getKey());
@@ -33,7 +34,7 @@ public class QuartzLoaderJob implements Job {
                 threadPool.submit(() -> {
                     try {
                         if (!service.isReloading()) {
-                            var resource = loadFromSource(service, source, (src, svc) -> src.loadIfModified(svc.latestVersion()));
+                            LoadedResource resource = loadFromSource(service, source, (src, svc) -> src.loadIfModified(svc.latestVersion()));
                             if (resource != null) {
                                 reload(service, resource);
                             } else {

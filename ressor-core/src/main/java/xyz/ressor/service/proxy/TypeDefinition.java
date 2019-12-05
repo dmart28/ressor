@@ -47,12 +47,12 @@ public class TypeDefinition<T> {
     }
 
     public static <T> TypeDefinition<T> of(Class<? extends T> type, Object[] defaultArgs) {
-        var isFinal = Modifier.isFinal(type.getModifiers());
-        var isInterface = type.isInterface();
+        boolean isFinal = Modifier.isFinal(type.getModifiers());
+        boolean isInterface = type.isInterface();
         if (!isInterface) {
             Constructor<T>[] constructors = (Constructor<T>[]) type.getDeclaredConstructors();
             Arrays.sort(constructors, ConstructorComparator.instance());
-            var hasEmptyConstructor = constructors.length > 0 && constructors[0].getParameterCount() == 0;
+            boolean hasEmptyConstructor = constructors.length > 0 && constructors[0].getParameterCount() == 0;
 
             if (!hasEmptyConstructor) {
                 Constructor<T> defaultConstructor = findAnnotatedExecutable(constructors, ProxyConstructor.class);
@@ -65,7 +65,7 @@ public class TypeDefinition<T> {
                         }
                     } else {
                         Class[] types = getTypes(defaultArgs);
-                        for (var constructor : constructors) {
+                        for (Constructor<T> constructor : constructors) {
                             if (matches(types, constructor.getParameterTypes())) {
                                 defaultConstructor = constructor;
                             }
@@ -76,7 +76,7 @@ public class TypeDefinition<T> {
                     throw new TypeDefinitionException(type, "All available constructors are private, unable to define a proxy class");
                 }
                 defaultConstructor.setAccessible(true);
-                var defaultArguments = isEmpty(defaultArgs) ? generateDefaultArguments(defaultConstructor) : defaultArgs;
+                Object[] defaultArguments = isEmpty(defaultArgs) ? generateDefaultArguments(defaultConstructor) : defaultArgs;
                 return new TypeDefinition<>(isFinal, false, defaultConstructor, defaultArguments);
             } else {
                 return new TypeDefinition<>(isFinal, false, constructors[0], new Object[0]);
@@ -90,7 +90,7 @@ public class TypeDefinition<T> {
         if (types.length != parameterTypes.length) {
             return false;
         } else {
-            for (var i = 0; i < types.length; i++) {
+            for (int i = 0; i < types.length; i++) {
                 if (!parameterTypes[i].isAssignableFrom(types[i])) {
                     return false;
                 }
@@ -100,7 +100,7 @@ public class TypeDefinition<T> {
     }
 
     private static Class[] getTypes(Object[] defaultArgs) {
-        var r = new Class[defaultArgs.length];
+        Class[] r = new Class[defaultArgs.length];
         for (int i = 0; i < defaultArgs.length; i++) {
             r[i] = defaultArgs[i].getClass();
         }
@@ -108,9 +108,9 @@ public class TypeDefinition<T> {
     }
 
     private static <T> Object[] generateDefaultArguments(Constructor<T> defaultConstructor) {
-        var parameterTypes = defaultConstructor.getParameterTypes();
-        var defaultArguments = new Object[defaultConstructor.getParameterCount()];
-        for (var i = 0; i < parameterTypes.length; i++) {
+        Class<?>[] parameterTypes = defaultConstructor.getParameterTypes();
+        Object[] defaultArguments = new Object[defaultConstructor.getParameterCount()];
+        for (int i = 0; i < parameterTypes.length; i++) {
             defaultArguments[i] = defaultInstance(parameterTypes[i]);
         }
         return defaultArguments;

@@ -18,7 +18,6 @@ import xyz.ressor.source.Subscription;
 import xyz.ressor.source.http.version.ETag;
 import xyz.ressor.source.version.LastModified;
 
-import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -32,6 +31,7 @@ import static java.time.ZoneOffset.UTC;
 import static java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME;
 import static java.util.Collections.singletonList;
 import static org.apache.http.HttpStatus.SC_OK;
+import static xyz.ressor.commons.utils.RessorUtils.emptyInputStream;
 
 public class HttpSource implements Source {
     private static final Logger log = LoggerFactory.getLogger(HttpSource.class);
@@ -89,15 +89,15 @@ public class HttpSource implements Source {
 
     protected boolean isChanged(SourceVersion version) {
         try {
-            var head = new HttpHead(resourceURI);
+            HttpHead head = new HttpHead(resourceURI);
             intercept(head);
-            var response = client.execute(head);
+            CloseableHttpResponse response = client.execute(head);
 
             if (cacheControl == CacheControlStrategy.ETAG_HEAD) {
-                var eTag = getHeader(response, HttpHeaders.ETAG);
+                String eTag = getHeader(response, HttpHeaders.ETAG);
                 return eTag == null || !eTag.equals(version.val());
             } else if (cacheControl == CacheControlStrategy.LAST_MODIFIED_HEAD) {
-                var lastModified = getLastModified(response);
+                Instant lastModified = getLastModified(response);
                 return lastModified == null || lastModified.isAfter(Instant.ofEpochMilli(version.val()));
             } else {
                 return true;
@@ -113,30 +113,30 @@ public class HttpSource implements Source {
 
     protected LoadedResource loadResource(List<Header> headers) {
         try {
-            var get = new HttpGet(resourceURI);
+            HttpGet get = new HttpGet(resourceURI);
             headers.forEach(get::addHeader);
             intercept(get);
-            var response = client.execute(get);
+            CloseableHttpResponse response = client.execute(get);
             if (response.getStatusLine() != null) {
-                var statusCode = response.getStatusLine().getStatusCode();
+                int statusCode = response.getStatusLine().getStatusCode();
                 if (statusCode == SC_OK) {
                     SourceVersion version = SourceVersion.EMPTY;
                     if (cacheControl == CacheControlStrategy.ETAG || cacheControl == CacheControlStrategy.ETAG_HEAD) {
-                        var eTag = getHeader(response, HttpHeaders.ETAG);
+                        String eTag = getHeader(response, HttpHeaders.ETAG);
                         if (eTag != null) {
                             version = new ETag(eTag);
                         } else {
                             log.debug("Not recognized a ETag header from the response");
                         }
                     } else if (cacheControl == CacheControlStrategy.IF_MODIFIED_SINCE || cacheControl == CacheControlStrategy.LAST_MODIFIED_HEAD) {
-                        var lastModified = getLastModified(response);
+                        Instant lastModified = getLastModified(response);
                         if (lastModified != null) {
                             version = new LastModified(lastModified.toEpochMilli());
                         } else {
                             log.debug("Not recognized a Last-Modified header from the response");
                         }
                     }
-                    return new LoadedResource(response.getEntity() != null ? response.getEntity().getContent() : InputStream.nullInputStream(),
+                    return new LoadedResource(response.getEntity() != null ? response.getEntity().getContent() : emptyInputStream(),
                             version, resourceURI);
                 } else {
                     log.debug("Received {} status code for GET {}", statusCode, resourceURI);
@@ -151,7 +151,7 @@ public class HttpSource implements Source {
     }
 
     protected String getHeader(CloseableHttpResponse httpResult, String name) {
-        var header = httpResult.getFirstHeader(name);
+        Header header = httpResult.getFirstHeader(name);
         if (header != null && header.getValue().length() > 0) {
             return header.getValue();
         } else {
@@ -161,7 +161,7 @@ public class HttpSource implements Source {
 
     protected Instant getLastModified(CloseableHttpResponse httpResult) {
         TemporalAccessor ta = null;
-        var header = httpResult.getFirstHeader(HttpHeaders.LAST_MODIFIED);
+        Header header = httpResult.getFirstHeader(HttpHeaders.LAST_MODIFIED);
         if (header != null && header.getValue().length() > 0) {
             try {
                 ta = RFC_1123_DATE_TIME.parse(header.getValue());

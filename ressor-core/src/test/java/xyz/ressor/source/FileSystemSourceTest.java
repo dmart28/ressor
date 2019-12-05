@@ -10,6 +10,7 @@ import xyz.ressor.commons.watch.fs.FileSystemWatchService;
 import xyz.ressor.source.fs.FileSystemSource;
 
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
@@ -25,23 +26,23 @@ public class FileSystemSourceTest {
 
     @Test
     public void testClasspathSourceUsage() throws Exception {
-        var source = new FileSystemSource("classpath:fs/user_data.json");
+        FileSystemSource source = new FileSystemSource("classpath:fs/user_data.json");
         assertThat(source.isClasspath()).isEqualTo(true);
         assertThat(source.isListenable()).isEqualTo(false);
 
-        var resource = source.load();
+        LoadedResource resource = source.load();
 
         assertThat(resource).isNotNull();
         assertThat((long) resource.getVersion().val()).isGreaterThan(0);
         assertThat(resource.getInputStream()).isNotNull();
         assertThat(resource.getResourceId()).isEqualTo("classpath:fs/user_data.json");
 
-        var originalURI = getClass().getClassLoader().getResource("fs/user_data.json");
+        URL originalURI = getClass().getClassLoader().getResource("fs/user_data.json");
         assertThat(originalURI).isNotNull();
         assertThat(IOUtils.toString(resource.getInputStream(), UTF_8))
                 .isEqualTo(IOUtils.toString(originalURI, UTF_8));
 
-        var conditionalResource = source.loadIfModified(resource.getVersion());
+        LoadedResource conditionalResource = source.loadIfModified(resource.getVersion());
 
         assertThat(conditionalResource).isNull();
 
@@ -51,14 +52,14 @@ public class FileSystemSourceTest {
 
     @Test
     public void testFileSourceUsage(@TempDir Path dir) throws Exception {
-        var filePath = dir.resolve("user_data.json");
+        Path filePath = dir.resolve("user_data.json");
         copy(stream("fs/user_data.json"), filePath);
 
-        var source = new FileSystemSource(filePath);
+        FileSystemSource source = new FileSystemSource(filePath);
         assertThat(source.isClasspath()).isEqualTo(false);
         assertThat(source.isListenable()).isEqualTo(false);
 
-        var resource = source.load();
+        LoadedResource resource = source.load();
 
         assertThat(resource).isNotNull();
         assertThat((long) resource.getVersion().val()).isGreaterThan(0);
@@ -75,7 +76,7 @@ public class FileSystemSourceTest {
 
         assertThat(source.loadIfModified(resource.getVersion())).isNotNull();
 
-        var newResource = source.load();
+        LoadedResource newResource = source.load();
 
         assertThat(newResource).isNotNull();
         assertThat(newResource).isNotEqualTo(resource);
@@ -92,14 +93,14 @@ public class FileSystemSourceTest {
     @Test
     public void testFileSourceWatchService(@TempDir Path dir,
                                            @Mock FileSystemWatchService watchService) throws Exception {
-        var filePath = dir.resolve("user_data.json");
+        Path filePath = dir.resolve("user_data.json");
         copy(stream("fs/user_data.json"), filePath);
 
-        var source = new FileSystemSource(filePath, watchService);
+        FileSystemSource source = new FileSystemSource(filePath, watchService);
         assertThat(source.isClasspath()).isEqualTo(false);
         assertThat(source.isListenable()).isEqualTo(true);
 
-        var subscription = source.subscribe(() -> {});
+        Subscription subscription = source.subscribe(() -> {});
         source.subscribe(() -> {});
 
         verify(watchService, times(2)).registerJob(any(), any());
