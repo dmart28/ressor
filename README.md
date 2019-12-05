@@ -66,22 +66,24 @@ See our [Project Website](https://ressor.xyz).
 
 Javadoc is [here](https://javadoc.ressor.xyz).
 
-## Requirements
-
-- Java 11+
-
-Java 8 special binaries might be supported, in case of such demand from the community.
-
 ## Import
 
 Releases are available via Maven Central.
 
+### Java 11+
+
 ```
   implementation 'xyz.ressor:ressor-core:1.0.0-beta.5'
-  // For Git source implementation
   implementation 'xyz.ressor:ressor-git-source:1.0.0-beta.5'
-  // For HTTP source implementation
   implementation 'xyz.ressor:ressor-http-source:1.0.0-beta.5'
+```
+
+### Java 8
+
+```
+  implementation 'xyz.ressor:ressor-core-jdk8:1.0.0-beta.5'
+  implementation 'xyz.ressor:ressor-git-source-jdk8:1.0.0-beta.5'
+  implementation 'xyz.ressor:ressor-http-source-jdk8:1.0.0-beta.5'
 ```
 
 ## Versioning
