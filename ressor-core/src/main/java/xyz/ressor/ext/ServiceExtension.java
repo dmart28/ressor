@@ -16,6 +16,6 @@ public interface ServiceExtension {
      * @param <T> erasure type of the service
      * @return extended ByteBuddy builder
      */
-    <T> DynamicType.Builder<?> interceptProxy(DynamicType.Builder<?> builder, Class<? extends T> type);
+    <T> DynamicType.Builder<T> interceptProxy(DynamicType.Builder<T> builder, Class<T> type);
 
 }

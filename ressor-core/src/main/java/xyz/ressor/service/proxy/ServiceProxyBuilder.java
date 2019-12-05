@@ -79,7 +79,7 @@ public class ServiceProxyBuilder {
         var b = byteBuddy.subclass(context.getType());
         if (isNotEmpty(context.getExtensions())) {
             for (var ext : context.getExtensions()) {
-                b = (DynamicType.Builder<? extends T>) ext.interceptProxy(b, context.getType());
+                b = ext.interceptProxy(b, context.getType());
             }
         }
         var typeDef = TypeDefinition.of(context.getType(), context.getProxyDefaultArguments());

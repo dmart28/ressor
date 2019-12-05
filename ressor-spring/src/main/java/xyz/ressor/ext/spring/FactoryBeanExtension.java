@@ -10,7 +10,7 @@ import static net.bytebuddy.matcher.ElementMatchers.named;
 public class FactoryBeanExtension implements ServiceExtension {
 
     @Override
-    public <T> DynamicType.Builder<?> interceptProxy(DynamicType.Builder<?> builder, Class<? extends T> type) {
+    public <T> DynamicType.Builder<T> interceptProxy(DynamicType.Builder<T> builder, Class<T> type) {
         return builder.implement(FactoryBean.class)
                 .method(named("getObject"))
                 .intercept(MethodCall.invoke(named("instance")))
