@@ -34,6 +34,7 @@ import static xyz.ressor.commons.utils.RessorUtils.firstNonNull;
 public class ServiceProxyBuilder {
     private static final String RS_VAR = "__$$rs";
     private static final String RS_METHOD = "__$$grs";
+    private static final String RS_METHOD_OBJECT = "__$$grso";
     private final ByteBuddy byteBuddy = new ByteBuddy();
     private final boolean isCacheClasses;
     private final Map<Class<?>, GeneratedClassInfo> classCache = new HashMap<>();
@@ -91,16 +92,38 @@ public class ServiceProxyBuilder {
                     .with(typeDef.getDefaultArguments());
             m = i.defineConstructor(Visibility.PUBLIC).intercept(constructor);
         }
+        var serviceInstanceMethod = invoke(named("instance")).onField(RS_VAR).withAssigner(Assigner.DEFAULT, Assigner.Typing.DYNAMIC);
         var f = m.defineField(RS_VAR, RessorServiceImpl.class, Visibility.PRIVATE)
                 .defineMethod(RS_METHOD, context.getType(), Visibility.PRIVATE)
-                .intercept(invoke(named("instance")).onField(RS_VAR).withAssigner(Assigner.DEFAULT, Assigner.Typing.DYNAMIC))
+                .intercept(serviceInstanceMethod)
                 .method(isDeclaredBy(RessorService.class).and(not(isDefaultMethod())))
                 .intercept(toField(RS_VAR))
                 .method(isDeepDeclaredBy(context.getType()))
                 .intercept(toMethodReturnOf(RS_METHOD));
+        if (context.isProxyObjectClassMethods()) {
+            f = f.defineMethod(RS_METHOD_OBJECT, Object.class, Visibility.PRIVATE)
+                    .intercept(serviceInstanceMethod)
+                    .method(definedMethod(mt -> isEquals(mt) || isHashCode(mt) || isToString(mt)))
+                    .intercept(toMethodReturnOf(RS_METHOD_OBJECT));
+        }
         return f.make()
                 .load(firstNonNull(context.getClassLoader(), getClass().getClassLoader()), INJECTION)
                 .getLoaded();
+    }
+
+    private boolean isHashCode(MethodDescription.InDefinedShape target) {
+        return target.getParameters().size() == 0 && target.getName().equals("hashCode")
+                && target.getReturnType().represents(int.class);
+    }
+
+    private boolean isEquals(MethodDescription.InDefinedShape target) {
+        return target.getParameters().size() == 1 && target.getName().equals("equals")
+                && target.getReturnType().represents(boolean.class);
+    }
+
+    private boolean isToString(MethodDescription.InDefinedShape target) {
+        return target.getParameters().size() == 0 && target.getName().equals("toString")
+                && target.getReturnType().represents(String.class);
     }
 
     private <T> Function<Object, ? extends T> getFactory(ProxyContext<T> context) {
