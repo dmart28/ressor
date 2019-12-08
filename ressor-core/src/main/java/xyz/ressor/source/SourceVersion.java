@@ -17,6 +17,10 @@ public interface SourceVersion {
     @Nullable
     <V> V val();
 
+    default boolean isEmpty() {
+        return this == EMPTY || val() == null;
+    }
+
     SourceVersion EMPTY = new SourceVersion() {
         @Override
         public <V> V val() {

@@ -8,13 +8,11 @@ import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicHeader;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xyz.ressor.commons.utils.Exceptions;
-import xyz.ressor.source.LoadedResource;
-import xyz.ressor.source.Source;
-import xyz.ressor.source.SourceVersion;
-import xyz.ressor.source.Subscription;
+import xyz.ressor.source.*;
 import xyz.ressor.source.http.version.ETag;
 import xyz.ressor.source.version.LastModified;
 
@@ -33,7 +31,7 @@ import static java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME;
 import static java.util.Collections.singletonList;
 import static org.apache.http.HttpStatus.SC_OK;
 
-public class HttpSource implements Source {
+public class HttpSource implements NonListenableSource {
     private static final Logger log = LoggerFactory.getLogger(HttpSource.class);
     private static final ZoneId GMT = ZoneId.of("GMT");
     protected final CloseableHttpClient client;
@@ -47,7 +45,7 @@ public class HttpSource implements Source {
     }
 
     public HttpSource(CloseableHttpClient client, String resourceURI, CacheControlStrategy cacheControl,
-                      Consumer<HttpRequestBase> requestInterceptor, boolean keepAlive) {
+                      @NotNull Consumer<HttpRequestBase> requestInterceptor, boolean keepAlive) {
         this.client = client;
         this.resourceURI = resourceURI;
         this.cacheControl = cacheControl;
@@ -69,16 +67,6 @@ public class HttpSource implements Source {
                 return loadResource();
             }
         }
-        return null;
-    }
-
-    @Override
-    public boolean isListenable() {
-        return false;
-    }
-
-    @Override
-    public Subscription subscribe(Runnable listener) {
         return null;
     }
 
