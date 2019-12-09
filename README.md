@@ -73,17 +73,17 @@ Releases are available via Maven Central.
 ### Java 11+
 
 ```
-  implementation 'xyz.ressor:ressor-core:1.0.0-beta.5'
-  implementation 'xyz.ressor:ressor-git-source:1.0.0-beta.5'
-  implementation 'xyz.ressor:ressor-http-source:1.0.0-beta.5'
+  implementation 'xyz.ressor:ressor-core:1.0.0'
+  implementation 'xyz.ressor:ressor-git-source:1.0.0'
+  implementation 'xyz.ressor:ressor-http-source:1.0.0'
 ```
 
 ### Java 8
 
 ```
-  implementation 'xyz.ressor:ressor-core-jdk8:1.0.0-beta.5'
-  implementation 'xyz.ressor:ressor-git-source-jdk8:1.0.0-beta.5'
-  implementation 'xyz.ressor:ressor-http-source-jdk8:1.0.0-beta.5'
+  implementation 'xyz.ressor:ressor-core-jdk8:1.0.0'
+  implementation 'xyz.ressor:ressor-git-source-jdk8:1.0.0'
+  implementation 'xyz.ressor:ressor-http-source-jdk8:1.0.0'
 ```
 
 ## Versioning
