@@ -3,6 +3,8 @@ package xyz.ressor.source.s3;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3ObjectId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import xyz.ressor.source.LoadedResource;
 import xyz.ressor.source.NonListenableSource;
 import xyz.ressor.source.SourceVersion;
@@ -17,6 +19,7 @@ import static java.util.Objects.requireNonNull;
 import static xyz.ressor.source.SourceVersion.EMPTY;
 
 public class S3Source implements NonListenableSource {
+    private static final Logger log = LoggerFactory.getLogger(S3Source.class);
     private final AmazonS3 client;
     private final S3ObjectId objectId;
     private final String resourceId;
@@ -47,11 +50,14 @@ public class S3Source implements NonListenableSource {
             if (isNullOrEmpty(eTag)) {
                 var lastModified = response.getObjectMetadata().getLastModified();
                 if (lastModified != null) {
+                    log.debug("Loaded Last-Modified version for {}: {}", objectId, eTag);
                     resultVersion = new S3Version(lastModified, VersionType.LAST_MODIFIED);
                 } else {
+                    log.debug("No resource version was found for {}", objectId);
                     resultVersion = EMPTY;
                 }
             } else {
+                log.debug("Loaded ETag version for {}: {}", objectId, eTag);
                 resultVersion = new S3Version(eTag, VersionType.ETAG);
             }
             return new LoadedResource(response.getObjectContent(), resultVersion, resourceId);
@@ -62,6 +68,6 @@ public class S3Source implements NonListenableSource {
 
     @Override
     public String describe() {
-        return resourceId;
+        return "S3: [" + resourceId + "]";
     }
 }

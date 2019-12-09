@@ -30,8 +30,10 @@ import static xyz.ressor.commons.utils.Exceptions.catchingFunc;
 import static xyz.ressor.commons.utils.ReflectionUtils.findAnnotatedExecutables;
 import static xyz.ressor.commons.utils.ReflectionUtils.findExecutable;
 import static xyz.ressor.commons.utils.RessorUtils.firstNonNull;
+import static xyz.ressor.commons.utils.StringUtils.randomString;
 
 public class ServiceProxyBuilder {
+    private static final String PROXY_BASE_PACKAGE = "xyz.ressor.service.proxy.";
     private static final String RS_VAR = "__$$rs";
     private static final String RS_METHOD = "__$$grs";
     private static final String RS_METHOD_OBJECT = "__$$grso";
@@ -50,7 +52,8 @@ public class ServiceProxyBuilder {
         Class<? extends T> loadedClass = null;
         if (isCachePossible(context)) {
             var gci = classCache.computeIfAbsent(context.getType(),
-                    k -> new GeneratedClassInfo(generateProxyClass(context), context.getProxyDefaultArguments(), context.getClassLoader()));
+                    k -> new GeneratedClassInfo(generateProxyClass(context), context.getProxyDefaultArguments(),
+                            context.getClassLoader(), context.isProxyObjectClassMethods()));
             if (gci.isMatches(context)) {
                 loadedClass = (Class<? extends T>) gci.loadedClass;
             }
@@ -77,7 +80,7 @@ public class ServiceProxyBuilder {
     }
 
     private <T> Class<? extends T> generateProxyClass(ProxyContext<T> context) {
-        var b = byteBuddy.subclass(context.getType());
+        var b = byteBuddy.subclass(context.getType()).name(generateName(context.getType()));
         if (isNotEmpty(context.getExtensions())) {
             for (var ext : context.getExtensions()) {
                 b = ext.interceptProxy(b, context.getType());
@@ -111,19 +114,23 @@ public class ServiceProxyBuilder {
                 .getLoaded();
     }
 
-    private boolean isHashCode(MethodDescription.InDefinedShape target) {
-        return target.getParameters().size() == 0 && target.getName().equals("hashCode")
-                && target.getReturnType().represents(int.class);
+    private <T> String generateName(Class<T> type) {
+        return PROXY_BASE_PACKAGE + type.getSimpleName() + "$RessorProxy$" + randomString();
     }
 
-    private boolean isEquals(MethodDescription.InDefinedShape target) {
-        return target.getParameters().size() == 1 && target.getName().equals("equals")
-                && target.getReturnType().represents(boolean.class);
+    private boolean isHashCode(MethodDescription.InDefinedShape target) {
+        return target.getParameters().size() == 0 && target.getName().equals("hashCode") &&
+                target.getReturnType().represents(int.class);
+    }
+
+    private boolean isEquals(MethodDescription.InDefinedShape t) {
+        return t.getParameters().size() == 1 && t.getParameters().get(0).getType().represents(Object.class) &&
+                t.getName().equals("equals") && t.getReturnType().represents(boolean.class);
     }
 
     private boolean isToString(MethodDescription.InDefinedShape target) {
-        return target.getParameters().size() == 0 && target.getName().equals("toString")
-                && target.getReturnType().represents(String.class);
+        return target.getParameters().size() == 0 && target.getName().equals("toString") &&
+                target.getReturnType().represents(String.class);
     }
 
     private <T> Function<Object, ? extends T> getFactory(ProxyContext<T> context) {
@@ -168,15 +175,19 @@ public class ServiceProxyBuilder {
         private final Class<?> loadedClass;
         private final Object[] defaultArguments;
         private final ClassLoader classLoader;
+        private final boolean isProxyObjectClassMethods;
 
-        public GeneratedClassInfo(Class<?> loadedClass, Object[] defaultArguments, ClassLoader classLoader) {
+        public GeneratedClassInfo(Class<?> loadedClass, Object[] defaultArguments, ClassLoader classLoader,
+                                  boolean isProxyObjectClassMethods) {
             this.loadedClass = loadedClass;
             this.defaultArguments = defaultArguments;
             this.classLoader = classLoader;
+            this.isProxyObjectClassMethods = isProxyObjectClassMethods;
         }
 
         public boolean isMatches(ProxyContext<?> ctx) {
-            return Arrays.equals(defaultArguments, ctx.getProxyDefaultArguments()) && Objects.equals(classLoader, ctx.getClassLoader());
+            return isProxyObjectClassMethods == ctx.isProxyObjectClassMethods() &&
+                    Arrays.equals(defaultArguments, ctx.getProxyDefaultArguments()) && Objects.equals(classLoader, ctx.getClassLoader());
         }
     }
 
