@@ -16,10 +16,7 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xyz.ressor.commons.utils.Exceptions;
-import xyz.ressor.source.LoadedResource;
-import xyz.ressor.source.Source;
-import xyz.ressor.source.SourceVersion;
-import xyz.ressor.source.Subscription;
+import xyz.ressor.source.*;
 import xyz.ressor.source.version.LastModified;
 
 import java.io.InputStream;
@@ -28,7 +25,7 @@ import java.util.concurrent.ForkJoinPool;
 
 import static xyz.ressor.source.git.GitRev.exact;
 
-public class GitSource implements Source {
+public class GitSource implements NonListenableSource {
     private static final Logger log = LoggerFactory.getLogger(GitSource.class);
     public static final TransportConfigCallback EMPTY_TRANSPORT_CONFIG = transport -> {};
     protected static final SourceVersion EMPTY = new LastModified(-1L);
@@ -107,16 +104,6 @@ public class GitSource implements Source {
         } catch (Throwable t) {
             throw Exceptions.wrap(t);
         }
-    }
-
-    @Override
-    public boolean isListenable() {
-        return false;
-    }
-
-    @Override
-    public Subscription subscribe(Runnable listener) {
-        return null;
     }
 
     @Override
