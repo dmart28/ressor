@@ -5,7 +5,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 public class S3 {
 
-    public static S3SourceBuilder builder(String bucket, String key) {
+    public static S3SourceBuilder builder() {
         return new S3SourceBuilder();
     }
 
