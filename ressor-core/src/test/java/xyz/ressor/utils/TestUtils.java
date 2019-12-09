@@ -8,6 +8,7 @@ import xyz.ressor.commons.utils.Exceptions;
 import xyz.ressor.service.error.ErrorHandler;
 import xyz.ressor.source.LoadedResource;
 import xyz.ressor.source.SourceVersion;
+import xyz.ressor.source.fs.FileSystemResourceId;
 import xyz.ressor.source.fs.FileSystemSource;
 
 import java.io.IOException;
@@ -24,7 +25,7 @@ public class TestUtils {
 
     public static LoadedResource load(String path, boolean force) {
         try {
-            return new FileSystemSource(path).load();
+            return new FileSystemSource().load(new FileSystemResourceId(path));
         } catch (Throwable t) {
             if (force) {
                 throw t;
@@ -35,7 +36,7 @@ public class TestUtils {
     }
 
     public static LoadedResource throwingResource() {
-        return new LoadedResource(new ThrowingInputStream(), SourceVersion.EMPTY, "");
+        return new LoadedResource(new ThrowingInputStream(), SourceVersion.EMPTY, null);
     }
 
     public static JsonNode json(String jsonValue) {

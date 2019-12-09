@@ -1,11 +1,13 @@
 package xyz.ressor.source;
 
-public interface NonListenableSource extends Source {
+public interface NonListenableSource<R extends ResourceId> extends Source<R> {
 
-    default Subscription subscribe(Runnable listener) {
+    @Override
+    default Subscription subscribe(R resourceId, Runnable listener) {
         return null;
     }
 
+    @Override
     default boolean isListenable() {
         return false;
     }

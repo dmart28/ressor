@@ -7,6 +7,7 @@ import org.springframework.beans.factory.FactoryBean;
 import xyz.ressor.service.RessorService;
 import xyz.ressor.service.error.ErrorHandler;
 import xyz.ressor.source.LoadedResource;
+import xyz.ressor.source.ResourceId;
 import xyz.ressor.source.SourceVersion;
 
 import static net.bytebuddy.dynamic.loading.ClassLoadingStrategy.Default.INJECTION;
@@ -48,6 +49,11 @@ public class FactoryBeanExtensionTest {
         @Override
         public Object instance() {
             return INSTANCE;
+        }
+
+        @Override
+        public ResourceId getResourceId() {
+            return null;
         }
 
         @Override

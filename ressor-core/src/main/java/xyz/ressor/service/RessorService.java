@@ -3,6 +3,7 @@ package xyz.ressor.service;
 import org.jetbrains.annotations.Nullable;
 import xyz.ressor.service.error.ErrorHandler;
 import xyz.ressor.source.LoadedResource;
+import xyz.ressor.source.ResourceId;
 import xyz.ressor.source.SourceVersion;
 
 public interface RessorService<T> {
@@ -25,6 +26,12 @@ public interface RessorService<T> {
      * service proxy instance.
      */
     T instance();
+
+    /**
+     *
+     * @return
+     */
+    ResourceId getResourceId();
 
     /**
      * Returns the latest resource version which this service is aware of and is switching to.

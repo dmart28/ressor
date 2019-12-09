@@ -7,6 +7,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import xyz.ressor.commons.watch.fs.FileSystemWatchService;
+import xyz.ressor.source.fs.FileSystemResourceId;
 import xyz.ressor.source.fs.FileSystemSource;
 
 import java.io.InputStream;
@@ -24,29 +25,42 @@ import static org.mockito.Mockito.verify;
 public class FileSystemSourceTest {
 
     @Test
+    public void testResourceId() {
+        var id = new FileSystemResourceId("classpath:fs/user_data.json");
+        assertThat(id.isClasspath()).isTrue();
+        assertThat(id.getResourcePath()).isNull();
+        assertThat(id.getRawResourcePath()).isEqualTo("fs/user_data.json");
+
+        id = new FileSystemResourceId("/tmp/data.txt");
+        assertThat(id.isClasspath()).isFalse();
+        assertThat(id.getResourcePath()).isEqualTo(Path.of("/tmp/data.txt"));
+        assertThat(id.getRawResourcePath()).isEqualTo("/tmp/data.txt");
+    }
+
+    @Test
     public void testClasspathSourceUsage() throws Exception {
-        var source = new FileSystemSource("classpath:fs/user_data.json");
-        assertThat(source.isClasspath()).isEqualTo(true);
+        final var source = new FileSystemSource();
         assertThat(source.isListenable()).isEqualTo(false);
 
-        var resource = source.load();
+        var id = new FileSystemResourceId("classpath:fs/user_data.json");
+        var resource = source.load(id);
 
         assertThat(resource).isNotNull();
         assertThat((long) resource.getVersion().val()).isGreaterThan(0);
         assertThat(resource.getInputStream()).isNotNull();
-        assertThat(resource.getResourceId()).isEqualTo("classpath:fs/user_data.json");
+        assertThat(resource.getResourceId()).isEqualTo(id);
 
         var originalURI = getClass().getClassLoader().getResource("fs/user_data.json");
         assertThat(originalURI).isNotNull();
         assertThat(IOUtils.toString(resource.getInputStream(), UTF_8))
                 .isEqualTo(IOUtils.toString(originalURI, UTF_8));
 
-        var conditionalResource = source.loadIfModified(resource.getVersion());
+        var conditionalResource = source.loadIfModified(id, resource.getVersion());
 
         assertThat(conditionalResource).isNull();
 
-        assertThat(source.load()).isNotNull();
-        assertThat(source.load()).isEqualTo(resource);
+        assertThat(source.load(id)).isNotNull();
+        assertThat(source.load(id)).isEqualTo(resource);
     }
 
     @Test
@@ -54,39 +68,39 @@ public class FileSystemSourceTest {
         var filePath = dir.resolve("user_data.json");
         copy(stream("fs/user_data.json"), filePath);
 
-        var source = new FileSystemSource(filePath);
-        assertThat(source.isClasspath()).isEqualTo(false);
+        final var source = new FileSystemSource();
+        var id = new FileSystemResourceId(filePath);
         assertThat(source.isListenable()).isEqualTo(false);
 
-        var resource = source.load();
+        var resource = source.load(id);
 
         assertThat(resource).isNotNull();
         assertThat((long) resource.getVersion().val()).isGreaterThan(0);
         assertThat(resource.getInputStream()).isNotNull();
-        assertThat(resource.getResourceId()).isEqualTo(filePath.toString());
+        assertThat(resource.getResourceId()).isEqualTo(id);
 
         assertThat(IOUtils.toString(resource.getInputStream(), UTF_8))
                 .isEqualTo(IOUtils.toString(stream("fs/user_data.json"), UTF_8));
 
-        assertThat(source.loadIfModified(resource.getVersion())).isNull();
+        assertThat(source.loadIfModified(id, resource.getVersion())).isNull();
 
         Thread.sleep(1000);
         copy(stream("fs/new_user_data.json"), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-        assertThat(source.loadIfModified(resource.getVersion())).isNotNull();
+        assertThat(source.loadIfModified(id, resource.getVersion())).isNotNull();
 
-        var newResource = source.load();
+        var newResource = source.load(id);
 
         assertThat(newResource).isNotNull();
         assertThat(newResource).isNotEqualTo(resource);
         assertThat((long) newResource.getVersion().val()).isGreaterThan((long) resource.getVersion().val());
         assertThat(newResource.getInputStream()).isNotNull();
-        assertThat(newResource.getResourceId()).isEqualTo(filePath.toString());
+        assertThat(newResource.getResourceId()).isEqualTo(id);
 
         assertThat(IOUtils.toString(newResource.getInputStream(), UTF_8))
                 .isEqualTo(IOUtils.toString(stream("fs/new_user_data.json"), UTF_8));
 
-        assertThat(source.loadIfModified(newResource.getVersion())).isNull();
+        assertThat(source.loadIfModified(id, newResource.getVersion())).isNull();
     }
 
     @Test
@@ -95,12 +109,12 @@ public class FileSystemSourceTest {
         var filePath = dir.resolve("user_data.json");
         copy(stream("fs/user_data.json"), filePath);
 
-        var source = new FileSystemSource(filePath, watchService);
-        assertThat(source.isClasspath()).isEqualTo(false);
+        final var source = new FileSystemSource(watchService);
+        var id = new FileSystemResourceId(filePath);
         assertThat(source.isListenable()).isEqualTo(true);
 
-        var subscription = source.subscribe(() -> {});
-        source.subscribe(() -> {});
+        var subscription = source.subscribe(id, () -> {});
+        source.subscribe(id, () -> {});
 
         verify(watchService, times(2)).registerJob(any(), any());
 

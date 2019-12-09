@@ -19,7 +19,7 @@ public class ListeningServiceLoader extends ServiceLoaderBase {
             throw new IllegalArgumentException("Service source doesn't support listening, use polling instead");
         }
         log.debug("Subscribing {} to [{}] source", service.underlyingType(), source.describe());
-        this.subscription = source.subscribe(() -> threadPool.submit(() -> {
+        this.subscription = source.subscribe(service.getResourceId(), () -> threadPool.submit(() -> {
             try {
                 long timeToWait = 1000;
                 var reloaded = false;

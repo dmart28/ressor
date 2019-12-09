@@ -11,7 +11,7 @@ public class LoaderHelper {
 
     @Nullable
     public static LoadedResource loadFromSource(RessorService service, Source source) {
-        return loadFromSource(service, source, (src, s) -> src.load());
+        return loadFromSource(service, source, (src, s) -> src.load(service.getResourceId()));
     }
 
     @Nullable

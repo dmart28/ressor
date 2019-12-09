@@ -33,7 +33,7 @@ public class QuartzLoaderJob implements Job {
                 threadPool.submit(() -> {
                     try {
                         if (!service.isReloading()) {
-                            var resource = loadFromSource(service, source, (src, svc) -> src.loadIfModified(svc.latestVersion()));
+                            var resource = loadFromSource(service, source, (src, svc) -> src.loadIfModified(svc.getResourceId(), svc.latestVersion()));
                             if (resource != null) {
                                 reload(service, resource);
                             } else {

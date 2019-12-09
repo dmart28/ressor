@@ -3,7 +3,14 @@ package xyz.ressor.source;
 /**
  * Represents the data source from which Ressor loads resources.
  */
-public interface Source {
+public interface Source<R extends ResourceId> {
+
+    /**
+     * The unique identifier of the given source in the given Ressor context.
+     *
+     * @return the source ID
+     */
+    String id();
 
     /**
      * Loads the contents of the resource if it was modified since the provided version.
@@ -12,12 +19,12 @@ public interface Source {
      * @throws RuntimeException or its subclass in case of any error
      * @return the loaded resource or null
      */
-    LoadedResource loadIfModified(SourceVersion version);
+    LoadedResource loadIfModified(R resourceId, SourceVersion version);
 
     /**
      * Describes whether you can subscribe for the changes on this resource.
      *
-     * @return <b>true</b> if {@link Source#subscribe(Runnable)} call is supported, otherwise <b>false</b>
+     * @return <b>true</b> if {@link Source#subscribe(ResourceId, Runnable)} call is supported, otherwise <b>false</b>
      */
     boolean isListenable();
 
@@ -26,7 +33,7 @@ public interface Source {
      *
      * @return subscription handle if {@link #isListenable()} <b>true</b>, otherwise <b>null</b>
      */
-    Subscription subscribe(Runnable listener);
+    Subscription subscribe(R resourceId, Runnable listener);
 
     /**
      * Returns description of the service in any format.
@@ -42,8 +49,8 @@ public interface Source {
      *
      * @return the loaded resource or null
      */
-    default LoadedResource load() {
-        return loadIfModified(emptyVersion());
+    default LoadedResource load(R resourceId) {
+        return loadIfModified(resourceId, emptyVersion());
     }
 
 }
