@@ -373,7 +373,9 @@ public class RessorBuilder<T> {
 
     private void reload(RessorService<T> proxy) {
         try {
-            log.debug("Loading {} with initial instance from source [{}]", type, source.describe());
+            if (log.isDebugEnabled()) {
+                log.debug("Loading {} with initial instance from source [{}]", type, source.describe());
+            }
             LoaderHelper.reload(proxy, source);
         } catch (Throwable t) {
             if (isAsync) {

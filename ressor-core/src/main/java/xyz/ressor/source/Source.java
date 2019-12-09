@@ -23,6 +23,8 @@ public interface Source {
 
     /**
      * Subscribe for the change events from the Source.
+     *
+     * @return subscription handle if {@link #isListenable()} <b>true</b>, otherwise <b>null</b>
      */
     Subscription subscribe(Runnable listener);
 

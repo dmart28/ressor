@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.function.Function;
 
 public class ProxyContext<T> {
-    private final Class<? extends T> type;
+    private final Class<T> type;
     private final Source source;
     private final Translator<InputStream, ?> translator;
     private final Function<Object, ? extends T> factory;
@@ -21,15 +21,16 @@ public class ProxyContext<T> {
     private final T initialInstance;
     private final Object[] proxyDefaultArguments;
     private final ErrorHandler errorHandler;
+    private final boolean proxyObjectClassMethods;
 
-    public static <T> ProxyContextBuilder<T> builder(Class<? extends T> type) {
+    public static <T> ProxyContextBuilder<T> builder(Class<T> type) {
         return new ProxyContextBuilder<>(type);
     }
 
-    private ProxyContext(Class<? extends T> type, Source source, Translator<InputStream, ?> translator,
+    private ProxyContext(Class<T> type, Source source, Translator<InputStream, ?> translator,
                          Function<Object, ? extends T> factory, List<ServiceExtension> extensions,
                          ClassLoader classLoader, T initialInstance, Object[] proxyDefaultArguments,
-                         ErrorHandler errorHandler) {
+                         ErrorHandler errorHandler, boolean proxyObjectClassMethods) {
         this.type = type;
         this.source = source;
         this.translator = translator;
@@ -39,9 +40,10 @@ public class ProxyContext<T> {
         this.initialInstance = initialInstance;
         this.proxyDefaultArguments = proxyDefaultArguments;
         this.errorHandler = errorHandler;
+        this.proxyObjectClassMethods = proxyObjectClassMethods;
     }
 
-    public Class<? extends T> getType() {
+    public Class<T> getType() {
         return type;
     }
 
@@ -77,8 +79,12 @@ public class ProxyContext<T> {
         return errorHandler;
     }
 
+    public boolean isProxyObjectClassMethods() {
+        return proxyObjectClassMethods;
+    }
+
     public static class ProxyContextBuilder<T> {
-        private final Class<? extends T> type;
+        private final Class<T> type;
         private Source source;
         private Translator<InputStream, ?> translator;
         private Function<Object, ? extends T> factory;
@@ -87,8 +93,9 @@ public class ProxyContext<T> {
         private T initialInstance;
         private Object[] proxyDefaultArguments;
         private ErrorHandler errorHandler;
+        private boolean proxyObjectClassMethods = true;
 
-        private ProxyContextBuilder(Class<? extends T> type) {
+        private ProxyContextBuilder(Class<T> type) {
             this.type = type;
         }
 
@@ -135,9 +142,14 @@ public class ProxyContext<T> {
             return this;
         }
 
+        public ProxyContextBuilder<T> proxyObjectClassMethods(boolean value) {
+            this.proxyObjectClassMethods = value;
+            return this;
+        }
+
         public ProxyContext<T> build() {
             return new ProxyContext<>(type, source, translator, factory, extensions, classLoader,
-                    initialInstance, proxyDefaultArguments, errorHandler);
+                    initialInstance, proxyDefaultArguments, errorHandler, proxyObjectClassMethods);
         }
     }
 }

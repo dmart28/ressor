@@ -6,8 +6,11 @@ import org.junit.jupiter.api.Test;
 import xyz.ressor.commons.exceptions.TypeDefinitionException;
 import xyz.ressor.service.RessorService;
 import xyz.ressor.service.proxy.model.*;
+import xyz.ressor.source.LoadedResource;
+import xyz.ressor.source.SourceVersion;
 import xyz.ressor.translator.Translator;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -16,6 +19,7 @@ import java.util.function.Function;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static xyz.ressor.translator.Translators.inputStream2Json;
+import static xyz.ressor.translator.Translators.inputStream2String;
 import static xyz.ressor.utils.TestUtils.*;
 
 public class ServiceProxyBuilderTest {
@@ -129,6 +133,7 @@ public class ServiceProxyBuilderTest {
     public void testProxyClassCaching() {
         Function<ServiceProxyBuilder, PersonInfo> f = pb -> pb.buildProxy(ProxyContext.builder(PersonInfo.class)
                 .translator(inputStream2Json())
+                .proxyObjectClassMethods(false)
                 .factory(n -> new PersonInfoImpl(null, null)).build());
 
         var p1 = f.apply(proxyBuilder);
@@ -151,6 +156,7 @@ public class ServiceProxyBuilderTest {
         Function<Object[], PublicClassConstructorAnnotated> f = dpa -> proxyBuilder.buildProxy(ProxyContext.builder(PublicClassConstructorAnnotated.class)
                 .translator(Translator.define(s -> 5, InputStream.class, int.class))
                 .proxyDefaultArguments(dpa)
+                .proxyObjectClassMethods(false)
                 .build());
 
         var p1 = f.apply(new Object[] { 0, 0L });
@@ -176,6 +182,21 @@ public class ServiceProxyBuilderTest {
         assertThrows(IOException.class, () -> ressorService(carRepository).reload(throwingResource()));
         assertThrows(JsonParseException.class, () ->
                 ressorService(carRepository).reload(load("classpath:proxy/car_repository_broken.json")));
+    }
+
+    @Test
+    public void testObjectMethods() {
+        var string = proxyBuilder.buildProxy(ProxyContext
+                .builder(CharSequence.class)
+                .translator(inputStream2String())
+                .factory((String s) -> s)
+                .build());
+
+        ressorService(string).reload(new LoadedResource(new ByteArrayInputStream("123".getBytes()), SourceVersion.EMPTY, null));
+
+        assertThat(string).isEqualTo("123");
+        assertThat(string.hashCode()).isEqualTo("123".hashCode());
+        assertThat(string.toString()).isEqualTo("123");
     }
 
     private <T> RessorService<T> ressorService(Object service) {

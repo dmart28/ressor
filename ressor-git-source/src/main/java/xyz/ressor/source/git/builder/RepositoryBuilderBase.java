@@ -23,38 +23,38 @@ public abstract class RepositoryBuilderBase<T extends RepositoryBuilderBase> {
 
     public T refValue(String ref) {
         this.ref = ref;
-        return (T) this;
+        return getThis();
     }
 
     public T refValue(String ref, RefType refType) {
         this.ref = ref;
         this.refType = refType;
-        return (T) this;
+        return getThis();
     }
 
     public T repositoryDirectory(String repositoryDirectory) {
         this.repositoryDirectory = repositoryDirectory;
-        return (T) this;
+        return getThis();
     }
 
     public T privateKeyPath(String privateKeyPath) {
         this.privateKeyPath = privateKeyPath;
-        return (T) this;
+        return getThis();
     }
 
     public T privateKeyPassphrase(String privateKeyPassphrase) {
         this.privateKeyPassphrase = privateKeyPassphrase;
-        return (T) this;
+        return getThis();
     }
 
     public T filePath(String filePath) {
         this.filePath = filePath;
-        return (T) this;
+        return getThis();
     }
 
     public T asyncPull(boolean asyncPull) {
         this.asyncPull = asyncPull;
-        return (T) this;
+        return getThis();
     }
 
     protected GitRef ref() {
@@ -78,6 +78,10 @@ public abstract class RepositoryBuilderBase<T extends RepositoryBuilderBase> {
                 }
             });
         };
+    }
+
+    private T getThis() {
+        return (T) this;
     }
 
 }

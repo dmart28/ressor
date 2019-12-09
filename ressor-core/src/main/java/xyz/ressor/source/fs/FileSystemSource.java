@@ -18,9 +18,6 @@ import static java.lang.String.format;
 import static java.nio.file.Files.newInputStream;
 import static xyz.ressor.commons.utils.Exceptions.wrap;
 
-/**
- *
- */
 public class FileSystemSource implements Source {
     private static final SourceVersion EMPTY = new LastModified(-1L);
     private static final String CLASSPATH_PREFIX = "classpath:";
