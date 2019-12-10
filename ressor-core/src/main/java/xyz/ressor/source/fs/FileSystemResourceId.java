@@ -2,6 +2,7 @@ package xyz.ressor.source.fs;
 
 import xyz.ressor.source.ResourceId;
 
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
 public class FileSystemResourceId implements ResourceId {
@@ -16,7 +17,7 @@ public class FileSystemResourceId implements ResourceId {
 
     public FileSystemResourceId(String resourcePath) {
         this.isClasspath = isClasspath(resourcePath);
-        this.resourcePath = isClasspath ? null : Path.of(resourcePath);
+        this.resourcePath = isClasspath ? null : FileSystems.getDefault().getPath(resourcePath);
         this.rawResourcePath = resourcePath.replaceFirst(CLASSPATH_PREFIX, "");
     }
 
