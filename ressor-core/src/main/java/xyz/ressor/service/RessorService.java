@@ -20,7 +20,7 @@ public interface RessorService<T> {
     Class<? extends T> underlyingType();
 
     /**
-     * Latest non-proxied instance of the user service.
+     * Latest non-proxied instance of the user service. Throws {@link IllegalStateException} if there is no underlying instance.
      *
      * Important! This method is used implicitly by {@link xyz.ressor.service.proxy.ServiceProxyBuilder} while building
      * service proxy instance.
@@ -59,5 +59,16 @@ public interface RessorService<T> {
      * Is this service currently reloading.
      */
     boolean isReloading();
+
+    /**
+     * Same as {@link #instance()} but returning <b>null</b> instead of throwing an exception.
+     */
+    default T safeInstance() {
+        try {
+            return instance();
+        } catch (IllegalStateException e) {
+            return null;
+        }
+    }
 
 }

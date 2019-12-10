@@ -32,6 +32,7 @@ public class Ressor {
     private final FileSystemSource fileSystemSource;
     private final FileSystemWatchService fsWatchService;
     private final RessorConfig config;
+    private final ActionsManager actionsManager;
 
     public static Ressor create() {
         return create(new RessorConfig());
@@ -49,6 +50,7 @@ public class Ressor {
         this.quartzManager = new QuartzManager(config.pollingThreads());
         this.fsWatchService = new FileSystemWatchService().init();
         this.fileSystemSource = new FileSystemSource(fsWatchService);
+        this.actionsManager = new ActionsManager(config);
     }
 
     /**
@@ -99,6 +101,10 @@ public class Ressor {
         });
     }
 
+    public ActionsManager actions() {
+        return actionsManager;
+    }
+
     /**
      * Stops any periodic activity on the service (polling or listening).
      *
@@ -134,7 +140,7 @@ public class Ressor {
         }
     }
 
-    private static <T, R> R checkRessorService(T service, Function<RessorServiceImpl, R> action) {
+    static <T, R> R checkRessorService(T service, Function<RessorServiceImpl, R> action) {
         if (service instanceof RessorService) {
             return action.apply((RessorServiceImpl) ((RessorService) service).unwrap());
         } else {
