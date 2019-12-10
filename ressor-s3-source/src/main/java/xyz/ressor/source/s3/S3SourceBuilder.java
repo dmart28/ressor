@@ -10,17 +10,10 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.S3ObjectId;
 
 public class S3SourceBuilder {
-    private final String bucket;
-    private final String key;
     private AWSCredentialsProvider credentialsProvider;
     private ClientConfiguration clientConfiguration;
     private Regions region;
     private String versionId;
-
-    public S3SourceBuilder(String bucket, String key) {
-        this.bucket = bucket;
-        this.key = key;
-    }
 
     public S3SourceBuilder credentialsProvider(AWSCredentialsProvider credentialsProvider) {
         this.credentialsProvider = credentialsProvider;
@@ -59,7 +52,6 @@ public class S3SourceBuilder {
 
     public S3Source build() {
         var builder = AmazonS3ClientBuilder.standard();
-        var objectId = new S3ObjectId(bucket, key, versionId);
         if (credentialsProvider != null) {
             builder.withCredentials(credentialsProvider);
         }
@@ -69,7 +61,7 @@ public class S3SourceBuilder {
         if (region != null) {
             builder.withRegion(region);
         }
-        return new S3Source(builder.build(), objectId);
+        return new S3Source(builder.build());
     }
 
 }

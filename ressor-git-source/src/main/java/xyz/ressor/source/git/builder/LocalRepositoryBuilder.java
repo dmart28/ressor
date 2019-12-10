@@ -2,7 +2,9 @@ package xyz.ressor.source.git.builder;
 
 import org.eclipse.jgit.api.Git;
 import xyz.ressor.commons.utils.Exceptions;
+import xyz.ressor.source.git.GitRef;
 import xyz.ressor.source.git.GitSource;
+import xyz.ressor.source.git.RefType;
 
 import java.io.File;
 
@@ -12,12 +14,8 @@ public class LocalRepositoryBuilder extends RepositoryBuilderBase<LocalRepositor
         if (repositoryDirectory == null) {
             throw new IllegalArgumentException("Git repository directory can't be empty");
         }
-        if (filePath == null) {
-            throw new IllegalArgumentException("No target file path is provided for this repository");
-        }
         try {
-            return new GitSource(Git.open(new File(repositoryDirectory)), createTransportConfig(),
-                    filePath, ref(), asyncPull);
+            return new GitSource(Git.open(new File(repositoryDirectory)), createTransportConfig(), asyncPull);
         } catch (Throwable t) {
             throw Exceptions.wrap(t);
         }

@@ -4,18 +4,34 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.Nullable;
+import xyz.ressor.RessorBuilder;
 import xyz.ressor.commons.utils.Exceptions;
+import xyz.ressor.service.RessorService;
 import xyz.ressor.service.error.ErrorHandler;
-import xyz.ressor.source.LoadedResource;
-import xyz.ressor.source.SourceVersion;
+import xyz.ressor.source.*;
+import xyz.ressor.source.fs.FileSystemResourceId;
 import xyz.ressor.source.fs.FileSystemSource;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 public class TestUtils {
 
-    public static RuntimeException illegalConstructor() {
-        throw new RuntimeException("Illegal constructor");
+    public static <T> RessorService<T> ressorService(Object service) {
+        return (RessorService<T>) service;
+    }
+
+    public static LoadedResource string(String value) {
+        return new LoadedResource(new ByteArrayInputStream(value.getBytes()), SourceVersion.EMPTY, null);
+    }
+
+    public static LoadedResource stringVersioned(String value) {
+        return new LoadedResource(new ByteArrayInputStream(value.getBytes()), new SourceVersion() {
+            @Override
+            public <V> V val() {
+                return (V) value;
+            }
+        }, null);
     }
 
     public static LoadedResource load(String path) {
@@ -24,7 +40,7 @@ public class TestUtils {
 
     public static LoadedResource load(String path, boolean force) {
         try {
-            return new FileSystemSource(path).load();
+            return new FileSystemSource().load(new FileSystemResourceId(path));
         } catch (Throwable t) {
             if (force) {
                 throw t;
@@ -35,7 +51,7 @@ public class TestUtils {
     }
 
     public static LoadedResource throwingResource() {
-        return new LoadedResource(new ThrowingInputStream(), SourceVersion.EMPTY, "");
+        return new LoadedResource(new ThrowingInputStream(), SourceVersion.EMPTY, null);
     }
 
     public static JsonNode json(String jsonValue) {
@@ -58,6 +74,66 @@ public class TestUtils {
                 translateFailed.run();
             }
         };
+    }
+
+    public static <T> RessorBuilder<T> stringBuilderSource(StringBuilder sb, RessorBuilder<T> builder) {
+        var source = stringBuilderSource(sb);
+        var resource = matching(source);
+
+        return builder.source(source).resource(resource);
+    }
+
+    public static Source stringBuilderSource(StringBuilder sb) {
+        return new NonListenableSource() {
+            @Override
+            public String id() {
+                return null;
+            }
+
+            @Override
+            public LoadedResource loadIfModified(ResourceId resourceId, SourceVersion version) {
+                return stringVersioned(sb.toString());
+            }
+
+            @Override
+            public String describe() {
+                return "";
+            }
+        };
+    }
+
+    public static <T> RessorBuilder<T> stubSource(RessorBuilder<T> builder) {
+        var source = stubSource();
+        var resource = matching(source);
+
+        return builder.source(source).resource(resource);
+    }
+
+    public static Source stubSource() {
+        return new NonListenableSource() {
+            @Override
+            public String id() {
+                return null;
+            }
+
+            @Override
+            public LoadedResource loadIfModified(ResourceId resourceId, SourceVersion version) {
+                return any();
+            }
+
+            @Override
+            public String describe() {
+                return "";
+            }
+        };
+    }
+
+    public static ResourceId matching(Source source) {
+        return source::getClass;
+    }
+
+    public static LoadedResource any() {
+        return stringVersioned("");
     }
 
 }

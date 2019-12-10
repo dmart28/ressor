@@ -3,12 +3,15 @@ package xyz.ressor.service.proxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xyz.ressor.service.RessorService;
+import xyz.ressor.service.action.InternalReloadAction;
 import xyz.ressor.service.error.ErrorHandler;
 import xyz.ressor.source.LoadedResource;
+import xyz.ressor.source.ResourceId;
 import xyz.ressor.source.SourceVersion;
 import xyz.ressor.translator.Translator;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -16,6 +19,7 @@ import java.util.function.Function;
 
 import static xyz.ressor.commons.utils.RessorUtils.firstNonNull;
 import static xyz.ressor.commons.utils.RessorUtils.silentlyClose;
+import static xyz.ressor.service.proxy.StateVariables.ACTIONS;
 
 public class RessorServiceImpl<T> implements RessorService<T> {
     private static final Logger log = LoggerFactory.getLogger(RessorServiceImpl.class);
@@ -25,17 +29,20 @@ public class RessorServiceImpl<T> implements RessorService<T> {
     private final Class<? extends T> type;
     private final Map<Object, Object> state = new ConcurrentHashMap<>();
     private final T initialInstance;
+    private final ResourceId resourceId;
     private volatile T underlyingInstance;
     private volatile SourceVersion latestVersion;
     private volatile AtomicBoolean isReloading = new AtomicBoolean(false);
 
     public RessorServiceImpl(Class<? extends T> type, Function<Object, ? extends T> factory,
-                             Translator<InputStream, ?> translator, ErrorHandler errorHandler, T initialInstance) {
+                             Translator<InputStream, ?> translator, ErrorHandler errorHandler,
+                             T initialInstance, ResourceId resourceId) {
         this.type = type;
         this.factory = factory;
         this.translator = translator;
         this.errorHandler = errorHandler;
         this.initialInstance = initialInstance;
+        this.resourceId = resourceId;
     }
 
     @Override
@@ -58,6 +65,11 @@ public class RessorServiceImpl<T> implements RessorService<T> {
     }
 
     @Override
+    public ResourceId getResourceId() {
+        return resourceId;
+    }
+
+    @Override
     public SourceVersion latestVersion() {
         return latestVersion;
     }
@@ -67,11 +79,13 @@ public class RessorServiceImpl<T> implements RessorService<T> {
         if (resource != null) {
             if (!isReloading.compareAndExchange(false, true)) {
                 try {
-                    var newResource = factory.apply(translator.translate(resource.getInputStream()));
-                    this.latestVersion = resource.getVersion();
-                    this.underlyingInstance = newResource;
-                    silentlyClose(resource.getInputStream());
-                    return true;
+                    if (checkReloadActions()) {
+                        var newResource = factory.apply(translator.translate(resource.getInputStream()));
+                        this.latestVersion = resource.getVersion();
+                        this.underlyingInstance = newResource;
+                        silentlyClose(resource.getInputStream());
+                        return true;
+                    }
                 } finally {
                     isReloading.set(false);
                 }
@@ -80,6 +94,18 @@ public class RessorServiceImpl<T> implements RessorService<T> {
             }
         }
         return false;
+    }
+
+    private boolean checkReloadActions() {
+        var actions = (List<InternalReloadAction>) state(ACTIONS);
+        if (actions != null && actions.size() > 0) {
+            for (var action : actions) {
+                if (!action.perform(this)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     @Override

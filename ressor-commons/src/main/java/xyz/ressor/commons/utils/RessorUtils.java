@@ -3,6 +3,7 @@ package xyz.ressor.commons.utils;
 import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.util.*;
+import java.util.concurrent.Callable;
 
 /**
  * Utility methods here can be found in most popular libraries, but we duplicate them here in order to
@@ -62,6 +63,14 @@ public class RessorUtils {
         try {
             stream.close();
         } catch (Throwable ignored) { }
+    }
+
+    public static <T> Callable<T> safe(Callable<T> action, T defaultValue) {
+        return () -> {
+            try {
+                return action.call();
+            } catch (Throwable ignored) { return defaultValue; }
+         };
     }
 
 }

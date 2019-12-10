@@ -10,6 +10,7 @@ import xyz.ressor.loader.ServiceLoaderBase;
 import xyz.ressor.service.RessorService;
 import xyz.ressor.service.proxy.RessorServiceImpl;
 import xyz.ressor.source.Source;
+import xyz.ressor.source.fs.FileSystemSource;
 
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -28,8 +29,10 @@ import static xyz.ressor.service.proxy.StateVariables.SOURCE;
 public class Ressor {
     private static final Logger log = LoggerFactory.getLogger(Ressor.class);
     private final QuartzManager quartzManager;
+    private final FileSystemSource fileSystemSource;
     private final FileSystemWatchService fsWatchService;
     private final RessorConfig config;
+    private final ActionsManager actionsManager;
 
     public static Ressor create() {
         return create(new RessorConfig());
@@ -46,6 +49,8 @@ public class Ressor {
         }
         this.quartzManager = new QuartzManager(config.pollingThreads());
         this.fsWatchService = new FileSystemWatchService().init();
+        this.fileSystemSource = new FileSystemSource(fsWatchService);
+        this.actionsManager = new ActionsManager(config);
     }
 
     /**
@@ -56,7 +61,7 @@ public class Ressor {
      * @return service builder instance
      */
     public <T> RessorBuilder<T> service(Class<T> type) {
-        return new RessorBuilder<>(type, config, fsWatchService);
+        return new RessorBuilder<>(type, config, fileSystemSource);
     }
 
     /**
@@ -96,6 +101,10 @@ public class Ressor {
         });
     }
 
+    public ActionsManager actions() {
+        return actionsManager;
+    }
+
     /**
      * Stops any periodic activity on the service (polling or listening).
      *
@@ -131,7 +140,7 @@ public class Ressor {
         }
     }
 
-    private static <T, R> R checkRessorService(T service, Function<RessorServiceImpl, R> action) {
+    static <T, R> R checkRessorService(T service, Function<RessorServiceImpl, R> action) {
         if (service instanceof RessorService) {
             return action.apply((RessorServiceImpl) ((RessorService) service).unwrap());
         } else {
