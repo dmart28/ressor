@@ -19,7 +19,7 @@ public class S3ResourceId implements ResourceId {
     }
 
     @Override
-    public String describe() {
+    public String toString() {
         return objectId.toString();
     }
 

@@ -37,7 +37,7 @@ public class FileSystemResourceId implements ResourceId {
     }
 
     @Override
-    public String describe() {
+    public String toString() {
         return rawResourcePath;
     }
 

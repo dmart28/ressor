@@ -15,6 +15,7 @@ public interface Source<R extends ResourceId> {
     /**
      * Loads the contents of the resource if it was modified since the provided version.
      *
+     * @param resourceId the resource id which should be reloaded
      * @param version the last modified version prior which the resource shouldn't be loaded
      * @throws RuntimeException or its subclass in case of any error
      * @return the loaded resource or null
@@ -47,6 +48,7 @@ public interface Source<R extends ResourceId> {
     /**
      * Load resource forcibly from the {@link Source}.
      *
+     * @param resourceId the resource id which should be reloaded
      * @return the loaded resource or null
      */
     default LoadedResource load(R resourceId) {

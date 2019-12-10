@@ -20,7 +20,7 @@ public class HttpResourceId implements ResourceId {
     }
 
     @Override
-    public String describe() {
+    public String toString() {
         return resourceURI;
     }
 

@@ -28,8 +28,9 @@ public interface RessorService<T> {
     T instance();
 
     /**
+     * The resource identifier which this service operate.
      *
-     * @return
+     * @return the resource id
      */
     ResourceId getResourceId();
 
@@ -55,7 +56,7 @@ public interface RessorService<T> {
     boolean reload(@Nullable LoadedResource resource);
 
     /**
-     * Is service currently reloading.
+     * Is this service currently reloading.
      */
     boolean isReloading();
 

@@ -25,7 +25,7 @@ public class GitResourceId implements ResourceId {
     }
 
     @Override
-    public String describe() {
+    public String toString() {
         return refValue + " [" + filePath + "]";
     }
 

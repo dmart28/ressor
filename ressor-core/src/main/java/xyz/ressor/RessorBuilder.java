@@ -58,7 +58,7 @@ public class RessorBuilder<T> {
     private final ServiceProxyBuilder proxyBuilder;
     private final Class<T> type;
     private final RessorConfig config;
-    private final FileSystemWatchService fsWatchService;
+    private final FileSystemSource fileSystemSource;
     private Translator<InputStream, ?> translator;
     private Function<?, ? extends T> factory;
     private Source source;
@@ -71,10 +71,10 @@ public class RessorBuilder<T> {
     private Object[] proxyDefaultArguments;
     private ErrorHandler errorHandler;
 
-    public RessorBuilder(Class<T> type, RessorConfig config, FileSystemWatchService fsWatchService) {
+    public RessorBuilder(Class<T> type, RessorConfig config, FileSystemSource fileSystemSource) {
         this.type = type;
         this.config = config;
-        this.fsWatchService = fsWatchService;
+        this.fileSystemSource = fileSystemSource;
         this.proxyBuilder = new ServiceProxyBuilder(config.isCacheClasses());
     }
 
@@ -259,13 +259,16 @@ public class RessorBuilder<T> {
      * Tells Ressor to use the given file as a data {@link Source}.
      */
     public RessorBuilder<T> fileSource(String filePath) {
-        this.source = new FileSystemSource(fsWatchService);
+        this.source = fileSystemSource;
         this.resource = new FileSystemResourceId(filePath);
         return this;
     }
 
+    /**
+     * Tells Ressor to use the given file as a data {@link Source}.
+     */
     public RessorBuilder<T> fileSource(Path filePath) {
-        this.source = new FileSystemSource(fsWatchService);
+        this.source = fileSystemSource;
         this.resource = new FileSystemResourceId(filePath);
         return this;
     }
@@ -392,12 +395,12 @@ public class RessorBuilder<T> {
     private void reload(RessorService<T> proxy) {
         try {
             if (log.isDebugEnabled()) {
-                log.debug("Loading {} with initial instance from source [{}]", type, source.describe());
+                log.debug("Loading {} with initial instance from [source: {}, resource: {}]", type, source.describe(), proxy.getResourceId());
             }
             LoaderHelper.reload(proxy, source);
         } catch (Throwable t) {
             if (isAsync) {
-                log.error("Failed reloading service [{}] from the [{}] source: {}", type, source.describe(), t.getMessage(), t);
+                log.error("Failed reloading service [{}] from [source: {}, resource: {}]: {}", type, source.describe(), proxy.getResourceId(), t.getMessage(), t);
             } else {
                 throw Exceptions.wrap(t);
             }

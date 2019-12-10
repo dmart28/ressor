@@ -10,6 +10,7 @@ import xyz.ressor.loader.ServiceLoaderBase;
 import xyz.ressor.service.RessorService;
 import xyz.ressor.service.proxy.RessorServiceImpl;
 import xyz.ressor.source.Source;
+import xyz.ressor.source.fs.FileSystemSource;
 
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -28,6 +29,7 @@ import static xyz.ressor.service.proxy.StateVariables.SOURCE;
 public class Ressor {
     private static final Logger log = LoggerFactory.getLogger(Ressor.class);
     private final QuartzManager quartzManager;
+    private final FileSystemSource fileSystemSource;
     private final FileSystemWatchService fsWatchService;
     private final RessorConfig config;
 
@@ -46,6 +48,7 @@ public class Ressor {
         }
         this.quartzManager = new QuartzManager(config.pollingThreads());
         this.fsWatchService = new FileSystemWatchService().init();
+        this.fileSystemSource = new FileSystemSource(fsWatchService);
     }
 
     /**
@@ -56,7 +59,7 @@ public class Ressor {
      * @return service builder instance
      */
     public <T> RessorBuilder<T> service(Class<T> type) {
-        return new RessorBuilder<>(type, config, fsWatchService);
+        return new RessorBuilder<>(type, config, fileSystemSource);
     }
 
     /**
