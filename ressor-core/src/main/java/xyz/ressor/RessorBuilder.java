@@ -12,7 +12,9 @@ import xyz.ressor.service.RessorService;
 import xyz.ressor.service.error.ErrorHandler;
 import xyz.ressor.service.proxy.ProxyContext;
 import xyz.ressor.service.proxy.ServiceProxyBuilder;
+import xyz.ressor.source.ResourceId;
 import xyz.ressor.source.Source;
+import xyz.ressor.source.fs.FileSystemResourceId;
 import xyz.ressor.source.fs.FileSystemSource;
 import xyz.ressor.translator.Translator;
 import xyz.ressor.translator.Translators;
@@ -23,6 +25,7 @@ import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.function.Function;
 
+import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static xyz.ressor.commons.utils.RessorUtils.firstNonNull;
 import static xyz.ressor.loader.LoaderHelper.loadFromSource;
@@ -55,10 +58,11 @@ public class RessorBuilder<T> {
     private final ServiceProxyBuilder proxyBuilder;
     private final Class<T> type;
     private final RessorConfig config;
-    private final FileSystemWatchService fsWatchService;
+    private final FileSystemSource fileSystemSource;
     private Translator<InputStream, ?> translator;
     private Function<?, ? extends T> factory;
     private Source source;
+    private ResourceId resource;
     private T initialValue;
     private boolean isAsync;
     private boolean gzipped = false;
@@ -67,10 +71,10 @@ public class RessorBuilder<T> {
     private Object[] proxyDefaultArguments;
     private ErrorHandler errorHandler;
 
-    public RessorBuilder(Class<T> type, RessorConfig config, FileSystemWatchService fsWatchService) {
+    public RessorBuilder(Class<T> type, RessorConfig config, FileSystemSource fileSystemSource) {
         this.type = type;
         this.config = config;
-        this.fsWatchService = fsWatchService;
+        this.fileSystemSource = fileSystemSource;
         this.proxyBuilder = new ServiceProxyBuilder(config.isCacheClasses());
     }
 
@@ -253,20 +257,19 @@ public class RessorBuilder<T> {
 
     /**
      * Tells Ressor to use the given file as a data {@link Source}.
-     *
-     * @param resourcePath the FS path to the resource
      */
-    public RessorBuilder<T> fileSource(String resourcePath) {
-        this.source = new FileSystemSource(resourcePath, fsWatchService);
+    public RessorBuilder<T> fileSource(String filePath) {
+        this.source = fileSystemSource;
+        this.resource = new FileSystemResourceId(filePath);
         return this;
     }
 
-    public RessorBuilder<T> fileSource(Path resourcePath) {
-        return fileSource(resourcePath.toFile().getAbsolutePath());
-    }
-
-    public RessorBuilder<T> fileSource(FileSystemSource fileSource) {
-        this.source = fileSource;
+    /**
+     * Tells Ressor to use the given file as a data {@link Source}.
+     */
+    public RessorBuilder<T> fileSource(Path filePath) {
+        this.source = fileSystemSource;
+        this.resource = new FileSystemResourceId(filePath);
         return this;
     }
 
@@ -275,6 +278,16 @@ public class RessorBuilder<T> {
      */
     public RessorBuilder<T> source(Source source) {
         this.source = source;
+        return this;
+    }
+
+    /**
+     *
+     * @param resource
+     * @return
+     */
+    public RessorBuilder<T> resource(ResourceId resource) {
+        this.resource = resource;
         return this;
     }
 
@@ -288,7 +301,7 @@ public class RessorBuilder<T> {
 
     /**
      * The initial default instance of your service. It will be used by Ressor before the first
-     * {@link Source#load()} is happened.
+     * {@link Source#load(ResourceId)} )} is happened.
      *
      * Make sense only if {@link #asyncInitialReload()} is used.
      */
@@ -339,7 +352,7 @@ public class RessorBuilder<T> {
 
     /**
      * Builds the Ressor service proxy instance. Along with building, it will also conduct the
-     * initial data load using {@link Source#load()}, either sync or async.
+     * initial data load using {@link Source#load(ResourceId)} )}, either sync or async.
      */
     public T build() {
         if (source == null) {
@@ -348,11 +361,19 @@ public class RessorBuilder<T> {
         if (translator == null) {
             throw new RessorBuilderException("The data format of the source is unknown, please provide a translator");
         }
+        if (resource == null) {
+            throw new RessorBuilderException("No Resource ID provided for the given source");
+        }
+        if (!resource.sourceType().equals(source.getClass())) {
+            throw new RessorBuilderException(format("Resource ID (%s) and Source types are incompatible (%s != %s)",
+                    resource.getClass().getName(), resource.sourceType().getName(), source.getClass().getName()));
+        }
         if (gzipped) {
             translator = Translators.gzipped(translator);
         }
         var ctx = ProxyContext.builder(type)
                 .source(source)
+                .resource(resource)
                 .classLoader(classLoader)
                 .factory(factory)
                 .proxyDefaultArguments(proxyDefaultArguments)
@@ -374,12 +395,12 @@ public class RessorBuilder<T> {
     private void reload(RessorService<T> proxy) {
         try {
             if (log.isDebugEnabled()) {
-                log.debug("Loading {} with initial instance from source [{}]", type, source.describe());
+                log.debug("Loading {} with initial instance from [source: {}, resource: {}]", type, source.describe(), proxy.getResourceId());
             }
             LoaderHelper.reload(proxy, source);
         } catch (Throwable t) {
             if (isAsync) {
-                log.error("Failed reloading service [{}] from the [{}] source: {}", type, source.describe(), t.getMessage(), t);
+                log.error("Failed reloading service [{}] from [source: {}, resource: {}]: {}", type, source.describe(), proxy.getResourceId(), t.getMessage(), t);
             } else {
                 throw Exceptions.wrap(t);
             }

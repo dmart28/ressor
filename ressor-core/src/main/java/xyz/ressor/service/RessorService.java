@@ -3,6 +3,7 @@ package xyz.ressor.service;
 import org.jetbrains.annotations.Nullable;
 import xyz.ressor.service.error.ErrorHandler;
 import xyz.ressor.source.LoadedResource;
+import xyz.ressor.source.ResourceId;
 import xyz.ressor.source.SourceVersion;
 
 public interface RessorService<T> {
@@ -27,6 +28,13 @@ public interface RessorService<T> {
     T instance();
 
     /**
+     * The resource identifier which this service operate.
+     *
+     * @return the resource id
+     */
+    ResourceId getResourceId();
+
+    /**
      * Returns the latest resource version which this service is aware of and is switching to.
      *
      * It's guaranteed that instance() and latestVersion() will be *eventually in sync* with each other at some
@@ -48,7 +56,7 @@ public interface RessorService<T> {
     boolean reload(@Nullable LoadedResource resource);
 
     /**
-     * Is service currently reloading.
+     * Is this service currently reloading.
      */
     boolean isReloading();
 

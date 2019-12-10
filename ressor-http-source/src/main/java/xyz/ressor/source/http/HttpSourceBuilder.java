@@ -10,7 +10,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class HttpSourceBuilder {
-    private final String resourceURI;
     private CloseableHttpClient client;
     private Integer socketTimeoutMs;
     private Integer connectTimeoutMs;
@@ -21,11 +20,6 @@ public class HttpSourceBuilder {
     private boolean keepAlive = true;
     private boolean contentCompression = false;
     private Consumer<HttpRequestBase> requestInterceptor = r -> {};
-    private CacheControlStrategy cacheControlStrategy = CacheControlStrategy.ETAG;
-
-    public HttpSourceBuilder(String resourceURI) {
-        this.resourceURI = resourceURI;
-    }
 
     public HttpSourceBuilder httpClient(CloseableHttpClient client) {
         this.client = client;
@@ -73,11 +67,6 @@ public class HttpSourceBuilder {
         return this;
     }
 
-    public HttpSourceBuilder cacheControlStrategy(CacheControlStrategy cacheControlStrategy) {
-        this.cacheControlStrategy = cacheControlStrategy;
-        return this;
-    }
-
     public HttpSource build() {
         if (client == null) {
             var client = HttpClients.custom();
@@ -114,7 +103,7 @@ public class HttpSourceBuilder {
             }
             this.client = client.build();
         }
-        return new HttpSource(client, resourceURI, cacheControlStrategy, requestInterceptor, keepAlive);
+        return new HttpSource(client, requestInterceptor, keepAlive);
     }
 
 }

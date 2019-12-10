@@ -25,9 +25,6 @@ public class RemoteRepositoryBuilder extends RepositoryBuilderBase<RemoteReposit
         if (repositoryURI == null) {
             throw new IllegalArgumentException("Repository URI can't be empty");
         }
-        if (filePath == null) {
-            throw new IllegalArgumentException("No target file path is provided for this repository");
-        }
         try {
             if (repositoryDirectory == null) {
                 repositoryDirectory = Files.createTempDirectory("git_source").toFile().getAbsolutePath();
@@ -35,10 +32,9 @@ public class RemoteRepositoryBuilder extends RepositoryBuilderBase<RemoteReposit
             var transportConfig = createTransportConfig();
             return new GitSource(Git.cloneRepository()
                     .setURI(repositoryURI)
-                    .setBranch(ref)
                     .setBare(bare)
                     .setDirectory(new File(repositoryDirectory))
-                    .setTransportConfigCallback(transportConfig).call(), transportConfig, filePath, ref(), asyncPull);
+                    .setTransportConfigCallback(transportConfig).call(), transportConfig, asyncPull);
         } catch (Throwable t) {
             throw Exceptions.wrap(t);
         }

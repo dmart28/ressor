@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import xyz.ressor.service.RessorService;
 import xyz.ressor.service.error.ErrorHandler;
 import xyz.ressor.source.LoadedResource;
+import xyz.ressor.source.ResourceId;
 import xyz.ressor.source.SourceVersion;
 import xyz.ressor.translator.Translator;
 
@@ -25,17 +26,20 @@ public class RessorServiceImpl<T> implements RessorService<T> {
     private final Class<? extends T> type;
     private final Map<Object, Object> state = new ConcurrentHashMap<>();
     private final T initialInstance;
+    private final ResourceId resourceId;
     private volatile T underlyingInstance;
     private volatile SourceVersion latestVersion;
     private volatile AtomicBoolean isReloading = new AtomicBoolean(false);
 
     public RessorServiceImpl(Class<? extends T> type, Function<Object, ? extends T> factory,
-                             Translator<InputStream, ?> translator, ErrorHandler errorHandler, T initialInstance) {
+                             Translator<InputStream, ?> translator, ErrorHandler errorHandler,
+                             T initialInstance, ResourceId resourceId) {
         this.type = type;
         this.factory = factory;
         this.translator = translator;
         this.errorHandler = errorHandler;
         this.initialInstance = initialInstance;
+        this.resourceId = resourceId;
     }
 
     @Override
@@ -55,6 +59,11 @@ public class RessorServiceImpl<T> implements RessorService<T> {
             throw new IllegalStateException("The service wasn't loaded yet, please provide service initial instance.");
         }
         return val;
+    }
+
+    @Override
+    public ResourceId getResourceId() {
+        return resourceId;
     }
 
     @Override

@@ -40,9 +40,10 @@ public class HttpSourceTest {
                 .willReturn(aResponse()
                         .withStatus(200).withBody("one")));
 
-        var source = Http.source(defaultURL()).cacheControlStrategy(NONE).build();
-        assertThat(IOUtils.toString(source.load().getInputStream(), UTF_8)).isEqualTo("one");
-        assertThat(IOUtils.toString(source.loadIfModified(new LastModified(System.currentTimeMillis()))
+        var source = Http.source();
+        var id = Http.id(defaultURL(), NONE);
+        assertThat(IOUtils.toString(source.load(id).getInputStream(), UTF_8)).isEqualTo("one");
+        assertThat(IOUtils.toString(source.loadIfModified(id, new LastModified(System.currentTimeMillis()))
                 .getInputStream(), UTF_8)).isEqualTo("one");
     }
 
@@ -56,15 +57,16 @@ public class HttpSourceTest {
                 .willReturn(aResponse().withStatus(200).withHeader("Last-Modified", "Fri, 4 Oct 2019 18:58:32 GMT")
                         .withBody("one")));
 
-        var source = Http.source(defaultURL()).cacheControlStrategy(IF_MODIFIED_SINCE).pool(5, 10000).build();
-        var loadedResource = source.load();
+        var source = Http.builder().pool(5, 10000).build();
+        var id = Http.id(defaultURL(), IF_MODIFIED_SINCE);
+        var loadedResource = source.load(id);
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
 
-        assertThat(source.loadIfModified(loadedResource.getVersion())).isNull();
+        assertThat(source.loadIfModified(id, loadedResource.getVersion())).isNull();
         verify(exactly(1), getRequestedFor(urlPathEqualTo(PATH)).withHeader("If-Modified-Since",
                 equalTo("Fri, 4 Oct 2019 18:58:30 GMT")));
 
-        loadedResource = source.loadIfModified(new LastModified(1570215511000L));
+        loadedResource = source.loadIfModified(id, new LastModified(1570215511000L));
         assertThat(loadedResource).isNotNull();
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("one");
         assertThat((long) loadedResource.getVersion().val()).isEqualTo(1570215512000L);
@@ -77,14 +79,15 @@ public class HttpSourceTest {
         stubFor(getPath().withHeader("If-None-Match", equalTo("1ac")).willReturn(aResponse().withStatus(200)
                 .withHeader("ETag", "1ad").withBody("one")));
 
-        var source = Http.source(defaultURL()).cacheControlStrategy(ETAG).socketTimeoutMs(10000).connectTimeoutMs(10000).build();
-        var loadedResource = source.load();
+        var source = Http.builder().socketTimeoutMs(10000).connectTimeoutMs(10000).build();
+        var id = Http.id(defaultURL(), ETAG);
+        var loadedResource = source.load(id);
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
 
-        assertThat(source.loadIfModified(loadedResource.getVersion())).isNull();
+        assertThat(source.loadIfModified(id, loadedResource.getVersion())).isNull();
         verify(exactly(1), getRequestedFor(urlPathEqualTo(PATH)).withHeader("If-None-Match", equalTo("1ab")));
 
-        loadedResource = source.loadIfModified(new ETag("1ac"));
+        loadedResource = source.loadIfModified(id, new ETag("1ac"));
         assertThat(loadedResource).isNotNull();
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("one");
         assertThat(loadedResource.getVersion().val().toString()).isEqualTo("1ad");
@@ -96,13 +99,14 @@ public class HttpSourceTest {
         stubFor(headPath().willReturn(response));
         stubFor(getPath().willReturn(response.withBody("init")));
 
-        var source = new HttpSource(client(), defaultURL(), CacheControlStrategy.LAST_MODIFIED_HEAD);
-        var loadedResource = source.load();
+        var source = new HttpSource(client());
+        var id = Http.id(defaultURL(), CacheControlStrategy.LAST_MODIFIED_HEAD);
+        var loadedResource = source.load(id);
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
         verify(exactly(0), headRequestedFor(urlPathEqualTo(PATH)));
         verify(exactly(1), getRequestedFor(urlPathEqualTo(PATH)));
 
-        assertThat(source.loadIfModified(loadedResource.getVersion())).isNull();
+        assertThat(source.loadIfModified(id, loadedResource.getVersion())).isNull();
         verify(exactly(1), headRequestedFor(urlPathEqualTo(PATH)));
         verify(exactly(1), getRequestedFor(urlPathEqualTo(PATH)));
 
@@ -112,7 +116,7 @@ public class HttpSourceTest {
         stubFor(headPath().willReturn(response));
         stubFor(getPath().willReturn(response.withBody("one")));
 
-        loadedResource = source.loadIfModified(loadedResource.getVersion());
+        loadedResource = source.loadIfModified(id, loadedResource.getVersion());
         assertThat(loadedResource).isNotNull();
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("one");
     }
@@ -123,13 +127,14 @@ public class HttpSourceTest {
         stubFor(headPath().willReturn(response));
         stubFor(getPath().willReturn(response.withBody("init")));
 
-        var source = Http.source(defaultURL()).cacheControlStrategy(ETAG_HEAD).receiveBufferSize(5).build();
-        var loadedResource = source.load();
+        var source = Http.builder().receiveBufferSize(5).build();
+        var id = Http.id(defaultURL(), ETAG_HEAD);
+        var loadedResource = source.load(id);
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
         verify(exactly(0), headRequestedFor(urlPathEqualTo(PATH)));
         verify(exactly(1), getRequestedFor(urlPathEqualTo(PATH)));
 
-        assertThat(source.loadIfModified(loadedResource.getVersion())).isNull();
+        assertThat(source.loadIfModified(id, loadedResource.getVersion())).isNull();
         verify(exactly(1), headRequestedFor(urlPathEqualTo(PATH)));
         verify(exactly(1), getRequestedFor(urlPathEqualTo(PATH)));
 
@@ -139,7 +144,7 @@ public class HttpSourceTest {
         stubFor(headPath().withHeader("If-None-Match", equalTo("1ab")).willReturn(response));
         stubFor(getPath().willReturn(response.withBody("one")));
 
-        loadedResource = source.loadIfModified(loadedResource.getVersion());
+        loadedResource = source.loadIfModified(id, loadedResource.getVersion());
         assertThat(loadedResource).isNotNull();
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("one");
     }
@@ -149,12 +154,13 @@ public class HttpSourceTest {
         stubFor(getPath().willReturn(aResponse().withStatus(200).withBody("init")
                 .withHeader("Last-Modified", "Fri, 4 Oct 2019 18:58:30 GMT")));
 
-        var source = new HttpSource(client(), defaultURL(), CacheControlStrategy.ETAG);
-        var loadedResource = source.load();
+        var source = new HttpSource(client());
+        var id = Http.id(defaultURL(), CacheControlStrategy.ETAG);
+        var loadedResource = source.load(id);
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
         assertThat(loadedResource.getVersion()).isSameAs(SourceVersion.EMPTY);
 
-        assertThat(source.loadIfModified(loadedResource.getVersion())).isNotNull();
+        assertThat(source.loadIfModified(id, loadedResource.getVersion())).isNotNull();
     }
 
     private String defaultURL() {

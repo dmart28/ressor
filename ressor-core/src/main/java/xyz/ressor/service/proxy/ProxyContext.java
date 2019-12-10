@@ -2,6 +2,7 @@ package xyz.ressor.service.proxy;
 
 import xyz.ressor.ext.ServiceExtension;
 import xyz.ressor.service.error.ErrorHandler;
+import xyz.ressor.source.ResourceId;
 import xyz.ressor.source.Source;
 import xyz.ressor.translator.Translator;
 
@@ -14,6 +15,7 @@ import java.util.function.Function;
 public class ProxyContext<T> {
     private final Class<T> type;
     private final Source source;
+    private final ResourceId resource;
     private final Translator<InputStream, ?> translator;
     private final Function<Object, ? extends T> factory;
     private final List<ServiceExtension> extensions;
@@ -27,12 +29,13 @@ public class ProxyContext<T> {
         return new ProxyContextBuilder<>(type);
     }
 
-    private ProxyContext(Class<T> type, Source source, Translator<InputStream, ?> translator,
+    private ProxyContext(Class<T> type, Source source, ResourceId resource, Translator<InputStream, ?> translator,
                          Function<Object, ? extends T> factory, List<ServiceExtension> extensions,
                          ClassLoader classLoader, T initialInstance, Object[] proxyDefaultArguments,
                          ErrorHandler errorHandler, boolean proxyObjectClassMethods) {
         this.type = type;
         this.source = source;
+        this.resource = resource;
         this.translator = translator;
         this.factory = factory;
         this.extensions = extensions == null ? Collections.emptyList() : Collections.unmodifiableList(extensions);
@@ -49,6 +52,10 @@ public class ProxyContext<T> {
 
     public Source getSource() {
         return source;
+    }
+
+    public ResourceId getResource() {
+        return resource;
     }
 
     public Translator<InputStream, ?> getTranslator() {
@@ -87,6 +94,7 @@ public class ProxyContext<T> {
         private final Class<T> type;
         private Source source;
         private Translator<InputStream, ?> translator;
+        private ResourceId resource;
         private Function<Object, ? extends T> factory;
         private List<ServiceExtension> extensions;
         private ClassLoader classLoader;
@@ -101,6 +109,11 @@ public class ProxyContext<T> {
 
         public ProxyContextBuilder<T> source(Source source) {
             this.source = source;
+            return this;
+        }
+
+        public ProxyContextBuilder<T> resource(ResourceId resource) {
+            this.resource = resource;
             return this;
         }
 
@@ -148,7 +161,7 @@ public class ProxyContext<T> {
         }
 
         public ProxyContext<T> build() {
-            return new ProxyContext<>(type, source, translator, factory, extensions, classLoader,
+            return new ProxyContext<>(type, source, resource, translator, factory, extensions, classLoader,
                     initialInstance, proxyDefaultArguments, errorHandler, proxyObjectClassMethods);
         }
     }

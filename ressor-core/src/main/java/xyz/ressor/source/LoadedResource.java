@@ -17,9 +17,9 @@ public class LoadedResource {
      * The unique string that would uniquely identify the resource in the best way.
      * FS path in case of file, URL in case of HTTP resource, etc.
      */
-    private final String resourceId;
+    private final ResourceId resourceId;
 
-    public LoadedResource(InputStream inputStream, SourceVersion version, String resourceId) {
+    public LoadedResource(InputStream inputStream, SourceVersion version, ResourceId resourceId) {
         this.inputStream = inputStream;
         this.version = version;
         this.resourceId = resourceId;
@@ -33,7 +33,7 @@ public class LoadedResource {
         return version;
     }
 
-    public String getResourceId() {
+    public ResourceId getResourceId() {
         return resourceId;
     }
 

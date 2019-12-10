@@ -5,6 +5,7 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import xyz.ressor.source.AbstractSource;
 import xyz.ressor.source.LoadedResource;
 import xyz.ressor.source.NonListenableSource;
 import xyz.ressor.source.SourceVersion;
@@ -18,20 +19,17 @@ import static com.amazonaws.util.StringUtils.isNullOrEmpty;
 import static java.util.Objects.requireNonNull;
 import static xyz.ressor.source.SourceVersion.EMPTY;
 
-public class S3Source implements NonListenableSource {
+public class S3Source extends AbstractSource<S3ResourceId> implements NonListenableSource<S3ResourceId> {
     private static final Logger log = LoggerFactory.getLogger(S3Source.class);
     private final AmazonS3 client;
-    private final S3ObjectId objectId;
-    private final String resourceId;
 
-    public S3Source(AmazonS3 client, S3ObjectId objectId) {
+    public S3Source(AmazonS3 client) {
         this.client = requireNonNull(client, "Amazon S3 client is required");
-        this.objectId = requireNonNull(objectId, "Amazon S3 object id is required");
-        this.resourceId = objectId.toString();
     }
 
     @Override
-    public LoadedResource loadIfModified(SourceVersion version) {
+    public LoadedResource loadIfModified(S3ResourceId resourceId, SourceVersion version) {
+        var objectId = resourceId.getObjectId();
         var request = new GetObjectRequest(objectId);
         if (!version.isEmpty()) {
             var type = ((S3Version) version).getType();
@@ -68,6 +66,6 @@ public class S3Source implements NonListenableSource {
 
     @Override
     public String describe() {
-        return "S3: [" + resourceId + "]";
+        return "S3";
     }
 }

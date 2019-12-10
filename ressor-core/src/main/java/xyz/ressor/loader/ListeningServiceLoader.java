@@ -18,8 +18,8 @@ public class ListeningServiceLoader extends ServiceLoaderBase {
         if (!source.isListenable()) {
             throw new IllegalArgumentException("Service source doesn't support listening, use polling instead");
         }
-        log.debug("Subscribing {} to [{}] source", service.underlyingType(), source.describe());
-        this.subscription = source.subscribe(() -> threadPool.submit(() -> {
+        log.debug("{}: subscribing resource {} to {} source", service.underlyingType(), service.getResourceId(), source.describe());
+        this.subscription = source.subscribe(service.getResourceId(), () -> threadPool.submit(() -> {
             try {
                 long timeToWait = 1000;
                 var reloaded = false;
@@ -32,7 +32,7 @@ public class ListeningServiceLoader extends ServiceLoaderBase {
                     }
                 } while(!reloaded && timeToWait <= reloadRetryMaxMillis);
             } catch (Throwable t) {
-                log.error("Failed reloading service [{}] from the [{}] source: {}", service.underlyingType(), source.describe(), t.getMessage(), t);
+                log.error("Failed reloading service {} from [source: {}, resource: {}]: {}", service.underlyingType(), source.describe(), service.getResourceId(), t.getMessage(), t);
             }
         }));
     }
@@ -46,7 +46,9 @@ public class ListeningServiceLoader extends ServiceLoaderBase {
 
     private boolean reload() {
         if (!service.isReloading()) {
-            log.debug("Reloading by notification from [{}]", source.describe());
+            if (log.isDebugEnabled()) {
+                log.debug("Reloading resource {} by notification from {} source", service.getResourceId(), source.describe());
+            }
             return LoaderHelper.reload(service, source);
         } else {
             return false;
