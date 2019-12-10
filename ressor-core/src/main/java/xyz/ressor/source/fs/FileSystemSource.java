@@ -1,15 +1,11 @@
 package xyz.ressor.source.fs;
 
 import xyz.ressor.commons.watch.fs.FileSystemWatchService;
-import xyz.ressor.source.LoadedResource;
-import xyz.ressor.source.Source;
-import xyz.ressor.source.SourceVersion;
-import xyz.ressor.source.Subscription;
+import xyz.ressor.source.*;
 import xyz.ressor.source.version.LastModified;
 
 import java.io.FileNotFoundException;
 import java.net.URL;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -20,59 +16,43 @@ import static java.lang.String.format;
 import static java.nio.file.Files.newInputStream;
 import static xyz.ressor.commons.utils.Exceptions.wrap;
 
-public class FileSystemSource implements Source {
+public class FileSystemSource extends AbstractSource<FileSystemResourceId> {
     private static final SourceVersion EMPTY = new LastModified(-1L);
-    private static final String CLASSPATH_PREFIX = "classpath:";
-    private final String rawResourcePath;
-    private final Path resourcePath;
-    private final boolean isClasspath;
     private final FileSystemWatchService watchService;
     private final List<Consumer<Path>> listeners = new CopyOnWriteArrayList<>();
-    private volatile long classpathLastModified = -1;
 
-    public FileSystemSource(Path resourcePath) {
-        this(resourcePath.toString(), null);
+    public FileSystemSource() {
+        this(null);
     }
 
-    public FileSystemSource(String resourcePath) {
-        this(resourcePath, null);
-    }
-
-    public FileSystemSource(Path resourcePath, FileSystemWatchService watchService) {
-        this(resourcePath.toString(), watchService);
-    }
-
-    public FileSystemSource(String resourcePath, FileSystemWatchService watchService) {
-        this.isClasspath = isClasspath(resourcePath);
-        this.resourcePath = isClasspath ? null : FileSystems.getDefault().getPath(resourcePath);
-        this.rawResourcePath = resourcePath.replaceFirst(CLASSPATH_PREFIX, "");
+    public FileSystemSource(FileSystemWatchService watchService) {
         this.watchService = watchService;
     }
 
     @Override
-    public LoadedResource loadIfModified(SourceVersion version) {
+    public LoadedResource loadIfModified(FileSystemResourceId resourceId, SourceVersion version) {
         final long lastModifiedMillis = version.val();
         try {
-            if (!isClasspath) {
-                long currentLastModified = Files.getLastModifiedTime(resourcePath).toMillis();
+            if (!resourceId.isClasspath()) {
+                long currentLastModified = Files.getLastModifiedTime(resourceId.getResourcePath()).toMillis();
                 if (currentLastModified > lastModifiedMillis) {
-                    return new LoadedResource(newInputStream(resourcePath), new LastModified(currentLastModified), rawResourcePath);
+                    return new LoadedResource(newInputStream(resourceId.getResourcePath()), new LastModified(currentLastModified), resourceId);
                 } else {
                     return null;
                 }
             } else {
-                long currentLastModified = classpathLastModified;
-                if (currentLastModified < 0) {
-                    URL resourceURI = getClass().getClassLoader().getResource(rawResourcePath);
+                long currentLastModified = lastModifiedMillis;
+                if (lastModifiedMillis < 0) {
+                    URL resourceURI = getClass().getClassLoader().getResource(resourceId.getRawResourcePath());
                     if (resourceURI != null) {
-                        classpathLastModified = (currentLastModified = resourceURI.openConnection().getLastModified());
+                        currentLastModified = resourceURI.openConnection().getLastModified();
                     } else {
-                        throw new FileNotFoundException(format("Can't find %s file on classpath", rawResourcePath));
+                        throw new FileNotFoundException(format("Can't find %s file on classpath", resourceId.getRawResourcePath()));
                     }
                 }
                 if (currentLastModified > lastModifiedMillis) {
-                    return new LoadedResource(getClass().getClassLoader().getResourceAsStream(rawResourcePath),
-                            new LastModified(currentLastModified), CLASSPATH_PREFIX + rawResourcePath);
+                    return new LoadedResource(getClass().getClassLoader().getResourceAsStream(resourceId.getRawResourcePath()),
+                            new LastModified(currentLastModified), resourceId);
                 } else {
                     return null;
                 }
@@ -84,40 +64,32 @@ public class FileSystemSource implements Source {
 
     @Override
     public boolean isListenable() {
-        return watchService != null && resourcePath != null;
+        return watchService != null;
     }
 
     @Override
-    public Subscription subscribe(Runnable listener) {
-        if (!isListenable()) {
+    public Subscription subscribe(FileSystemResourceId resourceId, Runnable listener) {
+        if (!isListenable() || resourceId.getResourcePath() == null) {
             throw new UnsupportedOperationException("You can't listen to classpath resources!");
         }
         final Consumer<Path> l = p -> listener.run();
         listeners.add(l);
-        watchService.registerJob(resourcePath, l);
+        watchService.registerJob(resourceId.getResourcePath(), l);
         return () -> {
             if (listeners.remove(l)) {
-                watchService.unregisterJob(resourcePath, l);
+                watchService.unregisterJob(resourceId.getResourcePath(), l);
             }
         };
     }
 
     @Override
     public String describe() {
-        return rawResourcePath;
+        return "FS";
     }
 
     @Override
     public SourceVersion emptyVersion() {
         return EMPTY;
-    }
-
-    public boolean isClasspath() {
-        return isClasspath;
-    }
-
-    private boolean isClasspath(String resourcePath) {
-        return resourcePath.startsWith(CLASSPATH_PREFIX);
     }
 
 }

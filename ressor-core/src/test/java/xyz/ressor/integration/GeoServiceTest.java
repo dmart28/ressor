@@ -6,12 +6,15 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import xyz.ressor.Ressor;
+import xyz.ressor.commons.exceptions.RessorBuilderException;
 import xyz.ressor.config.RessorConfig;
 import xyz.ressor.integration.model.geo.GeoData;
 import xyz.ressor.integration.model.geo.GeoInfo;
 import xyz.ressor.integration.model.geo.GeoService;
 import xyz.ressor.integration.model.geo.GeoServiceImpl;
 import xyz.ressor.service.error.ErrorHandler;
+import xyz.ressor.source.ResourceId;
+import xyz.ressor.source.fs.FileSystemSource;
 
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
@@ -240,6 +243,22 @@ public class GeoServiceTest {
         assertThat(translateFailed.getAndSet(0)).isOne();
     }
 
+    @Test
+    public void testResourceRelatedErrors() {
+        assertThrows(RessorBuilderException.class, () -> Ressor.create().service(GeoService.class)
+                .source(new FileSystemSource())
+                .xml().<JsonNode>factory(GeoServiceImpl::new).build());
+
+        assertThrows(RessorBuilderException.class, () -> Ressor.create().service(GeoService.class)
+                .source(new FileSystemSource())
+                .resource(new TestResourceId())
+                .xml().<JsonNode>factory(GeoServiceImpl::new).build());
+
+        assertThrows(RessorBuilderException.class, () -> Ressor.create().service(GeoService.class)
+                .resource(new TestResourceId())
+                .xml().<JsonNode>factory(GeoServiceImpl::new).build());
+    }
+
     private void checkGeoService(GeoService geoService) {
         assertThat(geoService).isNotNull();
         GeoInfo ipInfo = geoService.detect("92.154.89.56");
@@ -261,6 +280,14 @@ public class GeoServiceTest {
         assertThat(ipInfo.getLongitude()).isEqualTo(4.8995);
 
         assertThat(geoService.detect("1.1.1.1")).isNull();
+    }
+
+    private static class TestResourceId implements ResourceId {
+
+        @Override
+        public Class<?> sourceType() {
+            return String.class;
+        }
     }
 
 }

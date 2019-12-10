@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 import xyz.ressor.commons.exceptions.TypeDefinitionException;
-import xyz.ressor.service.RessorService;
 import xyz.ressor.service.proxy.model.*;
 import xyz.ressor.source.LoadedResource;
 import xyz.ressor.source.SourceVersion;
@@ -192,15 +191,11 @@ public class ServiceProxyBuilderTest {
                 .factory((String s) -> s)
                 .build());
 
-        ressorService(string).reload(new LoadedResource(new ByteArrayInputStream("123".getBytes()), SourceVersion.EMPTY, null));
+        ressorService(string).reload(string("123"));
 
         assertThat(string).isEqualTo("123");
         assertThat(string.hashCode()).isEqualTo("123".hashCode());
         assertThat(string.toString()).isEqualTo("123");
-    }
-
-    private <T> RessorService<T> ressorService(Object service) {
-        return (RessorService<T>) service;
     }
 
 }

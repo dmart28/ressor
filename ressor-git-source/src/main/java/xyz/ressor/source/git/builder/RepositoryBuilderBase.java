@@ -13,24 +13,10 @@ import xyz.ressor.source.git.GitSource;
 import xyz.ressor.source.git.RefType;
 
 public abstract class RepositoryBuilderBase<T extends RepositoryBuilderBase> {
-    protected String ref = "master";
-    protected RefType refType;
     protected String repositoryDirectory;
     protected String privateKeyPath;
     protected String privateKeyPassphrase;
-    protected String filePath;
     protected boolean asyncPull = false;
-
-    public T refValue(String ref) {
-        this.ref = ref;
-        return getThis();
-    }
-
-    public T refValue(String ref, RefType refType) {
-        this.ref = ref;
-        this.refType = refType;
-        return getThis();
-    }
 
     public T repositoryDirectory(String repositoryDirectory) {
         this.repositoryDirectory = repositoryDirectory;
@@ -47,18 +33,9 @@ public abstract class RepositoryBuilderBase<T extends RepositoryBuilderBase> {
         return getThis();
     }
 
-    public T filePath(String filePath) {
-        this.filePath = filePath;
-        return getThis();
-    }
-
     public T asyncPull(boolean asyncPull) {
         this.asyncPull = asyncPull;
         return getThis();
-    }
-
-    protected GitRef ref() {
-        return refType == null ? new GitRef(ref) : new GitRef(ref, refType);
     }
 
     protected TransportConfigCallback createTransportConfig() {

@@ -1,21 +1,8 @@
 language: java
 
 jdk:
-  - openjdk11
+  - openjdk8
 
 script:
   - ./gradlew test
   - ./gradlew aggregatedJavadocs
-
-deploy:
-  provider: s3
-  acl: public_read
-  skip_cleanup: true
-  access_key_id: "$AWS_AK"
-  secret_access_key: "$AWS_SK"
-  bucket: "javadoc.ressor.xyz"
-  local_dir: build/docs/javadoc/
-  on:
-    all_branches: true
-    tags: true
-    condition: "$TRAVIS_TAG =~ ^1\\.0.*$"

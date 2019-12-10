@@ -9,10 +9,10 @@ import xyz.ressor.source.LoadedResource;
 public interface ErrorHandler {
 
     /**
-     * Called when the {@link xyz.ressor.source.Source} failed to load given resource and threw an exception
+     * Called when the {@link xyz.ressor.source.Source} failed to load given resource and threw an exception.
      *
      * @param exception an exception which was thrown by the source
-     * @param service service proxied instance
+     * @param service service un-proxied instance, can be <b>null</b> if no successful reload was done
      */
     void onSourceFailed(Throwable exception, Object service);
 
@@ -22,7 +22,7 @@ public interface ErrorHandler {
      *
      * @param exception an exception which was thrown
      * @param resource the resource
-     * @param service service proxied instance
+     * @param service service un-proxied instance, can be <b>null</b> if no successful reload was done
      */
     void onTranslateFailed(Throwable exception, LoadedResource resource, Object service);
 

@@ -18,31 +18,31 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class S3SourceTest {
+    private static final S3ResourceId resourceId = new S3ResourceId("bucket", "key");
     @Mock
     private AmazonS3 client;
 
     @Test
     public void testSourceDefaultRequestBehavior() {
-        S3ObjectId objectId = new S3ObjectId("bucket", "key");
-        S3Source source = new S3Source(client, objectId);
+        S3Source source = new S3Source(client);
 
-        LoadedResource result = source.load();
+        LoadedResource result = source.load(resourceId);
         assertThat(result).isNull();
-        verify(client).getObject(new GetObjectRequest(objectId));
+        verify(client).getObject(new GetObjectRequest(resourceId.getObjectId()));
         reset(client);
 
         S3Version version = new S3Version("123", VersionType.ETAG);
-        result = source.loadIfModified(version);
+        result = source.loadIfModified(resourceId, version);
         assertThat(result).isNull();
-        GetObjectRequest request = new GetObjectRequest(objectId);
+        GetObjectRequest request = new GetObjectRequest(resourceId.getObjectId());
         request.setNonmatchingETagConstraints(Collections.singletonList(version.val()));
         verify(client).getObject(request);
         reset(client);
 
         version = new S3Version(new Date(), VersionType.LAST_MODIFIED);
-        result = source.loadIfModified(version);
+        result = source.loadIfModified(resourceId, version);
         assertThat(result).isNull();
-        request = new GetObjectRequest(objectId);
+        request = new GetObjectRequest(resourceId.getObjectId());
         request.setModifiedSinceConstraint(version.val());
         verify(client).getObject(request);
         reset(client);
@@ -51,7 +51,7 @@ public class S3SourceTest {
     @Test
     public void testSourceDefaultResponseBehavior() {
         S3ObjectId objectId = new S3ObjectId("bucket", "key");
-        S3Source source = new S3Source(client, objectId);
+        S3Source source = new S3Source(client);
 
         S3ObjectInputStream stream = mock(S3ObjectInputStream.class);
         S3Object response = mock(S3Object.class);
@@ -62,7 +62,7 @@ public class S3SourceTest {
         when(response.getObjectMetadata().getETag()).thenReturn("123");
         when(response.getObjectContent()).thenReturn(stream);
 
-        LoadedResource resource = source.load();
+        LoadedResource resource = source.load(resourceId);
 
         assertThat(resource).isNotNull();
         assertThat(resource.getVersion()).isEqualTo(new S3Version("123", VersionType.ETAG));
@@ -75,11 +75,10 @@ public class S3SourceTest {
         when(metadata.getLastModified()).thenReturn(date);
         when(metadata.getETag()).thenReturn(null);
 
-        resource = source.load();
+        resource = source.load(resourceId);
 
         assertThat(resource).isNotNull();
         assertThat(resource.getVersion()).isEqualTo(new S3Version(date, VersionType.LAST_MODIFIED));
         assertThat(resource.getInputStream()).isEqualTo(stream);
     }
-
 }

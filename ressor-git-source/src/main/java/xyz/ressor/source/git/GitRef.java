@@ -90,10 +90,7 @@ public class GitRef {
 
     @Override
     public String toString() {
-        return "GitRef{" +
-                "name='" + name + '\'' +
-                ", type=" + type +
-                '}';
+        return "[" + name + "/" + type + "]";
     }
 
 }

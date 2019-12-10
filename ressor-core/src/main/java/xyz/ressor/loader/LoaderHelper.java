@@ -11,7 +11,7 @@ public class LoaderHelper {
 
     @Nullable
     public static LoadedResource loadFromSource(RessorService service, Source source) {
-        return loadFromSource(service, source, (src, s) -> src.load());
+        return loadFromSource(service, source, (src, s) -> src.load(service.getResourceId()));
     }
 
     @Nullable
@@ -21,7 +21,7 @@ public class LoaderHelper {
             resource = reloader.apply(source, service);
         } catch (Throwable t) {
             if (service.errorHandler() != null) {
-                service.errorHandler().onSourceFailed(t, service);
+                service.errorHandler().onSourceFailed(t, service.safeInstance());
             } else {
                 throw t;
             }
@@ -38,7 +38,7 @@ public class LoaderHelper {
             return service.reload(resource);
         } catch (Throwable t) {
             if (service.errorHandler() != null) {
-                service.errorHandler().onTranslateFailed(t, resource, service);
+                service.errorHandler().onTranslateFailed(t, resource, service.safeInstance());
                 return false;
             } else {
                 throw t;
