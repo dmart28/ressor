@@ -2,15 +2,15 @@
 
 ![GitHub](https://img.shields.io/github/license/dmart28/ressor) [![Build Status](https://travis-ci.org/dmart28/ressor.svg?branch=develop)](https://travis-ci.org/dmart28/ressor) [![Join the chat at https://gitter.im/dmart28/ressor](https://badges.gitter.im/dmart28/ressor.svg)](https://gitter.im/dmart28/ressor?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Maven Central](https://img.shields.io/maven-central/v/xyz.ressor/ressor-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22xyz.ressor%22%20AND%20a:%22ressor-core%22)
 
-Ressor is a framework which ease the development of resource-based Java services. It translates your static or dynamic resources (files, http endpoints, git repositories, etc) into a complete Java service instance, implicitly reloading it when the source data is changed.
+Ressor is a framework which ease the development of resource-based Java services. It translates your static or dynamic resources (files, http endpoints, git repositories, etc) into a complete Java service instance, implicitly reloading it when the source data is changing.
 
-It supports various formats as well as different kinds of data sources.
+See the <a href="https://docs.ressor.xyz/basic-concepts" target="_blank">Basic Concepts</a> page for the more details.
 
 ## How it works?
 
 Ressor generates a special proxy class at runtime, which inherits the class/interface of your service. It delegates the calls to an actual instance of your service, which is created and stored inside this proxy, filled with the resource data.
 
-As a result, you generate a single instance once and use it everywhere for the whole application lifetime. When the source data changes, we just swap to the new instance under the hood.
+As a result, you generate a single instance once and use it everywhere for the whole application lifetime. When the source data changes, it reloads the service and just swap to the new instance under the hood.
 
 ## Project Status & Contributing
 
@@ -62,9 +62,9 @@ That's all, you can continue using `bookService` instance, which will be always 
 
 ## Documentation
 
-See our [Project Website](https://ressor.xyz).
+See our <a href="https://ressor.xyz" target="_blank">Project Website</a>.
 
-Javadoc is [here](https://javadoc.ressor.xyz).
+Javadoc is <a href="https://javadoc.ressor.xyz" target="_blank">here</a>.
 
 ## Import
 
