@@ -44,7 +44,7 @@ public class HttpSourceTest {
                         .withStatus(200).withBody("one")));
 
         HttpSource source = Http.source();
-        HttpResourceId id = Http.id(defaultURL(), NONE);
+        HttpResourceId id = Http.url(defaultURL(), NONE);
         assertThat(IOUtils.toString(source.load(id).getInputStream(), UTF_8)).isEqualTo("one");
         assertThat(IOUtils.toString(source.loadIfModified(id, new LastModified(System.currentTimeMillis()))
                 .getInputStream(), UTF_8)).isEqualTo("one");
@@ -61,7 +61,7 @@ public class HttpSourceTest {
                         .withBody("one")));
 
         HttpSource source = Http.builder().pool(5, 10000).build();
-        HttpResourceId id = Http.id(defaultURL(), IF_MODIFIED_SINCE);
+        HttpResourceId id = Http.url(defaultURL(), IF_MODIFIED_SINCE);
         LoadedResource loadedResource = source.load(id);
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
 
@@ -83,7 +83,7 @@ public class HttpSourceTest {
                 .withHeader("ETag", "1ad").withBody("one")));
 
         HttpSource source = Http.builder().socketTimeoutMs(10000).connectTimeoutMs(10000).build();
-        HttpResourceId id = Http.id(defaultURL(), ETAG);
+        HttpResourceId id = Http.url(defaultURL(), ETAG);
         LoadedResource loadedResource = source.load(id);
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
 
@@ -103,7 +103,7 @@ public class HttpSourceTest {
         stubFor(getPath().willReturn(response.withBody("init")));
 
         HttpSource source = new HttpSource(client());
-        HttpResourceId id = Http.id(defaultURL(), CacheControlStrategy.LAST_MODIFIED_HEAD);
+        HttpResourceId id = Http.url(defaultURL(), CacheControlStrategy.LAST_MODIFIED_HEAD);
         LoadedResource loadedResource = source.load(id);
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
         verify(exactly(0), headRequestedFor(urlPathEqualTo(PATH)));
@@ -131,7 +131,7 @@ public class HttpSourceTest {
         stubFor(getPath().willReturn(response.withBody("init")));
 
         HttpSource source = Http.builder().receiveBufferSize(5).build();
-        HttpResourceId id = Http.id(defaultURL(), ETAG_HEAD);
+        HttpResourceId id = Http.url(defaultURL(), ETAG_HEAD);
         LoadedResource loadedResource = source.load(id);
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
         verify(exactly(0), headRequestedFor(urlPathEqualTo(PATH)));
@@ -158,7 +158,7 @@ public class HttpSourceTest {
                 .withHeader("Last-Modified", "Fri, 4 Oct 2019 18:58:30 GMT")));
 
         HttpSource source = new HttpSource(client());
-        HttpResourceId id = Http.id(defaultURL(), CacheControlStrategy.ETAG);
+        HttpResourceId id = Http.url(defaultURL(), CacheControlStrategy.ETAG);
         LoadedResource loadedResource = source.load(id);
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
         assertThat(loadedResource.getVersion()).isSameAs(SourceVersion.EMPTY);

@@ -14,15 +14,15 @@ public class GitRepository {
         return new RemoteRepositoryBuilder();
     }
 
-    public static GitResourceId id(String filePath) {
-        return id(filePath, DEFAULT_BRANCH);
+    public static GitResourceId path(String filePath) {
+        return path(filePath, DEFAULT_BRANCH);
     }
 
-    public static GitResourceId id(String filePath, String refName) {
-        return id(filePath, refName, null);
+    public static GitResourceId path(String filePath, String refName) {
+        return path(filePath, refName, null);
     }
 
-    public static GitResourceId id(String filePath, String refName, RefType refType) {
+    public static GitResourceId path(String filePath, String refName, RefType refType) {
         if (filePath == null) {
             throw new IllegalArgumentException("No target file path is provided for this repository");
         }

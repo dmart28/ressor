@@ -10,11 +10,11 @@ public class Http {
         return builder().build();
     }
 
-    public static HttpResourceId id(String resourceURI) {
+    public static HttpResourceId url(String resourceURI) {
         return new HttpResourceId(resourceURI, CacheControlStrategy.ETAG);
     }
 
-    public static HttpResourceId id(String resourceURI, CacheControlStrategy cacheControl) {
+    public static HttpResourceId url(String resourceURI, CacheControlStrategy cacheControl) {
         return new HttpResourceId(resourceURI, cacheControl);
     }
 
