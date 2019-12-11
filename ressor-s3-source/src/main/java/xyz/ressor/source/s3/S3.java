@@ -17,11 +17,11 @@ public class S3 {
         return new S3Source(client);
     }
 
-    public static S3ResourceId id(String bucket, String key) {
+    public static S3ResourceId object(String bucket, String key) {
         return new S3ResourceId(bucket, key);
     }
 
-    public static S3ResourceId id(String bucket, String key, String versionId) {
+    public static S3ResourceId object(String bucket, String key, String versionId) {
         return new S3ResourceId(bucket, key, versionId);
     }
 

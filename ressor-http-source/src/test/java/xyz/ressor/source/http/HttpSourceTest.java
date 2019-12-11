@@ -41,7 +41,7 @@ public class HttpSourceTest {
                         .withStatus(200).withBody("one")));
 
         var source = Http.source();
-        var id = Http.id(defaultURL(), NONE);
+        var id = Http.url(defaultURL(), NONE);
         assertThat(IOUtils.toString(source.load(id).getInputStream(), UTF_8)).isEqualTo("one");
         assertThat(IOUtils.toString(source.loadIfModified(id, new LastModified(System.currentTimeMillis()))
                 .getInputStream(), UTF_8)).isEqualTo("one");
@@ -58,7 +58,7 @@ public class HttpSourceTest {
                         .withBody("one")));
 
         var source = Http.builder().pool(5, 10000).build();
-        var id = Http.id(defaultURL(), IF_MODIFIED_SINCE);
+        var id = Http.url(defaultURL(), IF_MODIFIED_SINCE);
         var loadedResource = source.load(id);
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
 
@@ -80,7 +80,7 @@ public class HttpSourceTest {
                 .withHeader("ETag", "1ad").withBody("one")));
 
         var source = Http.builder().socketTimeoutMs(10000).connectTimeoutMs(10000).build();
-        var id = Http.id(defaultURL(), ETAG);
+        var id = Http.url(defaultURL(), ETAG);
         var loadedResource = source.load(id);
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
 
@@ -100,7 +100,7 @@ public class HttpSourceTest {
         stubFor(getPath().willReturn(response.withBody("init")));
 
         var source = new HttpSource(client());
-        var id = Http.id(defaultURL(), CacheControlStrategy.LAST_MODIFIED_HEAD);
+        var id = Http.url(defaultURL(), CacheControlStrategy.LAST_MODIFIED_HEAD);
         var loadedResource = source.load(id);
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
         verify(exactly(0), headRequestedFor(urlPathEqualTo(PATH)));
@@ -128,7 +128,7 @@ public class HttpSourceTest {
         stubFor(getPath().willReturn(response.withBody("init")));
 
         var source = Http.builder().receiveBufferSize(5).build();
-        var id = Http.id(defaultURL(), ETAG_HEAD);
+        var id = Http.url(defaultURL(), ETAG_HEAD);
         var loadedResource = source.load(id);
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
         verify(exactly(0), headRequestedFor(urlPathEqualTo(PATH)));
@@ -155,7 +155,7 @@ public class HttpSourceTest {
                 .withHeader("Last-Modified", "Fri, 4 Oct 2019 18:58:30 GMT")));
 
         var source = new HttpSource(client());
-        var id = Http.id(defaultURL(), CacheControlStrategy.ETAG);
+        var id = Http.url(defaultURL(), CacheControlStrategy.ETAG);
         var loadedResource = source.load(id);
         assertThat(IOUtils.toString(loadedResource.getInputStream(), UTF_8)).isEqualTo("init");
         assertThat(loadedResource.getVersion()).isSameAs(SourceVersion.EMPTY);
