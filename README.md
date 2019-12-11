@@ -14,9 +14,9 @@ As a result, you generate a single instance once and use it everywhere for the w
 
 ## Project Status & Contributing
 
-Ressor currently at its very early stage, so the feature set can be poor and some bugs occur.
+Ressor is currently at its early stages, so the feature set can be not complete and some bugs occur.
 
-I will be extremely glad to receive any feedback from the community, in any form: PR, issues, freature requests, etc. You can always contact be directly by an e-mail: me@tema.im
+Feel free to participate in Ressor development in any form via contributions, issues, feature requests, etc.
 
 ## Quick Example
 
