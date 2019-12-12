@@ -196,7 +196,7 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Fetches the raw byte array from the source and pass it to the service factory.
+     * Fetches the raw byte array from the source and pass it to the service factory as a byte[] array.
      */
     public RessorBuilder<T> bytes() {
         this.translator = Translators.inputStream2Bytes();
@@ -204,14 +204,14 @@ public class RessorBuilder<T> {
     }
 
     /**
-     * Read the source data as a single string and pass it to the service factory.
+     * Read the source data as a single string and pass it to the service factory as a String.
      */
     public RessorBuilder<T> string() {
         return string(UTF_8);
     }
 
     /**
-     * Read the source data as a single string and pass it to the service factory.
+     * Read the source data as a single string and pass it to the service factory as a String.
      *
      * @param charset the charset used to decode data
      */
@@ -222,6 +222,7 @@ public class RessorBuilder<T> {
 
     /**
      * Read the source data as string lines (separated by System.lineSeparator) and pass it to the service factory
+     * as a String[] array.
      */
     public RessorBuilder<T> lines() {
         return lines(UTF_8);
@@ -229,6 +230,7 @@ public class RessorBuilder<T> {
 
     /**
      * Read the source data as string lines (separated by {@link System#lineSeparator()}) and pass it to the service factory
+     * as a String[] array.
      *
      * @param charset the charset used to decode data.
      */

@@ -2,4 +2,5 @@ dependencies {
     compile project(":ressor-core")
     compile project(":ressor-git-source")
     compile project(":ressor-http-source")
+    compile project(":ressor-s3-source")
 }
