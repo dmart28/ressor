@@ -50,7 +50,12 @@ public abstract class RepositoryBuilderBase<T extends RepositoryBuilderBase> {
                 @Override
                 protected JSch createDefaultJSch(FS fs) throws JSchException {
                     JSch jSch = super.createDefaultJSch(fs);
-                    jSch.addIdentity(privateKeyPath, privateKeyPassphrase);
+                    jSch.removeAllIdentity();
+                    if (privateKeyPassphrase != null) {
+                        jSch.addIdentity(privateKeyPath, privateKeyPassphrase);
+                    } else {
+                        jSch.addIdentity(privateKeyPath);
+                    }
                     return jSch;
                 }
             });
