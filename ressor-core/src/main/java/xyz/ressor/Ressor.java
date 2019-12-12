@@ -115,6 +115,13 @@ public class Ressor {
         checkRessorService(service, Ressor::checkAndStopLoaderIfRequired);
     }
 
+    /**
+     * Shutdowns the current Ressor context. This includes stopping all polling, listening activities,
+     * as well as service reloads and associated actions. The internal thread pool is shutdown as well.
+     * <p />
+     * This operation doesn't affect the created services itself, they will be usable until they are
+     * normally garbage collected by VM. Ressor doesn't keep any strong references to them.
+     */
     public void shutdown() {
         try {
             quartzManager.scheduler().shutdown();
