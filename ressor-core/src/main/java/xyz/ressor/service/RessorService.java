@@ -50,10 +50,18 @@ public interface RessorService<T> {
     /**
      * Attempts to reload the service with the given resource.
      *
+     * If the service is already reloading from another thread, will return false.
+     * In case of any error will throw appropriate exception.
+     *
      * @param resource the new version of the resource
-     * @return true if the resource was successfully applied, unless false
+     * @param force whether to force the reload, blocking until concurrent reloads completed
+     * @return true if the resource was reloaded, unless false
      */
-    boolean reload(@Nullable LoadedResource resource);
+    boolean reload(@Nullable LoadedResource resource, boolean force);
+
+    default boolean reload(@Nullable LoadedResource resource) {
+        return reload(resource, false);
+    }
 
     /**
      * Is this service currently reloading.

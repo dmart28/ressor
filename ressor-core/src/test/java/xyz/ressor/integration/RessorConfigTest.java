@@ -15,13 +15,11 @@ public class RessorConfigTest {
         assertThat(rc.threadPool()).isNull();
         assertThat(rc.pollingThreads()).isNull();
         assertThat(rc.isCacheClasses()).isNull();
-        assertThat(rc.reloadRetryMaxMillis()).isNull();
 
         var nrc = new RessorConfig(rc);
         assertThat(nrc.threadPool()).isNull();
         assertThat(nrc.pollingThreads()).isEqualTo(Runtime.getRuntime().availableProcessors());
         assertThat(nrc.isCacheClasses()).isTrue();
-        assertThat(nrc.reloadRetryMaxMillis()).isEqualTo(64_000);
 
         rc.threadPool(ForkJoinPool.commonPool());
 

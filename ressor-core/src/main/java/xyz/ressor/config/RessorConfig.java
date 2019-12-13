@@ -10,7 +10,6 @@ import java.util.concurrent.ExecutorService;
 public class RessorConfig {
     private Integer pollingThreads;
     private ExecutorService threadPool;
-    private Integer reloadRetryMaxMillis;
     private Boolean cacheClasses;
     private ErrorHandler errorHandler;
 
@@ -20,7 +19,6 @@ public class RessorConfig {
     public RessorConfig(RessorConfig other) {
         this.pollingThreads = other.pollingThreads == null? Runtime.getRuntime().availableProcessors() : other.pollingThreads;
         this.threadPool = other.threadPool;
-        this.reloadRetryMaxMillis = other.reloadRetryMaxMillis == null ? 64_000 : other.reloadRetryMaxMillis;
         this.cacheClasses = other.cacheClasses == null ? true : other.cacheClasses;
         this.errorHandler = other.errorHandler;
     }
@@ -41,17 +39,6 @@ public class RessorConfig {
      */
     public ExecutorService threadPool() {
         return threadPool;
-    }
-
-    /**
-     * The maximum time for which the listener will wait until it give up to retry on reload by signal.
-     *
-     * Make sense when the signal from listener arrived, but service reload failed for some reason
-     *
-     * Default is 64 seconds
-     */
-    public Integer reloadRetryMaxMillis() {
-        return reloadRetryMaxMillis;
     }
 
     /**
@@ -77,11 +64,6 @@ public class RessorConfig {
 
     public RessorConfig threadPool(ExecutorService threadPool) {
         this.threadPool = threadPool;
-        return this;
-    }
-
-    public RessorConfig reloadRetryMaxMillis(int reloadRetryMaxMillis) {
-        this.reloadRetryMaxMillis = reloadRetryMaxMillis;
         return this;
     }
 

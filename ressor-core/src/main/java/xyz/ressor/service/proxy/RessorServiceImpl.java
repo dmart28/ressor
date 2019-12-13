@@ -2,8 +2,8 @@ package xyz.ressor.service.proxy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import xyz.ressor.service.ReloadAction;
 import xyz.ressor.service.RessorService;
-import xyz.ressor.service.action.InternalReloadAction;
 import xyz.ressor.service.error.ErrorHandler;
 import xyz.ressor.source.LoadedResource;
 import xyz.ressor.source.ResourceId;
@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 
 import static xyz.ressor.commons.utils.RessorUtils.firstNonNull;
@@ -27,9 +29,10 @@ public class RessorServiceImpl<T> implements RessorService<T> {
     private final Translator<InputStream, ?> translator;
     private final ErrorHandler errorHandler;
     private final Class<? extends T> type;
-    private final Map<Object, Object> state = new ConcurrentHashMap<>();
     private final T initialInstance;
     private final ResourceId resourceId;
+    private final Map<Object, Object> state = new ConcurrentHashMap<>();
+    private final ReadWriteLock reloadLock = new ReentrantReadWriteLock();
     private volatile T underlyingInstance;
     private volatile SourceVersion latestVersion;
     private volatile AtomicBoolean isReloading = new AtomicBoolean(false);
@@ -75,29 +78,48 @@ public class RessorServiceImpl<T> implements RessorService<T> {
     }
 
     @Override
-    public boolean reload(LoadedResource resource) {
+    public boolean reload(LoadedResource resource, boolean force) {
         if (resource != null) {
-            if (!isReloading.compareAndExchange(false, true)) {
+            if (force) {
+                reloadLock.writeLock().lock();
                 try {
-                    if (checkReloadActions()) {
-                        var newResource = factory.apply(translator.translate(resource.getInputStream()));
-                        this.latestVersion = resource.getVersion();
-                        this.underlyingInstance = newResource;
-                        silentlyClose(resource.getInputStream());
-                        return true;
-                    }
+                    return doReload(resource);
                 } finally {
-                    isReloading.set(false);
+                    reloadLock.writeLock().unlock();
                 }
             } else {
-                log.debug("Unable to reload service {}, since it's already reloading", type);
+                reloadLock.readLock().lock();
+                try {
+                    return doReload(resource);
+                } finally {
+                    reloadLock.readLock().unlock();
+                }
             }
         }
         return false;
     }
 
+    private boolean doReload(LoadedResource resource) {
+        if (!isReloading.compareAndExchange(false, true)) {
+            try {
+                if (checkReloadActions()) {
+                    var newResource = factory.apply(translator.translate(resource.getInputStream()));
+                    this.latestVersion = resource.getVersion();
+                    this.underlyingInstance = newResource;
+                    silentlyClose(resource.getInputStream());
+                    return true;
+                }
+            } finally {
+                isReloading.set(false);
+            }
+        } else {
+            log.debug("Unable to reload service {}, since it's already reloading", type);
+        }
+        return false;
+    }
+
     private boolean checkReloadActions() {
-        var actions = (List<InternalReloadAction>) state(ACTIONS);
+        var actions = (List<ReloadAction>) state(ACTIONS);
         if (actions != null && actions.size() > 0) {
             for (var action : actions) {
                 if (!action.perform(this)) {
