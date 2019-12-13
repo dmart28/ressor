@@ -24,7 +24,7 @@ public class ReloadActionsTest {
         var string = createTestService();
 
         var toggle = new AtomicBoolean();
-        ressor.actions().onReload(string, (config, target) -> toggle.get());
+        ressor.actions().onReload(string, s -> toggle.get());
 
         ressorService(string).reload(string("Never found"));
         assertThat(string).isEqualTo("Test data");
@@ -100,8 +100,9 @@ public class ReloadActionsTest {
         var toggle1 = new AtomicBoolean();
         var toggle2 = new AtomicBoolean();
 
-        ressor.actions().onReload(string, andF.apply(List.<ReloadAction>of((config, target) -> toggle1.get(),
-                (config, target) -> toggle2.get()).toArray(new ReloadAction[0])));
+        ressor.actions().onReload(string, andF.apply(List.<ReloadAction>of(
+                s -> toggle1.get(),
+                s -> toggle2.get()).toArray(new ReloadAction[0])));
 
         ressorService(string).reload(string("Never found"));
         assertThat(string).isEqualTo("Test data");
@@ -119,8 +120,9 @@ public class ReloadActionsTest {
         ressor.actions().resetAll(string);
         toggle1.set(false);
         toggle2.set(false);
-        ressor.actions().onReload(string, orF.apply(List.<ReloadAction>of((config, target) -> toggle1.get(),
-                (config, target) -> toggle2.get()).toArray(new ReloadAction[0])));
+        ressor.actions().onReload(string, orF.apply(List.<ReloadAction>of(
+                s -> toggle1.get(),
+                s -> toggle2.get()).toArray(new ReloadAction[0])));
 
         ressorService(string).reload(string("Never found"));
         assertThat(string).isEqualTo("Was found");

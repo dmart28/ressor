@@ -3,12 +3,10 @@ package xyz.ressor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xyz.ressor.commons.exceptions.RessorBuilderException;
-import xyz.ressor.commons.utils.Exceptions;
-import xyz.ressor.commons.watch.fs.FileSystemWatchService;
 import xyz.ressor.config.RessorConfig;
 import xyz.ressor.ext.ServiceExtension;
-import xyz.ressor.loader.LoaderHelper;
 import xyz.ressor.service.RessorService;
+import xyz.ressor.service.ServiceManager;
 import xyz.ressor.service.error.ErrorHandler;
 import xyz.ressor.service.proxy.ProxyContext;
 import xyz.ressor.service.proxy.ServiceProxyBuilder;
@@ -28,7 +26,6 @@ import java.util.function.Function;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static xyz.ressor.commons.utils.RessorUtils.firstNonNull;
-import static xyz.ressor.loader.LoaderHelper.loadFromSource;
 
 /**
  * The builder for the Ressor service proxy class, which will be built and loaded by a {@link ClassLoader} at runtime.
@@ -54,11 +51,11 @@ import static xyz.ressor.loader.LoaderHelper.loadFromSource;
  * @param <T> service public type
  */
 public class RessorBuilder<T> {
-    private static final Logger log = LoggerFactory.getLogger(RessorBuilder.class);
     private final ServiceProxyBuilder proxyBuilder;
     private final Class<T> type;
     private final RessorConfig config;
     private final FileSystemSource fileSystemSource;
+    private final ServiceManager serviceManager;
     private Translator<InputStream, ?> translator;
     private Function<?, ? extends T> factory;
     private Source source;
@@ -71,11 +68,13 @@ public class RessorBuilder<T> {
     private Object[] proxyDefaultArguments;
     private ErrorHandler errorHandler;
 
-    public RessorBuilder(Class<T> type, RessorConfig config, FileSystemSource fileSystemSource) {
+    public RessorBuilder(Class<T> type, RessorConfig config, FileSystemSource fileSystemSource,
+                         ServiceManager serviceManager) {
         this.type = type;
         this.config = config;
         this.fileSystemSource = fileSystemSource;
         this.proxyBuilder = new ServiceProxyBuilder(config.isCacheClasses());
+        this.serviceManager = serviceManager;
     }
 
     /**
@@ -387,27 +386,11 @@ public class RessorBuilder<T> {
         }
         var proxy = (RessorService<T>) proxyBuilder.buildProxy(ctx.build());
         if (isAsync) {
-            config.threadPool().submit(() -> reload(proxy));
+            serviceManager.reloadAsync(proxy, source);
         } else {
-            reload(proxy);
+            serviceManager.reload(proxy, source);
         }
         return (T) proxy;
-    }
-
-    private void reload(RessorService<T> proxy) {
-        try {
-            if (log.isDebugEnabled()) {
-                log.debug("Loading {} with initial instance from [source: {}, resource: {}]", type, source.describe(), proxy.getResourceId());
-            }
-            LoaderHelper.reload(proxy, source);
-        } catch (Throwable t) {
-            if (isAsync) {
-                log.error("Failed reloading service [{}] from [source: {}, resource: {}]: {}", type, source.describe(), proxy.getResourceId(), t.getMessage(), t);
-            } else {
-                throw Exceptions.wrap(t);
-            }
-        }
-
     }
 
 }
