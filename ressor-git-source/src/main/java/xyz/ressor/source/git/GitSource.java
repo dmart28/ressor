@@ -20,6 +20,7 @@ import xyz.ressor.commons.utils.Exceptions;
 import xyz.ressor.source.*;
 import xyz.ressor.source.version.LastModified;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
 
+import static java.lang.String.format;
 import static xyz.ressor.source.git.GitRev.exact;
 
 public class GitSource extends AbstractSource<GitResourceId> implements NonListenableSource<GitResourceId> {
@@ -179,7 +181,7 @@ public class GitSource extends AbstractSource<GitResourceId> implements NonListe
                     return objectLoader.openStream();
                 }
             } else {
-                return null;
+                throw new FileNotFoundException(format("No file [%s] found for commit [%s]", path, commit.getId()));
             }
         } catch (Throwable t) {
             throw Exceptions.wrap(t);

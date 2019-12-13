@@ -3,12 +3,12 @@ package xyz.ressor.loader;
 import org.quartz.*;
 import xyz.ressor.commons.utils.Exceptions;
 import xyz.ressor.service.RessorService;
+import xyz.ressor.service.ServiceManager;
 import xyz.ressor.source.Source;
 
 import java.lang.ref.WeakReference;
 import java.time.ZoneOffset;
 import java.util.TimeZone;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static org.quartz.CronScheduleBuilder.cronSchedule;
@@ -18,18 +18,18 @@ import static org.quartz.TriggerBuilder.newTrigger;
 
 public class QuartzServiceLoader extends ServiceLoaderBase {
     private static final TimeZone UTC = TimeZone.getTimeZone(ZoneOffset.UTC);
-    static final String THREAD_POOL_KEY = "__tpk";
+    static final String SERVICE_MANAGER_KEY = "__smk";
     static final String SERVICE_KEY = "__rs";
     static final String SOURCE_KEY = "__sk";
-    private final QuartzManager manager;
-    private final ExecutorService threadPool;
+    private final ServiceManager serviceManager;
+    private final QuartzManager quartzManager;
     private JobKey jobKey;
 
-    public QuartzServiceLoader(RessorService service, Source source, ExecutorService threadPool,
-                               QuartzManager manager) {
+    public QuartzServiceLoader(RessorService service, Source source, ServiceManager serviceManager,
+                               QuartzManager quartzManager) {
         super(service, source);
-        this.threadPool = threadPool;
-        this.manager = manager;
+        this.serviceManager = serviceManager;
+        this.quartzManager = quartzManager;
     }
 
     public void start(String expression) {
@@ -49,9 +49,9 @@ public class QuartzServiceLoader extends ServiceLoaderBase {
     }
 
     private void start(Trigger trigger) {
-        Scheduler scheduler = manager.scheduler();
+        Scheduler scheduler = quartzManager.scheduler();
         JobDataMap dataMap = new JobDataMap();
-        dataMap.put(THREAD_POOL_KEY, threadPool);
+        dataMap.put(SERVICE_MANAGER_KEY, serviceManager);
         dataMap.put(SERVICE_KEY, new WeakReference<>(service));
         dataMap.put(SOURCE_KEY, new WeakReference<>(source));
         JobDetail job = newJob(QuartzLoaderJob.class)
@@ -69,7 +69,7 @@ public class QuartzServiceLoader extends ServiceLoaderBase {
     public void stop() {
         if (jobKey != null) {
             try {
-                manager.scheduler().deleteJob(jobKey);
+                quartzManager.scheduler().deleteJob(jobKey);
             } catch (SchedulerException e) {
                 throw Exceptions.wrap(e);
             }

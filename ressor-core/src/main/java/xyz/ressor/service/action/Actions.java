@@ -1,13 +1,13 @@
 package xyz.ressor.service.action;
 
 import xyz.ressor.commons.utils.Exceptions;
-import xyz.ressor.config.RessorConfig;
 import xyz.ressor.service.ReloadAction;
 import xyz.ressor.service.RessorService;
 import xyz.ressor.source.SourceVersion;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.BiPredicate;
 
@@ -19,7 +19,7 @@ public final class Actions {
      * Triggers the asynchronous reload of service when the target service is being reloaded and
      * returns <b>true</b> immediately, without waiting for result.
      *
-     * Target service is provided in {@link ReloadAction#perform(RessorConfig, RessorService)} call.
+     * Target service is provided in {@link ReloadAction#perform(RessorService)} call.
      *
      * @param service the service which should be reloaded when target service is reloading
      * @return action
@@ -32,7 +32,7 @@ public final class Actions {
      * Triggers the synchronous reload of service, making the target service wait for its result.
      * If reload is successful, target service proceed with its own reload, otherwise it aborts.
      *
-     * Target service is provided in {@link ReloadAction#perform(RessorConfig, RessorService)} call.
+     * Target service is provided in {@link ReloadAction#perform(RessorService)} call.
      *
      * @param service the service which should be reloaded when target service is reloading
      * @return action
@@ -44,7 +44,7 @@ public final class Actions {
     /**
      * Aborts the reload of target service if the versionPredicate returns true.
      *
-     * Target service is provided in {@link ReloadAction#perform(RessorConfig, RessorService)} call.
+     * Target service is provided in {@link ReloadAction#perform(RessorService)} call.
      *
      * @param service which version is being compared with the target service
      * @param versionPredicate predicate, which has target service current resource version on left and provided service resource version on right
@@ -61,9 +61,9 @@ public final class Actions {
      * @return action
      */
     public static ReloadAction or(ReloadAction... actions) {
-        return (config, target) -> {
+        return target -> {
             for (ReloadAction action : actions) {
-                if (action.perform(config, target)) {
+                if (action.perform(target)) {
                     return true;
                 }
             }
@@ -78,9 +78,9 @@ public final class Actions {
      * @return action
      */
     public static ReloadAction and(ReloadAction... actions) {
-        return (config, target) -> {
+        return target -> {
             for (ReloadAction action : actions) {
-                if (!action.perform(config, target)) {
+                if (!action.perform(target)) {
                     return false;
                 }
             }
@@ -95,8 +95,8 @@ public final class Actions {
      * @return action
      */
     public static ReloadAction andParallel(ReloadAction... actions) {
-        return (config, target) -> {
-            List<Future<Boolean>> futures = runAsync(config, target, actions);
+        return new ExecutorServiceAction((threadPool, target) -> {
+            List<Future<Boolean>> futures = runAsync(target, threadPool, actions);
             try {
                 for (Future<Boolean> f : futures) {
                     Boolean result = f.get();
@@ -108,7 +108,7 @@ public final class Actions {
             } catch (Throwable t) {
                 throw Exceptions.wrap(t);
             }
-        };
+        });
     }
 
     /**
@@ -118,8 +118,8 @@ public final class Actions {
      * @return action
      */
     public static ReloadAction orParallel(ReloadAction... actions) {
-        return (config, target) -> {
-            List<Future<Boolean>> futures = runAsync(config, target, actions);
+        return new ExecutorServiceAction((threadPool, target) -> {
+            List<Future<Boolean>> futures = runAsync(target, threadPool, actions);
             try {
                 for (Future<Boolean> f : futures) {
                     Boolean result = f.get();
@@ -131,13 +131,13 @@ public final class Actions {
             } catch (Throwable t) {
                 throw Exceptions.wrap(t);
             }
-        };
+        });
     }
 
-    private static List<Future<Boolean>> runAsync(RessorConfig config, RessorService target, ReloadAction[] actions) {
-        List<Future<Boolean>> futures = new ArrayList<Future<Boolean>>(actions.length);
+    private static List<Future<Boolean>> runAsync(RessorService target, ExecutorService threadPool, ReloadAction[] actions) {
+                List<Future<Boolean>> futures = new ArrayList<>(actions.length);
         for (ReloadAction action : actions) {
-            futures.add(config.threadPool().submit(safe(() -> action.perform(config, target), null)));
+            futures.add(threadPool.submit(safe(() -> action.perform(target), null)));
         }
         return futures;
     }

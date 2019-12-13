@@ -9,6 +9,7 @@ import xyz.ressor.source.git.builder.LocalRepositoryBuilder;
 import xyz.ressor.source.version.LastModified;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.FileSystems;
@@ -58,7 +59,6 @@ public class GitSourceTest {
 
         assertThat(toString(source, path("data.txt"))).isEqualTo("One");
         assertThat(toString(source, path("data.txt", "master", TAG))).isEqualTo("Three");
-        assertThat(source.load(path("data.txt", "develop"))).isNull();
         assertThat(source.load(path("nodata.txt", "develop"))).isNotNull();
         assertThat(toString(source, path("data.txt", "develop", TAG))).isEqualTo("Four");
         assertThat(toString(source, path("data.txt", "refs/tags/develop"))).isEqualTo("Four");
@@ -69,6 +69,7 @@ public class GitSourceTest {
         assertThat(toString(source, path("data.txt", "refs/tags/tag-2"), 1570108694000L)).isEqualTo("Two");
         assertThat(source.loadIfModified(path("data.txt", "refs/tags/tag-2"), new LastModified(1570108695000L))).isNull();
 
+        assertThrows(FileNotFoundException.class, () -> source.load(path("data.txt", "develop")));
         assertThrows(IllegalArgumentException.class, () -> source.load(path("data.txt", "tag-3")));
     }
 

@@ -1,7 +1,5 @@
 package xyz.ressor.service;
 
-import xyz.ressor.config.RessorConfig;
-
 public interface ReloadAction {
 
     /**
@@ -19,6 +17,6 @@ public interface ReloadAction {
      * @param target target Ressor service which triggers this action
      * @return <b>true</b> if the reload operation can be continued, otherwise <b>false</b>
      */
-    boolean perform(RessorConfig config, RessorService target);
+    boolean perform(RessorService target);
 
 }

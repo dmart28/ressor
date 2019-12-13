@@ -1,20 +1,23 @@
 package xyz.ressor;
 
-import xyz.ressor.config.RessorConfig;
 import xyz.ressor.service.ReloadAction;
-import xyz.ressor.service.action.InternalReloadAction;
+import xyz.ressor.service.ServiceManager;
+import xyz.ressor.service.action.ServiceBasedAction;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
 
 import static xyz.ressor.Ressor.checkRessorService;
 import static xyz.ressor.service.proxy.StateVariables.ACTIONS;
 
 public class ActionsManager {
-    private final RessorConfig config;
+    private final ServiceManager serviceManager;
+    private final ExecutorService threadPool;
 
-    public ActionsManager(RessorConfig config) {
-        this.config = config;
+    public ActionsManager(ServiceManager serviceManager, ExecutorService threadPool) {
+        this.serviceManager = serviceManager;
+        this.threadPool = threadPool;
     }
 
     /**
@@ -25,12 +28,17 @@ public class ActionsManager {
      */
     public synchronized void onReload(Object service, ReloadAction action) {
         checkRessorService(service, ressorService -> {
-            List<InternalReloadAction> actions = (List<InternalReloadAction>) ressorService.state(ACTIONS);
+            List<ReloadAction> actions = (List<ReloadAction>) ressorService.state(ACTIONS);
             if (actions == null) {
                 actions = new CopyOnWriteArrayList<>();
                 ressorService.state(ACTIONS, actions);
             }
-            actions.add(InternalReloadAction.from(action, config));
+            if (action instanceof ServiceBasedAction) {
+                ServiceBasedAction serviceAction = (ServiceBasedAction) action;
+                serviceAction.setServiceManager(serviceManager);
+                serviceAction.setExecutorService(threadPool);
+            }
+            actions.add(action);
             return null;
         });
     }
@@ -40,7 +48,7 @@ public class ActionsManager {
      */
     public synchronized void resetAll(Object service) {
         checkRessorService(service, ressorService -> {
-            List<InternalReloadAction> actions = (List<InternalReloadAction>) ressorService.state(ACTIONS);
+            List<ReloadAction> actions = (List<ReloadAction>) ressorService.state(ACTIONS);
             if (actions != null) {
                 actions.clear();
             }

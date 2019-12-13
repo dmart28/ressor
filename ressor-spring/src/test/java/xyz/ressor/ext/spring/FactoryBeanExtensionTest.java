@@ -2,6 +2,7 @@ package xyz.ressor.ext.spring;
 
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.DynamicType;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.FactoryBean;
 import xyz.ressor.service.RessorService;
@@ -67,8 +68,8 @@ public class FactoryBeanExtensionTest {
         }
 
         @Override
-        public boolean reload(LoadedResource resource) {
-            return true;
+        public boolean reload(@Nullable LoadedResource resource, boolean force) {
+            return false;
         }
 
         @Override

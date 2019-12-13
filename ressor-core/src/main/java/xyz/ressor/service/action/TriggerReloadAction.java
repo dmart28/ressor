@@ -2,8 +2,6 @@ package xyz.ressor.service.action;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import xyz.ressor.config.RessorConfig;
-import xyz.ressor.loader.LoaderHelper;
 import xyz.ressor.service.RessorService;
 
 public class TriggerReloadAction extends ServiceBasedAction {
@@ -16,22 +14,17 @@ public class TriggerReloadAction extends ServiceBasedAction {
     }
 
     @Override
-    public boolean perform(RessorConfig config, RessorService target) {
+    public boolean perform(RessorService target) {
         if (isAsync) {
-            config.threadPool().submit((Runnable) this::performReload);
+            getServiceManager().reloadAsync(getService(), getSource()).whenComplete((result, t) -> {
+               if (t != null) {
+                   log.error("Failed to reload service {} by trigger from [source: {}, resource: {}]: {}", getService().underlyingType(),
+                           getSource().describe(), getService().getResourceId(), t.getMessage(), t);
+               }
+            });
             return true;
         } else {
-            return performReload();
-        }
-    }
-
-    private boolean performReload() {
-        try {
-            return LoaderHelper.reload(getService(), getSource());
-        } catch (Throwable t) {
-            log.error("Failed to reload service {} by trigger from [source: {}, resource: {}]: {}", getService().underlyingType(),
-                    getSource().describe(), getService().getResourceId(), t.getMessage(), t);
-            return false;
+            return getServiceManager().reload(getService(), getSource());
         }
     }
 }

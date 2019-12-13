@@ -1,6 +1,5 @@
 package xyz.ressor.service.action;
 
-import xyz.ressor.config.RessorConfig;
 import xyz.ressor.service.RessorService;
 import xyz.ressor.source.SourceVersion;
 
@@ -15,7 +14,7 @@ public class VersionCheckAction extends ServiceBasedAction {
     }
 
     @Override
-    public boolean perform(RessorConfig config, RessorService target) {
+    public boolean perform(RessorService target) {
         try {
             return !versionPredicate.test(target.latestVersion(), getService().latestVersion());
         } catch (Throwable t) {

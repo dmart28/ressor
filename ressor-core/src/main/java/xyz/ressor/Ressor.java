@@ -8,6 +8,7 @@ import xyz.ressor.loader.ListeningServiceLoader;
 import xyz.ressor.loader.QuartzManager;
 import xyz.ressor.loader.ServiceLoaderBase;
 import xyz.ressor.service.RessorService;
+import xyz.ressor.service.ServiceManager;
 import xyz.ressor.service.proxy.RessorServiceImpl;
 import xyz.ressor.source.Source;
 import xyz.ressor.source.fs.FileSystemSource;
@@ -16,6 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static xyz.ressor.service.proxy.StateHelper.getSource;
 import static xyz.ressor.service.proxy.StateVariables.LOADER;
 import static xyz.ressor.service.proxy.StateVariables.SOURCE;
 
@@ -33,6 +35,7 @@ public class Ressor {
     private final FileSystemWatchService fsWatchService;
     private final RessorConfig config;
     private final ActionsManager actionsManager;
+    private final ServiceManager serviceManager;
 
     public static Ressor create() {
         return create(new RessorConfig());
@@ -50,7 +53,8 @@ public class Ressor {
         this.quartzManager = new QuartzManager(config.pollingThreads());
         this.fsWatchService = new FileSystemWatchService().init();
         this.fileSystemSource = new FileSystemSource(fsWatchService);
-        this.actionsManager = new ActionsManager(config);
+        this.serviceManager = new ServiceManager(config);
+        this.actionsManager = new ActionsManager(serviceManager, config.threadPool());
     }
 
     /**
@@ -61,7 +65,7 @@ public class Ressor {
      * @return service builder instance
      */
     public <T> RessorBuilder<T> service(Class<T> type) {
-        return new RessorBuilder<>(type, config, fileSystemSource);
+        return new RessorBuilder<>(type, config, fileSystemSource, serviceManager);
     }
 
     /**
@@ -71,14 +75,13 @@ public class Ressor {
      * Please note that for now listening is supported only by {@link xyz.ressor.source.fs.FileSystemSource}.
      * Unless, an appropriate exception would be thrown.
      *
-     * @param service Ressor proxy service instance
+     * @param service Ressor service proxy instance
      * @param <T> service public type
      */
     public <T> void listen(T service) {
         checkRessorService(service, ressorService -> {
             checkAndStopLoaderIfRequired(ressorService);
-            ListeningServiceLoader loader = new ListeningServiceLoader(ressorService, (Source) ressorService.state(SOURCE), config.threadPool(),
-                    config.reloadRetryMaxMillis());
+            ListeningServiceLoader loader = new ListeningServiceLoader(serviceManager, ressorService, (Source) ressorService.state(SOURCE));
             ressorService.state(LOADER, loader);
         });
     }
@@ -90,14 +93,39 @@ public class Ressor {
      * Polling is supported by every {@link Source}, and have different approaches based on the implementation. Please
      * read documentation of each source implementation.
      *
-     * @param service Ressor proxy service instance
+     * @param service Ressor service proxy instance
      * @param <T> service public type
      * @return poller builder instance
      */
     public <T> PollingBuilder poll(T service) {
         return checkRessorService(service, ressorService -> {
             checkAndStopLoaderIfRequired(ressorService);
-            return new PollingBuilder(ressorService, config.threadPool(), quartzManager);
+            return new PollingBuilder(ressorService, serviceManager, quartzManager);
+        });
+    }
+
+    /**
+     * Forces the service to reload from the underlying data source. This methods blocks until the reload completion.
+     *
+     * @param service Ressor service to be reloaded
+     * @param <T> service public type
+     */
+    public <T> void reload(T service) {
+        checkRessorService(service, ressorService -> {
+            serviceManager.reload(ressorService, getSource(ressorService));
+        });
+    }
+
+    /**
+     * Schedules the service reload from the underlying data source. Unlike {@link #reload(Object)}, this
+     * method return immediately without waiting for the reload completion.
+     *
+     * @param service Ressor service to be reloaded
+     * @param <T> service public type
+     */
+    public <T> void scheduleReload(T service) {
+        checkRessorService(service, ressorService -> {
+            serviceManager.reloadAsync(ressorService, getSource(ressorService));
         });
     }
 
