@@ -22,6 +22,8 @@ public class ActionsManager {
 
     /**
      * Performs the given action when the service reload is triggered, but not yet performed.
+     * <p />
+     * For the standard provided actions please see {@link xyz.ressor.service.action.Actions} class.
      *
      * @param service service which is going to be reloaded
      * @param action action which decides whether reload would happen or not
