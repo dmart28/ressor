@@ -1,4 +1,4 @@
-package quickstart;
+package examples;
 
 import xyz.ressor.Ressor;
 
@@ -11,7 +11,7 @@ public class QuickStart {
     public static void main(String[] args) {
         Ressor ressor = Ressor.create();
         BookRepository bookService = ressor.service(BookRepository.class)
-                .fileSource("classpath:quickstart/data.json")
+                .fileSource("classpath:examples/data.json")
                 .jsonList(Book.class)
                 .build();
 
@@ -25,7 +25,7 @@ public class QuickStart {
         public String title;
     }
 
-    public static class BookRepository{
+    public static class BookRepository {
         private final Map<String, String> data = new HashMap<>();
 
         public BookRepository(List<Book> node) {

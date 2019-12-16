@@ -47,8 +47,8 @@ public class GitSourceTest {
 
         assertThat(toString(source, path("data.txt"))).isEqualTo("master data");
         assertThat(toString(source, path("data.txt", "develop"))).isEqualTo("develop data");
-        assertThat(source.load(path("nodata.txt", "develop"))).isNull();
 
+        assertThrows(FileNotFoundException.class, () -> source.load(path("nodata.txt", "develop")));
         assertThrows(IllegalArgumentException.class, () -> source.load(path("data.txt", "nobranch")));
     }
 

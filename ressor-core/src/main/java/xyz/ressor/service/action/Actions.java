@@ -16,12 +16,12 @@ import static xyz.ressor.commons.utils.RessorUtils.safe;
 public final class Actions {
 
     /**
-     * Triggers the asynchronous reload of service when the target service is being reloaded and
-     * returns <b>true</b> immediately, without waiting for result.
+     * Triggers the asynchronous reload of the service when the target service is being reloaded and
+     * returns <b>true</b> immediately, without waiting for the result.
      *
      * Target service is provided in {@link ReloadAction#perform(RessorService)} call.
      *
-     * @param service the service which should be reloaded when target service is reloading
+     * @param service the service which should be reloaded when the target service is reloading
      * @return action
      */
     public static ReloadAction triggerReload(Object service) {
@@ -29,12 +29,12 @@ public final class Actions {
     }
 
     /**
-     * Triggers the synchronous reload of service, making the target service wait for its result.
+     * Triggers synchronous reload of the service, making the target service wait for its result first.
      * If reload is successful, target service proceed with its own reload, otherwise it aborts.
      *
      * Target service is provided in {@link ReloadAction#perform(RessorService)} call.
      *
-     * @param service the service which should be reloaded when target service is reloading
+     * @param service the service which should be reloaded when the target service is reloading
      * @return action
      */
     public static ReloadAction triggerAndWaitReload(Object service) {
@@ -42,12 +42,12 @@ public final class Actions {
     }
 
     /**
-     * Aborts the reload of target service if the versionPredicate returns true.
+     * Aborts reload of the target service if the versionPredicate returns true.
      *
      * Target service is provided in {@link ReloadAction#perform(RessorService)} call.
      *
      * @param service which version is being compared with the target service
-     * @param versionPredicate predicate, which has target service current resource version on left and provided service resource version on right
+     * @param versionPredicate predicate, which has the target service latest version on left and the provided service latest version on right
      * @return action
      */
     public static ReloadAction abortIf(Object service, BiPredicate<SourceVersion, SourceVersion> versionPredicate) {
