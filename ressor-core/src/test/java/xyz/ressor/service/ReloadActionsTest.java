@@ -51,11 +51,11 @@ public class ReloadActionsTest {
 
         var string1 = stubSource(ressor.service(CharSequence.class)
                 .string()
-                .factory((String s) -> s))
+                .factory(Function.identity()))
                 .build();
         var string2 = stringBuilderSource(dataSource2, ressor.service(CharSequence.class)
                 .string()
-                .factory((String s) -> s))
+                .factory(Function.identity()))
                 .build();
 
         dataSource2.append("New Data 2");
@@ -137,7 +137,7 @@ public class ReloadActionsTest {
         var string = ressor.service(CharSequence.class)
                 .fileSource("classpath:fs/simpleText.txt")
                 .string()
-                .factory((String s) -> s)
+                .factory(Function.identity())
                 .build();
         assertThat(string).isEqualTo("Test data");
         return string;

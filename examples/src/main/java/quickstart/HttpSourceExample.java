@@ -3,6 +3,8 @@ package quickstart;
 import xyz.ressor.Ressor;
 import xyz.ressor.source.http.Http;
 
+import java.util.function.Function;
+
 public class HttpSourceExample {
 
     public static void main(String[] args) {
@@ -12,7 +14,7 @@ public class HttpSourceExample {
                 .source(Http.builder().connectTimeoutMs(5000).socketTimeoutMs(5000).build())
                 .resource(Http.url("http://ressor-examples.s3-website.us-east-2.amazonaws.com/fruit.json"))
                 .json(Fruit.class)
-                .factory((Fruit f) -> f)
+                .factory(Function.identity())
                 .build();
 
         System.out.println(fruit);
