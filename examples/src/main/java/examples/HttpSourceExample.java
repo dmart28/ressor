@@ -1,4 +1,4 @@
-package quickstart;
+package examples;
 
 import xyz.ressor.Ressor;
 import xyz.ressor.source.http.Http;
