@@ -25,7 +25,7 @@ public class QuickStart {
         public String title;
     }
 
-    public static class BookRepository{
+    public static class BookRepository {
         private final Map<String, String> data = new HashMap<>();
 
         public BookRepository(List<Book> node) {
