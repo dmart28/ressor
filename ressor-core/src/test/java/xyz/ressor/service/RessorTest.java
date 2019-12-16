@@ -5,6 +5,7 @@ import org.junit.jupiter.api.TestInstance;
 import xyz.ressor.Ressor;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -19,7 +20,7 @@ public class RessorTest {
         var sb = new StringBuilder();
         var string = stringBuilderSource(sb, ressor.service(CharSequence.class)
                 .string()
-                .factory((String s) -> s)).build();
+                .factory(Function.identity())).build();
 
         sb.append("reload");
         assertThat(string).isEqualTo("");

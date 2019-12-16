@@ -188,7 +188,7 @@ public class ServiceProxyBuilderTest {
         var string = proxyBuilder.buildProxy(ProxyContext
                 .builder(CharSequence.class)
                 .translator(inputStream2String())
-                .factory((String s) -> s)
+                .factory(Function.identity())
                 .build());
 
         ressorService(string).reload(string("123"));

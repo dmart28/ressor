@@ -85,7 +85,11 @@ public class GitSource extends AbstractSource<GitResourceId> implements NonListe
                     return loadFromCommit(resourceId, commit);
                 }
             }
-            return null;
+            if (version.equals(EMPTY)) {
+                throw new FileNotFoundException(format("No file [%s] found for ref %s", resourceId.getFilePath(), resourceId.getRefValue()));
+            } else {
+                return null;
+            }
         } catch (Throwable t) {
             throw Exceptions.wrap(t);
         }
