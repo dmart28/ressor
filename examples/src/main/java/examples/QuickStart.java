@@ -11,7 +11,7 @@ public class QuickStart {
     public static void main(String[] args) {
         var ressor = Ressor.create();
         var bookService = ressor.service(BookRepository.class)
-                .fileSource("classpath:quickstart/data.json")
+                .fileSource("classpath:examples/data.json")
                 .jsonList(Book.class)
                 .build();
 
