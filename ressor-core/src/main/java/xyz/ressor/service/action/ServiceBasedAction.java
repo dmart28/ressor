@@ -9,12 +9,12 @@ import xyz.ressor.source.Source;
 import java.util.concurrent.ExecutorService;
 
 public abstract class ServiceBasedAction implements ReloadAction {
-    private final RessorService service;
+    private final RessorService<?> service;
     private final Source source;
     private ServiceManager serviceManager;
     private ExecutorService executorService;
 
-    public RessorService getService() {
+    public RessorService<?> getService() {
         return service;
     }
 
@@ -38,7 +38,7 @@ public abstract class ServiceBasedAction implements ReloadAction {
         this.executorService = executorService;
     }
 
-    public ServiceBasedAction(RessorService service) {
+    public ServiceBasedAction(RessorService<?> service) {
         this.service = service;
         this.source = service != null ? StateHelper.getSource(service) : null;
     }
