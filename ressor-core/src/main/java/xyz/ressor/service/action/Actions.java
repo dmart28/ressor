@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
 import static xyz.ressor.commons.utils.RessorUtils.safe;
 
@@ -52,6 +53,10 @@ public final class Actions {
      */
     public static ReloadAction abortIf(Object service, BiPredicate<SourceVersion, SourceVersion> versionPredicate) {
         return new VersionCheckAction(checkRessorService(service), versionPredicate);
+    }
+
+    public static <T> ReloadAction abortIf(Predicate<RessorService<T>> predicate) {
+        return predicate.negate()::test;
     }
 
     /**
