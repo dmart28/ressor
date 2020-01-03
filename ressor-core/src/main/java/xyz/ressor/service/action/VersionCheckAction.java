@@ -8,7 +8,7 @@ import java.util.function.BiPredicate;
 public class VersionCheckAction extends ServiceBasedAction {
     private final BiPredicate<SourceVersion, SourceVersion> versionPredicate;
 
-    public VersionCheckAction(RessorService service, BiPredicate<SourceVersion, SourceVersion> versionPredicate) {
+    public VersionCheckAction(RessorService<?> service, BiPredicate<SourceVersion, SourceVersion> versionPredicate) {
         super(service);
         this.versionPredicate = versionPredicate;
     }

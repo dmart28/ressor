@@ -91,6 +91,18 @@ public class ReloadActionsTest {
 
         ressorService(string1).reload(stringVersioned("New Data 3"));
         assertThat(string1).isEqualTo("New Data 2");
+
+        var toggle = new AtomicBoolean(true);
+        ressor.actions().resetAll(string1);
+        ressor.actions().onReload(string1, abortIf(s -> toggle.get()));
+
+        ressorService(string1).reload(stringVersioned("New Data 3"));
+        assertThat(string1).isEqualTo("New Data 2");
+
+        toggle.set(false);
+
+        ressorService(string1).reload(stringVersioned("New Data 3"));
+        assertThat(string1).isEqualTo("New Data 3");
     }
 
     public void testReloadActionOperatorsPrivate(Function<ReloadAction[], ReloadAction> orF,

@@ -8,7 +8,7 @@ public class TriggerReloadAction extends ServiceBasedAction {
     private static final Logger log = LoggerFactory.getLogger(TriggerReloadAction.class);
     private final boolean isAsync;
 
-    public TriggerReloadAction(RessorService service, boolean isAsync) {
+    public TriggerReloadAction(RessorService<?> service, boolean isAsync) {
         super(service);
         this.isAsync = isAsync;
     }
