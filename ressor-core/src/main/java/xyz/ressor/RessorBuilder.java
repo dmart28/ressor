@@ -76,8 +76,9 @@ public class RessorBuilder<ServiceType, DataType> {
     }
 
     /**
-     * Your custom data translator implementation. The resulting type of translator will be provided
+     * Your data translator implementation. The resulting type of translator will be provided
      * to your service factory.
+     * You can find built-in translators in {@link xyz.ressor.translator.Translators} helper class.
      */
     public <DT> RessorBuilder<ServiceType, DT> translator(Translator<InputStream, DT> translator) {
         this.translator = (Translator<InputStream, DataType>) translator;
@@ -94,7 +95,7 @@ public class RessorBuilder<ServiceType, DataType> {
     }
 
     /**
-     * Tells Ressor to use the given file as a data {@link Source}.
+     * Tells Ressor to use the given file as a data source.
      */
     public RessorBuilder<ServiceType, DataType> fileSource(String filePath) {
         this.source = fileSystemSource;
@@ -103,7 +104,7 @@ public class RessorBuilder<ServiceType, DataType> {
     }
 
     /**
-     * Tells Ressor to use the given file as a data {@link Source}.
+     * Tells Ressor to use the given file as a data source.
      */
     public RessorBuilder<ServiceType, DataType> fileSource(Path filePath) {
         this.source = fileSystemSource;
@@ -120,9 +121,10 @@ public class RessorBuilder<ServiceType, DataType> {
     }
 
     /**
+     * The resource identifier which will be fetched from the provided source. Please refer your particular
+     * {@link Source} implementation documentation about how to obtain resource ids for it.
      *
-     * @param resource
-     * @return
+     * @param resource the resource id
      */
     public RessorBuilder<ServiceType, DataType> resource(ResourceId resource) {
         this.resource = resource;
@@ -194,13 +196,16 @@ public class RessorBuilder<ServiceType, DataType> {
      */
     public ServiceType build() {
         if (source == null) {
-            throw new RessorBuilderException("No source instance provided");
+            throw new RessorBuilderException("No source was provided, please pass it using " +
+                    "RessorBuilder#source() method.");
         }
         if (translator == null) {
-            throw new RessorBuilderException("The data format of the source is unknown, please provide a translator");
+            throw new RessorBuilderException("No translator was provided, please pass it using " +
+                    "RessorBuilder#translator() method.");
         }
         if (resource == null) {
-            throw new RessorBuilderException("No Resource ID provided for the given source");
+            throw new RessorBuilderException("No resource ID provided for the given source, please pass it using " +
+                    "RessorBuilder#resource() method.");
         }
         if (!resource.sourceType().equals(source.getClass())) {
             throw new RessorBuilderException(format("Resource ID (%s) and Source types are incompatible (%s != %s)",
