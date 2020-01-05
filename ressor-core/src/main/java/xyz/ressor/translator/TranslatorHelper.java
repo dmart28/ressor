@@ -21,10 +21,8 @@ import static xyz.ressor.commons.utils.Exceptions.wrap;
 import static xyz.ressor.translator.Translator.define;
 
 public abstract class TranslatorHelper {
-    private static final JsonFactory JSON_FACTORY = new JsonFactory();
-    private static final YAMLFactory YAML_FACTORY = new YAMLFactory();
-    private static final ObjectMapper JSON_MAPPER = new ObjectMapper(JSON_FACTORY);
-    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(YAML_FACTORY);
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper(new JsonFactory());
+    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
     private static final ObjectMapper XML_MAPPER = XmlMapper.builder()
             .addModule(new SimpleModule().addDeserializer(
                     JsonNode.class,
@@ -61,52 +59,100 @@ public abstract class TranslatorHelper {
         return inputStream2Bytes().chain(bytes2Lines(charset));
     }
 
+    public static Translator<InputStream, JsonNode> inputStream2Json(ObjectMapper mapper) {
+        return inputStream2Node(mapper);
+    }
+
     public static Translator<InputStream, JsonNode> inputStream2Json() {
-        return inputStream2Node(JSON_MAPPER);
+        return inputStream2Json(JSON_MAPPER);
+    }
+
+    public static <T> Translator<InputStream, T> inputStream2JsonObject(Class<T> type, ObjectMapper mapper) {
+        return inputStream2Object(mapper, type);
     }
 
     public static <T> Translator<InputStream, T> inputStream2JsonObject(Class<T> type) {
-        return inputStream2Object(JSON_MAPPER, type);
+        return inputStream2JsonObject(type, JSON_MAPPER);
+    }
+
+    public static <T> Translator<InputStream, T> inputStream2XmlObject(Class<T> type, ObjectMapper mapper) {
+        return inputStream2Object(mapper, type);
     }
 
     public static <T> Translator<InputStream, T> inputStream2XmlObject(Class<T> type) {
-        return inputStream2Object(XML_MAPPER, type);
+        return inputStream2XmlObject(type, XML_MAPPER);
+    }
+
+    public static <T> Translator<InputStream, List<T>> inputStream2XmlObjectList(Class<T> type, ObjectMapper mapper) {
+        return inputStream2ObjectList(mapper, type);
     }
 
     public static <T> Translator<InputStream, List<T>> inputStream2XmlObjectList(Class<T> type) {
-        return inputStream2ObjectList(XML_MAPPER, type);
+        return inputStream2XmlObjectList(type, XML_MAPPER);
+    }
+
+    public static <T> Translator<InputStream, List<T>> inputStream2JsonObjectList(Class<T> type, ObjectMapper mapper) {
+        return inputStream2ObjectList(mapper, type);
     }
 
     public static <T> Translator<InputStream, List<T>> inputStream2JsonObjectList(Class<T> type) {
-        return inputStream2ObjectList(JSON_MAPPER, type);
+        return inputStream2JsonObjectList(type, JSON_MAPPER);
+    }
+
+    public static <T> Translator<InputStream, List<T>> inputStream2YamlObjectList(Class<T> type, ObjectMapper mapper) {
+        return inputStream2ObjectList(mapper, type);
     }
 
     public static <T> Translator<InputStream, List<T>> inputStream2YamlObjectList(Class<T> type) {
-        return inputStream2ObjectList(YAML_MAPPER, type);
+        return inputStream2YamlObjectList(type, YAML_MAPPER);
+    }
+
+    public static Translator<InputStream, JsonNode> inputStream2Xml(ObjectMapper mapper) {
+        return inputStream2Node(mapper);
     }
 
     public static Translator<InputStream, JsonNode> inputStream2Xml() {
-        return inputStream2Node(XML_MAPPER);
+        return inputStream2Xml(XML_MAPPER);
+    }
+
+    public static Translator<InputStream, JsonNode> inputStream2Yaml(ObjectMapper mapper) {
+        return inputStream2Node(mapper);
     }
 
     public static Translator<InputStream, JsonNode> inputStream2Yaml() {
-        return inputStream2Node(YAML_MAPPER);
+        return inputStream2Yaml(YAML_MAPPER);
+    }
+
+    public static <T> Translator<InputStream, T> inputStream2YamlObject(Class<T> type, ObjectMapper mapper) {
+        return inputStream2Object(mapper, type);
     }
 
     public static <T> Translator<InputStream, T> inputStream2YamlObject(Class<T> type) {
-        return inputStream2Object(YAML_MAPPER, type);
+        return inputStream2YamlObject(type, YAML_MAPPER);
+    }
+
+    public static Translator<InputStream, JsonParser> inputStream2XmlParser(ObjectMapper mapper) {
+        return inputStream2NodeParser(mapper.getFactory());
     }
 
     public static Translator<InputStream, JsonParser> inputStream2XmlParser() {
-        return inputStream2NodeParser(XML_MAPPER.getFactory());
+        return inputStream2XmlParser(XML_MAPPER);
+    }
+
+    public static Translator<InputStream, JsonParser> inputStream2JsonParser(ObjectMapper mapper) {
+        return inputStream2NodeParser(mapper.getFactory());
     }
 
     public static Translator<InputStream, JsonParser> inputStream2JsonParser() {
-        return inputStream2NodeParser(JSON_FACTORY);
+        return inputStream2JsonParser(JSON_MAPPER);
+    }
+
+    public static Translator<InputStream, JsonParser> inputStream2YamlParser(ObjectMapper mapper) {
+        return inputStream2NodeParser(mapper.getFactory());
     }
 
     public static Translator<InputStream, JsonParser> inputStream2YamlParser() {
-        return inputStream2NodeParser(YAML_FACTORY);
+        return inputStream2YamlParser(YAML_MAPPER);
     }
 
     public static <T> Translator<InputStream, T> gzipped(Translator<InputStream, T> original) {

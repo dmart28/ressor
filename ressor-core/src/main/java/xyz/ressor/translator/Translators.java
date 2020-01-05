@@ -2,6 +2,7 @@ package xyz.ressor.translator;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -23,12 +24,26 @@ public final class Translators {
     }
 
     /**
+     * See {@link #xml()}.
+     */
+    public static Translator<InputStream, JsonNode> xml(ObjectMapper mapper) {
+        return TranslatorHelper.inputStream2Xml(mapper);
+    }
+
+    /**
      * Expect XML data format from the source, will provide instance of entityType class to the service factory.
      *
      * @param entityType the target type class
      */
     public static <T> Translator<InputStream, T> xml(Class<T> entityType) {
         return TranslatorHelper.inputStream2XmlObject(entityType);
+    }
+
+    /**
+     * See {@link #xml(Class)}.
+     */
+    public static <T> Translator<InputStream, T> xml(Class<T> entityType, ObjectMapper mapper) {
+        return TranslatorHelper.inputStream2XmlObject(entityType, mapper);
     }
 
     /**
@@ -41,6 +56,13 @@ public final class Translators {
     }
 
     /**
+     * See {@link #xmlList(Class)}.
+     */
+    public static <T> Translator<InputStream, List<T>> xmlList(Class<T> entityType, ObjectMapper mapper) {
+        return TranslatorHelper.inputStream2XmlObjectList(entityType, mapper);
+    }
+
+    /**
      * Expect XML data format from the source, will provide {@link com.fasterxml.jackson.core.JsonParser} instance
      * to the service factory
      */
@@ -49,11 +71,25 @@ public final class Translators {
     }
 
     /**
+     * See {@link #xmlParser()}.
+     */
+    public static Translator<InputStream, JsonParser> xmlParser(ObjectMapper mapper) {
+        return TranslatorHelper.inputStream2XmlParser(mapper);
+    }
+
+    /**
      * Expect YAML data format from the source, will provide {@link com.fasterxml.jackson.databind.JsonNode} instance
      * to the service factory.
      */
     public static Translator<InputStream, JsonNode> yaml() {
         return TranslatorHelper.inputStream2Yaml();
+    }
+
+    /**
+     * See {@link #yaml()}.
+     */
+    public static Translator<InputStream, JsonNode> yaml(ObjectMapper mapper) {
+        return TranslatorHelper.inputStream2Yaml(mapper);
     }
 
     /**
@@ -66,12 +102,26 @@ public final class Translators {
     }
 
     /**
+     * See {@link #yaml(Class)}.
+     */
+    public static <T> Translator<InputStream, T> yaml(Class<T> entityType, ObjectMapper mapper) {
+        return TranslatorHelper.inputStream2YamlObject(entityType, mapper);
+    }
+
+    /**
      * Same as {@link #yaml(Class)}, but providing {@link java.util.List<T>} of entityType class instances.
      *
      * @param entityType the target type class
      */
     public static <T> Translator<InputStream, List<T>> yamlList(Class<T> entityType) {
         return TranslatorHelper.inputStream2YamlObjectList(entityType);
+    }
+
+    /**
+     * See {@link #yamlList(Class)}.
+     */
+    public static <T> Translator<InputStream, List<T>> yamlList(Class<T> entityType, ObjectMapper mapper) {
+        return TranslatorHelper.inputStream2YamlObjectList(entityType, mapper);
     }
 
     /**
@@ -83,11 +133,25 @@ public final class Translators {
     }
 
     /**
+     * See {@link #yamlParser()}.
+     */
+    public static Translator<InputStream, JsonParser> yamlParser(ObjectMapper mapper) {
+        return TranslatorHelper.inputStream2YamlParser(mapper);
+    }
+
+    /**
      * Expect JSON data format from the source, will provide {@link com.fasterxml.jackson.databind.JsonNode} instance
      * to the service factory.
      */
     public static Translator<InputStream, JsonNode> json() {
         return TranslatorHelper.inputStream2Json();
+    }
+
+    /**
+     * See {@link #json()}.
+     */
+    public static Translator<InputStream, JsonNode> json(ObjectMapper mapper) {
+        return TranslatorHelper.inputStream2Json(mapper);
     }
 
     /**
@@ -100,6 +164,13 @@ public final class Translators {
     }
 
     /**
+     * See {@link #json(Class)}.
+     */
+    public static <T> Translator<InputStream, T> json(Class<T> entityType, ObjectMapper mapper) {
+        return TranslatorHelper.inputStream2JsonObject(entityType, mapper);
+    }
+
+    /**
      * Same as {@link #json(Class)}, but providing {@link java.util.List<T>} of entityType class instances.
      *
      * @param entityType the target type class
@@ -109,11 +180,25 @@ public final class Translators {
     }
 
     /**
+     * See {@link #jsonList(Class)}.
+     */
+    public static <T> Translator<InputStream, List<T>> jsonList(Class<T> entityType, ObjectMapper mapper) {
+        return TranslatorHelper.inputStream2JsonObjectList(entityType, mapper);
+    }
+
+    /**
      * Expect JSON data format from the source, will provide {@link com.fasterxml.jackson.core.JsonParser} instance
      * to the service factory.
      */
     public static Translator<InputStream, JsonParser> jsonParser() {
         return TranslatorHelper.inputStream2JsonParser();
+    }
+
+    /**
+     * See {@link #jsonParser()}.
+     */
+    public static Translator<InputStream, JsonParser> jsonParser(ObjectMapper mapper) {
+        return TranslatorHelper.inputStream2JsonParser(mapper);
     }
 
     /**
