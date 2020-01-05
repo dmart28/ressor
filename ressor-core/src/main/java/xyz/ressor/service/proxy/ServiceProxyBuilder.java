@@ -145,7 +145,11 @@ public class ServiceProxyBuilder {
                     .findFirst()
                     .orElse(findExecutable(type, context.getTranslator().outputType()));
             if (factoryExecutable == null) {
-                throw new TypeDefinitionException(type, "Unable to find any @ServiceFactory or any matching constructor for the given source");
+                throw new TypeDefinitionException(type, "Unable to find factory for the " + type.getName() + " service " +
+                        "among:\n- Constructor or factory method annotated with @ServiceFactory;\n" +
+                        "- Constructor matching parameters to the given translator;\n" +
+                        "- Factory function provided during service building using Ressor.\n\nPlease make sure to " +
+                        "provide any from the list above.");
             }
             factoryExecutable.setAccessible(true);
             if (factoryExecutable instanceof Method) {
