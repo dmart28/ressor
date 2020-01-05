@@ -1,165 +1,160 @@
 package xyz.ressor.translator;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import xyz.ressor.translator.xml.DuplicateToArrayJsonNodeDeserializer;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.List;
-import java.util.zip.GZIPInputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static xyz.ressor.commons.utils.Exceptions.catchingFunc;
-import static xyz.ressor.commons.utils.Exceptions.wrap;
-import static xyz.ressor.translator.Translator.define;
 
-public abstract class Translators {
-    private static final JsonFactory JSON_FACTORY = new JsonFactory();
-    private static final YAMLFactory YAML_FACTORY = new YAMLFactory();
-    private static final ObjectMapper JSON_MAPPER = new ObjectMapper(JSON_FACTORY);
-    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(YAML_FACTORY);
-    private static final ObjectMapper XML_MAPPER = XmlMapper.builder()
-            .addModule(new SimpleModule().addDeserializer(
-                    JsonNode.class,
-                    new DuplicateToArrayJsonNodeDeserializer()
-            )).defaultUseWrapper(false).build();
+public final class Translators {
 
-    public static Translator<byte[], String> bytes2String() {
-        return bytes2String(UTF_8);
+    /**
+     * Expect XML data format from the source, will provide {@link com.fasterxml.jackson.databind.JsonNode} instance
+     * to the service factory.
+     *
+     * Please note that by default parser will not wrap root element and duplicate elements will be combined under
+     * {@link com.fasterxml.jackson.databind.node.ArrayNode}, so no data is lost.
+     */
+    public static Translator<InputStream, JsonNode> xml() {
+        return TranslatorHelper.inputStream2Xml();
     }
 
-    public static Translator<byte[], String> bytes2String(Charset charset) {
-        return define(s -> new String(s, charset), byte[].class, String.class);
+    /**
+     * Expect XML data format from the source, will provide instance of entityType class to the service factory.
+     *
+     * @param entityType the target type class
+     */
+    public static <T> Translator<InputStream, T> xml(Class<T> entityType) {
+        return TranslatorHelper.inputStream2XmlObject(entityType);
     }
 
-    public static Translator<byte[], String[]> bytes2Lines(Charset charset) {
-        return define(s -> new String(s, charset).split(System.lineSeparator()), byte[].class, String[].class);
+    /**
+     * Same as {@link #xml(Class)}, but providing {@link java.util.List<T>} of entityType class instances.
+     *
+     * @param entityType the target type class
+     */
+    public static <T> Translator<InputStream, List<T>> xmlList(Class<T> entityType) {
+        return TranslatorHelper.inputStream2XmlObjectList(entityType);
     }
 
-    public static Translator<InputStream, byte[]> inputStream2Bytes() {
-        return define(s -> {
-            try {
-                return s.readAllBytes();
-            } catch (IOException e) {
-                throw wrap(e);
-            }
-        }, InputStream.class, byte[].class);
+    /**
+     * Expect XML data format from the source, will provide {@link com.fasterxml.jackson.core.JsonParser} instance
+     * to the service factory
+     */
+    public static Translator<InputStream, JsonParser> xmlParser() {
+        return TranslatorHelper.inputStream2XmlParser();
     }
 
-    public static Translator<InputStream, String> inputStream2String() {
-        return inputStream2String(UTF_8);
+    /**
+     * Expect YAML data format from the source, will provide {@link com.fasterxml.jackson.databind.JsonNode} instance
+     * to the service factory.
+     */
+    public static Translator<InputStream, JsonNode> yaml() {
+        return TranslatorHelper.inputStream2Yaml();
     }
 
-    public static Translator<InputStream, String> inputStream2String(Charset charset) {
-        return inputStream2Bytes().chain(bytes2String(charset));
+    /**
+     * Expect YAML data format from the source, will provide instance of entityType class to the service factory.
+     *
+     * @param entityType the target type class
+     */
+    public static <T> Translator<InputStream, T> yaml(Class<T> entityType) {
+        return TranslatorHelper.inputStream2YamlObject(entityType);
     }
 
-    public static Translator<InputStream, String[]> inputStream2Lines() {
-        return inputStream2Lines(UTF_8);
+    /**
+     * Same as {@link #yaml(Class)}, but providing {@link java.util.List<T>} of entityType class instances.
+     *
+     * @param entityType the target type class
+     */
+    public static <T> Translator<InputStream, List<T>> yamlList(Class<T> entityType) {
+        return TranslatorHelper.inputStream2YamlObjectList(entityType);
     }
 
-    public static Translator<InputStream, String[]> inputStream2Lines(Charset charset) {
-        return inputStream2Bytes().chain(bytes2Lines(charset));
+    /**
+     * Expect YAML data format from the source, will provide {@link com.fasterxml.jackson.core.JsonParser} instance
+     * to the service factory.
+     */
+    public static Translator<InputStream, JsonParser> yamlParser() {
+        return TranslatorHelper.inputStream2YamlParser();
     }
 
-    public static Translator<InputStream, JsonNode> inputStream2Json() {
-        return inputStream2Node(JSON_MAPPER);
+    /**
+     * Expect JSON data format from the source, will provide {@link com.fasterxml.jackson.databind.JsonNode} instance
+     * to the service factory.
+     */
+    public static Translator<InputStream, JsonNode> json() {
+        return TranslatorHelper.inputStream2Json();
     }
 
-    public static <T> Translator<InputStream, T> inputStream2JsonObject(Class<T> type) {
-        return inputStream2Object(JSON_MAPPER, type);
+    /**
+     * Expect JSON data format from the source, will provide instance of entityType class to the service factory.
+     *
+     * @param entityType the target type class
+     */
+    public static <T> Translator<InputStream, T> json(Class<T> entityType) {
+        return TranslatorHelper.inputStream2JsonObject(entityType);
     }
 
-    public static <T> Translator<InputStream, T> inputStream2XmlObject(Class<T> type) {
-        return inputStream2Object(XML_MAPPER, type);
+    /**
+     * Same as {@link #json(Class)}, but providing {@link java.util.List<T>} of entityType class instances.
+     *
+     * @param entityType the target type class
+     */
+    public static <T> Translator<InputStream, List<T>> jsonList(Class<T> entityType) {
+        return TranslatorHelper.inputStream2JsonObjectList(entityType);
     }
 
-    public static <T> Translator<InputStream, List<T>> inputStream2XmlObjectList(Class<T> type) {
-        return inputStream2ObjectList(XML_MAPPER, type);
+    /**
+     * Expect JSON data format from the source, will provide {@link com.fasterxml.jackson.core.JsonParser} instance
+     * to the service factory.
+     */
+    public static Translator<InputStream, JsonParser> jsonParser() {
+        return TranslatorHelper.inputStream2JsonParser();
     }
 
-    public static <T> Translator<InputStream, List<T>> inputStream2JsonObjectList(Class<T> type) {
-        return inputStream2ObjectList(JSON_MAPPER, type);
+    /**
+     * Fetches the raw byte array from the source and pass it to the service factory as a byte[] array.
+     */
+    public static Translator<InputStream, byte[]> bytes() {
+        return TranslatorHelper.inputStream2Bytes();
     }
 
-    public static <T> Translator<InputStream, List<T>> inputStream2YamlObjectList(Class<T> type) {
-        return inputStream2ObjectList(YAML_MAPPER, type);
+    /**
+     * Read the source data as a single string and pass it to the service factory as a String.
+     */
+    public static Translator<InputStream, String> string() {
+        return TranslatorHelper.inputStream2String(UTF_8);
     }
 
-    public static Translator<InputStream, JsonNode> inputStream2Xml() {
-        return inputStream2Node(XML_MAPPER);
+    /**
+     * Read the source data as a single string and pass it to the service factory as a String.
+     *
+     * @param charset the charset used to decode data
+     */
+    public static Translator<InputStream, String> string(Charset charset) {
+        return TranslatorHelper.inputStream2String(charset);
     }
 
-    public static Translator<InputStream, JsonNode> inputStream2Yaml() {
-        return inputStream2Node(YAML_MAPPER);
+    /**
+     * Read the source data as string lines (separated by System.lineSeparator) and pass it to the service factory
+     * as a String[] array.
+     */
+    public static Translator<InputStream, String[]> lines() {
+        return TranslatorHelper.inputStream2Lines(UTF_8);
     }
 
-    public static <T> Translator<InputStream, T> inputStream2YamlObject(Class<T> type) {
-        return inputStream2Object(YAML_MAPPER, type);
-    }
-
-    public static Translator<InputStream, JsonParser> inputStream2XmlParser() {
-        return inputStream2NodeParser(XML_MAPPER.getFactory());
-    }
-
-    public static Translator<InputStream, JsonParser> inputStream2JsonParser() {
-        return inputStream2NodeParser(JSON_FACTORY);
-    }
-
-    public static Translator<InputStream, JsonParser> inputStream2YamlParser() {
-        return inputStream2NodeParser(YAML_FACTORY);
-    }
-
-    public static <T> Translator<InputStream, T> gzipped(Translator<InputStream, T> original) {
-        return original.prepend(catchingFunc(GZIPInputStream::new), InputStream.class);
-    }
-
-    private static <T> Translator<InputStream, T> inputStream2Object(ObjectMapper mapper, Class<T> type) {
-        return define(s -> {
-            try {
-                return mapper.readValue(s, type);
-            } catch (IOException e) {
-                throw wrap(e);
-            }
-        }, InputStream.class, type);
-    }
-
-    private static <T> Translator<InputStream, List<T>> inputStream2ObjectList(ObjectMapper mapper, Class<T> type) {
-        return define(s -> {
-            try {
-                var t = mapper.getTypeFactory().constructCollectionType(List.class, type);
-                return mapper.readValue(s, t);
-            } catch (IOException e) {
-                throw wrap(e);
-            }
-        }, InputStream.class, (Class<List<T>>) (Class<?>) List.class);
-    }
-
-    private static Translator<InputStream, JsonNode> inputStream2Node(ObjectMapper mapper) {
-        return define(s -> {
-            try {
-                return mapper.readTree(s);
-            } catch (IOException e) {
-                throw wrap(e);
-            }
-        }, InputStream.class, JsonNode.class);
-    }
-
-    private static Translator<InputStream, JsonParser> inputStream2NodeParser(JsonFactory f) {
-        return define(s -> {
-            try {
-                return f.createParser(s);
-            } catch (IOException e) {
-                throw wrap(e);
-            }
-        }, InputStream.class, JsonParser.class);
+    /**
+     * Read the source data as string lines (separated by {@link System#lineSeparator()}) and pass it to the service factory
+     * as a String[] array.
+     *
+     * @param charset the charset used to decode data.
+     */
+    public static Translator<InputStream, String[]> lines(Charset charset) {
+        return TranslatorHelper.inputStream2Lines(charset);
     }
 
 }

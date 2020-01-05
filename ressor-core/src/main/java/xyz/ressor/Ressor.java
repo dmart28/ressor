@@ -64,7 +64,7 @@ public class Ressor {
      * @param <T> the public service type
      * @return service builder instance
      */
-    public <T> RessorBuilder<T> service(Class<T> type) {
+    public <T> RessorBuilder<T, Object> service(Class<T> type) {
         return new RessorBuilder<>(type, config, fileSystemSource, serviceManager);
     }
 

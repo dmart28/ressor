@@ -45,7 +45,7 @@ public class ServiceProxyBuilder {
         this.isCacheClasses = isCacheClasses;
     }
 
-    public synchronized <T> T buildProxy(ProxyContext<T> context) {
+    public synchronized <T, D> T buildProxy(ProxyContext<T, D> context) {
         var serviceProxy = new RessorServiceImpl<>(context.getType(), getFactory(context), context.getTranslator(), context.getErrorHandler(),
                 context.getInitialInstance(), context.getResource())
                 .state(StateVariables.SOURCE, context.getSource());
@@ -75,11 +75,11 @@ public class ServiceProxyBuilder {
         }
     }
 
-    private <T> boolean isCachePossible(ProxyContext<T> context) {
+    private <T, D> boolean isCachePossible(ProxyContext<T, D> context) {
         return isCacheClasses && context.getExtensions().size() == 0;
     }
 
-    private <T> Class<? extends T> generateProxyClass(ProxyContext<T> context) {
+    private <T, D> Class<? extends T> generateProxyClass(ProxyContext<T, D> context) {
         var b = byteBuddy.subclass(context.getType()).name(generateName(context.getType()));
         if (isNotEmpty(context.getExtensions())) {
             for (var ext : context.getExtensions()) {
@@ -133,7 +133,7 @@ public class ServiceProxyBuilder {
                 target.getReturnType().represents(String.class);
     }
 
-    private <T> Function<Object, ? extends T> getFactory(ProxyContext<T> context) {
+    private <T, D> Function<D, ? extends T> getFactory(ProxyContext<T, D> context) {
         if (context.getFactory() != null) {
             return context.getFactory();
         } else {
@@ -185,7 +185,7 @@ public class ServiceProxyBuilder {
             this.isProxyObjectClassMethods = isProxyObjectClassMethods;
         }
 
-        public boolean isMatches(ProxyContext<?> ctx) {
+        public boolean isMatches(ProxyContext<?, ?> ctx) {
             return isProxyObjectClassMethods == ctx.isProxyObjectClassMethods() &&
                     Arrays.equals(defaultArguments, ctx.getProxyDefaultArguments()) && Objects.equals(classLoader, ctx.getClassLoader());
         }

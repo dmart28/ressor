@@ -12,12 +12,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
 
-public class ProxyContext<T> {
+public class ProxyContext<T, D> {
     private final Class<T> type;
     private final Source source;
     private final ResourceId resource;
-    private final Translator<InputStream, ?> translator;
-    private final Function<Object, ? extends T> factory;
+    private final Translator<InputStream, D> translator;
+    private final Function<D, ? extends T> factory;
     private final List<ServiceExtension> extensions;
     private final ClassLoader classLoader;
     private final T initialInstance;
@@ -25,12 +25,12 @@ public class ProxyContext<T> {
     private final ErrorHandler errorHandler;
     private final boolean proxyObjectClassMethods;
 
-    public static <T> ProxyContextBuilder<T> builder(Class<T> type) {
+    public static <T, D> ProxyContextBuilder<T, D> builder(Class<T> type) {
         return new ProxyContextBuilder<>(type);
     }
 
-    private ProxyContext(Class<T> type, Source source, ResourceId resource, Translator<InputStream, ?> translator,
-                         Function<Object, ? extends T> factory, List<ServiceExtension> extensions,
+    private ProxyContext(Class<T> type, Source source, ResourceId resource, Translator<InputStream, D> translator,
+                         Function<D, ? extends T> factory, List<ServiceExtension> extensions,
                          ClassLoader classLoader, T initialInstance, Object[] proxyDefaultArguments,
                          ErrorHandler errorHandler, boolean proxyObjectClassMethods) {
         this.type = type;
@@ -58,11 +58,11 @@ public class ProxyContext<T> {
         return resource;
     }
 
-    public Translator<InputStream, ?> getTranslator() {
+    public Translator<InputStream, D> getTranslator() {
         return translator;
     }
 
-    public Function<Object, ? extends T> getFactory() {
+    public Function<D, ? extends T> getFactory() {
         return factory;
     }
 
@@ -90,12 +90,12 @@ public class ProxyContext<T> {
         return proxyObjectClassMethods;
     }
 
-    public static class ProxyContextBuilder<T> {
+    public static class ProxyContextBuilder<T, D> {
         private final Class<T> type;
         private Source source;
-        private Translator<InputStream, ?> translator;
+        private Translator<InputStream, D> translator;
         private ResourceId resource;
-        private Function<Object, ? extends T> factory;
+        private Function<D, ? extends T> factory;
         private List<ServiceExtension> extensions;
         private ClassLoader classLoader;
         private T initialInstance;
@@ -107,27 +107,27 @@ public class ProxyContext<T> {
             this.type = type;
         }
 
-        public ProxyContextBuilder<T> source(Source source) {
+        public ProxyContextBuilder<T, D> source(Source source) {
             this.source = source;
             return this;
         }
 
-        public ProxyContextBuilder<T> resource(ResourceId resource) {
+        public ProxyContextBuilder<T, D> resource(ResourceId resource) {
             this.resource = resource;
             return this;
         }
 
-        public ProxyContextBuilder<T> translator(Translator<InputStream, ?> translator) {
+        public ProxyContextBuilder<T, D> translator(Translator<InputStream, D> translator) {
             this.translator = translator;
             return this;
         }
 
-        public <D> ProxyContextBuilder<T> factory(Function<D, ? extends T> factory) {
-            this.factory = (Function<Object, ? extends T>) factory;
+        public ProxyContextBuilder<T, D> factory(Function<D, ? extends T> factory) {
+            this.factory = factory;
             return this;
         }
 
-        public ProxyContextBuilder<T> addExtension(ServiceExtension extension) {
+        public ProxyContextBuilder<T, D> addExtension(ServiceExtension extension) {
             if (extensions == null) {
                 extensions = new LinkedList<>();
             }
@@ -135,32 +135,32 @@ public class ProxyContext<T> {
             return this;
         }
 
-        public ProxyContextBuilder<T> classLoader(ClassLoader classLoader) {
+        public ProxyContextBuilder<T, D> classLoader(ClassLoader classLoader) {
             this.classLoader = classLoader;
             return this;
         }
 
-        public ProxyContextBuilder<T> initialInstance(T initialInstance) {
+        public ProxyContextBuilder<T, D> initialInstance(T initialInstance) {
             this.initialInstance = initialInstance;
             return this;
         }
 
-        public ProxyContextBuilder<T> proxyDefaultArguments(Object... proxyDefaultArguments) {
+        public ProxyContextBuilder<T, D> proxyDefaultArguments(Object... proxyDefaultArguments) {
             this.proxyDefaultArguments = proxyDefaultArguments;
             return this;
         }
 
-        public ProxyContextBuilder<T> errorHandler(ErrorHandler errorHandler) {
+        public ProxyContextBuilder<T, D> errorHandler(ErrorHandler errorHandler) {
             this.errorHandler = errorHandler;
             return this;
         }
 
-        public ProxyContextBuilder<T> proxyObjectClassMethods(boolean value) {
+        public ProxyContextBuilder<T, D> proxyObjectClassMethods(boolean value) {
             this.proxyObjectClassMethods = value;
             return this;
         }
 
-        public ProxyContext<T> build() {
+        public ProxyContext<T, D> build() {
             return new ProxyContext<>(type, source, resource, translator, factory, extensions, classLoader,
                     initialInstance, proxyDefaultArguments, errorHandler, proxyObjectClassMethods);
         }

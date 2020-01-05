@@ -6,6 +6,7 @@ import java.util.function.Function;
 
 import static helper.ExampleHelper.constantStringSource;
 import static helper.ExampleHelper.stringValue;
+import static xyz.ressor.translator.Translators.string;
 
 public class ServiceInjectionExample {
 
@@ -15,14 +16,14 @@ public class ServiceInjectionExample {
         var stringOne = ressor.service(CharSequence.class)
                 .source(constantStringSource())
                 .resource(stringValue("one"))
-                .string()
+                .translator(string())
                 .factory(Function.identity())
                 .build();
 
         var stringTwo = ressor.service(CharSequence.class)
                 .source(constantStringSource())
                 .resource(stringValue("two"))
-                .string()
+                .translator(string())
                 .factory((String v) -> v + " " + stringOne)
                 .build();
 
