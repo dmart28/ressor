@@ -42,7 +42,7 @@ Also, there is a `/etc/books.json` file with all the data. Now we can simply tel
 var ressor = Ressor.create();
 var bookService = ressor.service(BookRepository.class)
         .fileSource("/etc/books.json")
-        .jsonList(Book.class)
+        .translator(jsonList(Book.class))
         .build();
 ```
 
@@ -73,19 +73,19 @@ Releases are available via Maven Central.
 ### Java 11+
 
 ```
-  implementation 'xyz.ressor:ressor-core:1.2.2'
-  implementation 'xyz.ressor:ressor-git-source:1.2.2'
-  implementation 'xyz.ressor:ressor-http-source:1.2.2'
-  implementation 'xyz.ressor:ressor-s3-source:1.2.2'
+  implementation 'xyz.ressor:ressor-core:1.3.0'
+  implementation 'xyz.ressor:ressor-git-source:1.3.0'
+  implementation 'xyz.ressor:ressor-http-source:1.3.0'
+  implementation 'xyz.ressor:ressor-s3-source:1.3.0'
 ```
 
 ### Java 8
 
 ```
-  implementation 'xyz.ressor:ressor-core-jdk8:1.2.2'
-  implementation 'xyz.ressor:ressor-git-source-jdk8:1.2.2'
-  implementation 'xyz.ressor:ressor-http-source-jdk8:1.2.2'
-  implementation 'xyz.ressor:ressor-s3-source-jdk8:1.2.2'
+  implementation 'xyz.ressor:ressor-core-jdk8:1.3.0'
+  implementation 'xyz.ressor:ressor-git-source-jdk8:1.3.0'
+  implementation 'xyz.ressor:ressor-http-source-jdk8:1.3.0'
+  implementation 'xyz.ressor:ressor-s3-source-jdk8:1.3.0'
 ```
 
 ## Versioning
