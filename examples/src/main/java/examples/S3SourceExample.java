@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static xyz.ressor.translator.Translators.yamlList;
+
 public class S3SourceExample {
 
     public static void main(String[] args) {
@@ -15,7 +17,7 @@ public class S3SourceExample {
         InvoiceRepository invoiceRepository = ressor.service(InvoiceRepository.class)
                 .source(S3.builder().region("us-east-2").build())
                 .resource(S3.object("ressor-examples", "invoices.yaml"))
-                .yamlList(Invoice.class)
+                .translator(yamlList(Invoice.class))
                 .build();
 
         System.out.println(invoiceRepository.find(120));

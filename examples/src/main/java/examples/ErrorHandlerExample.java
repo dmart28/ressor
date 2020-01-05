@@ -6,13 +6,15 @@ import xyz.ressor.source.http.Http;
 
 import java.util.function.Function;
 
+import static xyz.ressor.translator.Translators.string;
+
 public class ErrorHandlerExample {
 
     public static void main(String[] args) {
         Ressor ressor = Ressor.create();
 
         CharSequence serviceValue = ressor.service(CharSequence.class)
-                .string()
+                .translator(string())
                 .source(Http.builder().connectTimeoutMs(100).socketTimeoutMs(100).build())
                 .errorHandler(new SimpleErrorHandler(t -> System.out.println(t.getMessage())))
                 .resource(Http.url("http://never-existing-host.neh.xyz/noData.txt"))

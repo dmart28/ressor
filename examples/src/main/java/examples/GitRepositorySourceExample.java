@@ -5,6 +5,8 @@ import xyz.ressor.source.git.GitRepository;
 
 import java.util.List;
 
+import static xyz.ressor.translator.Translators.json;
+
 public class GitRepositorySourceExample {
 
     public static void main(String[] args) {
@@ -13,7 +15,7 @@ public class GitRepositorySourceExample {
         UIManager uiManager = ressor.service(UIManager.class)
                 .source(GitRepository.remote().repositoryURI("https://github.com/dmart28/ressor.git").build())
                 .resource(GitRepository.path("examples/src/main/resources/git/menu.json", "develop"))
-                .json(Window.class)
+                .translator(json(Window.class))
                 .build();
 
         System.out.println(uiManager.getMenuLabel("OriginalView"));

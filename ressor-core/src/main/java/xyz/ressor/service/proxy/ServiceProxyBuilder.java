@@ -44,8 +44,8 @@ public class ServiceProxyBuilder {
         this.isCacheClasses = isCacheClasses;
     }
 
-    public synchronized <T> T buildProxy(ProxyContext<T> context) {
-        RessorServiceImpl<T> serviceProxy = new RessorServiceImpl<>(context.getType(), getFactory(context), context.getTranslator(), context.getErrorHandler(),
+    public synchronized <T, D> T buildProxy(ProxyContext<T, D> context) {
+            RessorServiceImpl<T, D> serviceProxy = new RessorServiceImpl<>(context.getType(), getFactory(context), context.getTranslator(), context.getErrorHandler(),
                 context.getInitialInstance(), context.getResource())
                 .state(StateVariables.SOURCE, context.getSource());
         Class<? extends T> loadedClass = null;
@@ -74,12 +74,12 @@ public class ServiceProxyBuilder {
         }
     }
 
-    private <T> boolean isCachePossible(ProxyContext<T> context) {
+    private <T, D> boolean isCachePossible(ProxyContext<T, D> context) {
         return isCacheClasses && context.getExtensions().size() == 0;
     }
 
-    private <T> Class<? extends T> generateProxyClass(ProxyContext<T> context) {
-        DynamicType.Builder<T> b = byteBuddy.subclass(context.getType()).name(generateName(context.getType()));
+    private <T, D> Class<? extends T> generateProxyClass(ProxyContext<T, D> context) {
+            DynamicType.Builder<T> b = byteBuddy.subclass(context.getType()).name(generateName(context.getType()));
         if (isNotEmpty(context.getExtensions())) {
             for (ServiceExtension ext : context.getExtensions()) {
                 b = ext.interceptProxy(b, context.getType());
@@ -132,7 +132,7 @@ public class ServiceProxyBuilder {
                 target.getReturnType().represents(String.class);
     }
 
-    private <T> Function<Object, ? extends T> getFactory(ProxyContext<T> context) {
+    private <T, D> Function<D, ? extends T> getFactory(ProxyContext<T, D> context) {
         if (context.getFactory() != null) {
             return context.getFactory();
         } else {
@@ -144,7 +144,11 @@ public class ServiceProxyBuilder {
                     .findFirst()
                     .orElse(findExecutable(type, context.getTranslator().outputType()));
             if (factoryExecutable == null) {
-                throw new TypeDefinitionException(type, "Unable to find any @ServiceFactory or any matching constructor for the given source");
+                throw new TypeDefinitionException(type, "Unable to find factory for the " + type.getName() + " service " +
+                        "among:\n- Constructor or factory method annotated with @ServiceFactory;\n" +
+                        "- Constructor matching parameters to the given translator;\n" +
+                        "- Factory function provided during service building using Ressor.\n\nPlease make sure to " +
+                        "provide any from the list above.");
             }
             factoryExecutable.setAccessible(true);
             if (factoryExecutable instanceof Method) {
@@ -184,7 +188,7 @@ public class ServiceProxyBuilder {
             this.isProxyObjectClassMethods = isProxyObjectClassMethods;
         }
 
-        public boolean isMatches(ProxyContext<?> ctx) {
+        public boolean isMatches(ProxyContext<?, ?> ctx) {
             return isProxyObjectClassMethods == ctx.isProxyObjectClassMethods() &&
                     Arrays.equals(defaultArguments, ctx.getProxyDefaultArguments()) && Objects.equals(classLoader, ctx.getClassLoader());
         }

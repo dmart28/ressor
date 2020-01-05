@@ -5,20 +5,18 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 import xyz.ressor.commons.exceptions.TypeDefinitionException;
 import xyz.ressor.service.proxy.model.*;
-import xyz.ressor.source.LoadedResource;
-import xyz.ressor.source.SourceVersion;
 import xyz.ressor.translator.Translator;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.function.Function;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static xyz.ressor.translator.Translators.inputStream2Json;
-import static xyz.ressor.translator.Translators.inputStream2String;
+import static xyz.ressor.translator.TranslatorHelper.inputStream2Json;
+import static xyz.ressor.translator.TranslatorHelper.inputStream2String;
 import static xyz.ressor.utils.TestUtils.*;
 
 public class ServiceProxyBuilderTest {
@@ -27,14 +25,14 @@ public class ServiceProxyBuilderTest {
     @Test
     public void testVeryBasicClass() {
         assertThrows(TypeDefinitionException.class, () -> proxyBuilder.buildProxy(
-                ProxyContext.builder(VeryBasicClass.class).translator(inputStream2Json()).build()));
+                ProxyContext.<VeryBasicClass, JsonNode>builder(VeryBasicClass.class).translator(inputStream2Json()).build()));
     }
 
     @Test
     public void testJsonCarRepository() {
         JsonCarRepository initialInstance = new JsonCarRepository("-", "-");
         JsonCarRepository carRepository = proxyBuilder.buildProxy(ProxyContext
-                .builder(JsonCarRepository.class)
+                .<JsonCarRepository, JsonNode>builder(JsonCarRepository.class)
                 .translator(inputStream2Json())
                 .initialInstance(initialInstance)
                 .build());
@@ -53,7 +51,7 @@ public class ServiceProxyBuilderTest {
     @Test
     public void testNestedJsonCarRepository() {
         JsonNestedCarRepository nestedCarRepository = proxyBuilder.buildProxy(ProxyContext
-                .builder(JsonNestedCarRepository.class)
+                .<JsonNestedCarRepository, JsonNode>builder(JsonNestedCarRepository.class)
                 .translator(inputStream2Json()).build());
 
         assertThat(nestedCarRepository).isNotNull();
@@ -77,7 +75,7 @@ public class ServiceProxyBuilderTest {
     @Test
     public void testConstructorOnlyCarRepository() {
         JsonConstructorOnlyCarRepository carRepository = proxyBuilder.buildProxy(ProxyContext
-                .builder(JsonConstructorOnlyCarRepository.class)
+                .<JsonConstructorOnlyCarRepository, JsonNode>builder(JsonConstructorOnlyCarRepository.class)
                 .translator(inputStream2Json()).build());
 
         assertThat(carRepository).isNotNull();
@@ -91,7 +89,7 @@ public class ServiceProxyBuilderTest {
     @Test
     public void testDefaultArgumentsJsonCarRepository() {
         DefaultArgumentsJsonCarRepository carRepository = proxyBuilder.buildProxy(ProxyContext
-                .builder(DefaultArgumentsJsonCarRepository.class)
+                .<DefaultArgumentsJsonCarRepository, JsonNode>builder(DefaultArgumentsJsonCarRepository.class)
                 .translator(inputStream2Json())
                 .proxyDefaultArguments(json("{\"model\":\"None\",\"manufacturer\":\"None\"}"))
                 .initialInstance(new DefaultArgumentsJsonCarRepository(json("{\"model\":\"-\",\"manufacturer\":\"-\"}")))
@@ -105,7 +103,7 @@ public class ServiceProxyBuilderTest {
     @Test
     public void testNoDefaultArgumentsJsonCarRepository() {
         assertThrows(InvocationTargetException.class, () -> proxyBuilder.buildProxy(ProxyContext
-                .builder(DefaultArgumentsJsonCarRepository.class)
+                .<DefaultArgumentsJsonCarRepository, JsonNode>builder(DefaultArgumentsJsonCarRepository.class)
                 .translator(inputStream2Json())
                 .initialInstance(new DefaultArgumentsJsonCarRepository(json("{\"model\":\"-\",\"manufacturer\":\"-\"}")))
                 .build()));
@@ -114,7 +112,7 @@ public class ServiceProxyBuilderTest {
     @Test
     public void testInterfaceRepository() {
         PersonInfo personInfo = proxyBuilder.buildProxy(ProxyContext
-                .builder(PersonInfo.class)
+                .<PersonInfo, JsonNode>builder(PersonInfo.class)
                 .translator(inputStream2Json())
                 .factory((JsonNode n) -> new PersonInfoImpl(n.path("first_name").asText(), n.path("last_name").asText()))
                 .build());
@@ -130,7 +128,7 @@ public class ServiceProxyBuilderTest {
 
     @Test
     public void testProxyClassCaching() {
-        Function<ServiceProxyBuilder, PersonInfo> f = pb -> pb.buildProxy(ProxyContext.builder(PersonInfo.class)
+        Function<ServiceProxyBuilder, PersonInfo> f = pb -> pb.buildProxy(ProxyContext.<PersonInfo, JsonNode>builder(PersonInfo.class)
                 .translator(inputStream2Json())
                 .proxyObjectClassMethods(false)
                 .factory(n -> new PersonInfoImpl(null, null)).build());
@@ -152,7 +150,8 @@ public class ServiceProxyBuilderTest {
 
     @Test
     public void testProxyClassCachingConditions() {
-        Function<Object[], PublicClassConstructorAnnotated> f = dpa -> proxyBuilder.buildProxy(ProxyContext.builder(PublicClassConstructorAnnotated.class)
+        Function<Object[], PublicClassConstructorAnnotated> f = dpa -> proxyBuilder.buildProxy(
+                ProxyContext.<PublicClassConstructorAnnotated, Integer>builder(PublicClassConstructorAnnotated.class)
                 .translator(Translator.define(s -> 5, InputStream.class, int.class))
                 .proxyDefaultArguments(dpa)
                 .proxyObjectClassMethods(false)
@@ -174,7 +173,7 @@ public class ServiceProxyBuilderTest {
     @Test
     public void testReloadErrorHandler() {
         JsonCarRepository carRepository = proxyBuilder.buildProxy(ProxyContext
-                .builder(JsonCarRepository.class)
+                .<JsonCarRepository, JsonNode>builder(JsonCarRepository.class)
                 .translator(inputStream2Json())
                 .build());
 
@@ -186,8 +185,8 @@ public class ServiceProxyBuilderTest {
     @Test
     public void testObjectMethods() {
         CharSequence string = proxyBuilder.buildProxy(ProxyContext
-                .builder(CharSequence.class)
-                .translator(inputStream2String())
+                .<CharSequence, String>builder(CharSequence.class)
+                .translator(inputStream2String(UTF_8))
                 .factory(Function.identity())
                 .build());
 

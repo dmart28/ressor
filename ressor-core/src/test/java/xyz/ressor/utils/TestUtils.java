@@ -76,7 +76,7 @@ public class TestUtils {
         };
     }
 
-    public static <T> RessorBuilder<T> stringBuilderSource(StringBuilder sb, RessorBuilder<T> builder) {
+    public static <T, D> RessorBuilder<T, D> stringBuilderSource(StringBuilder sb, RessorBuilder<T, D> builder) {
         Source source = stringBuilderSource(sb);
         ResourceId resource = matching(source);
 
@@ -102,7 +102,7 @@ public class TestUtils {
         };
     }
 
-    public static <T> RessorBuilder<T> stubSource(RessorBuilder<T> builder) {
+    public static <T, D> RessorBuilder<T, D> stubSource(RessorBuilder<T, D> builder) {
         Source source = stubSource();
         ResourceId resource = matching(source);
 

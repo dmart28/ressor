@@ -6,13 +6,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static xyz.ressor.translator.Translators.jsonList;
+
 public class QuickStart {
 
     public static void main(String[] args) {
         Ressor ressor = Ressor.create();
         BookRepository bookService = ressor.service(BookRepository.class)
                 .fileSource("classpath:examples/data.json")
-                .jsonList(Book.class)
+                .translator(jsonList(Book.class))
                 .build();
 
         System.out.println(bookService.getTitle("0679760806"));

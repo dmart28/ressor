@@ -1,6 +1,5 @@
 package xyz.ressor.integration;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
@@ -20,7 +19,6 @@ import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
@@ -28,6 +26,14 @@ import java.util.function.BiConsumer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static xyz.ressor.translator.Translators.json;
+import static xyz.ressor.translator.Translators.jsonList;
+import static xyz.ressor.translator.Translators.lines;
+import static xyz.ressor.translator.Translators.string;
+import static xyz.ressor.translator.Translators.xml;
+import static xyz.ressor.translator.Translators.xmlList;
+import static xyz.ressor.translator.Translators.yaml;
+import static xyz.ressor.translator.Translators.yamlList;
 import static xyz.ressor.utils.TestUtils.simpleErrorHandler;
 
 public class GeoServiceTest {
@@ -36,8 +42,8 @@ public class GeoServiceTest {
     public void testXml() {
         checkGeoService(Ressor.create().service(GeoService.class)
                 .fileSource("classpath:integration/geoData.xml")
-                .xml()
-                .<JsonNode>factory(GeoServiceImpl::new)
+                .translator(xml())
+                .factory(GeoServiceImpl::new)
                 .build());
     }
 
@@ -45,8 +51,8 @@ public class GeoServiceTest {
     public void testXmlObject() {
         checkGeoService(Ressor.create().service(GeoService.class)
                 .fileSource("classpath:integration/geoData.xml")
-                .xmlList(GeoData.class)
-                .<List<GeoData>>factory(GeoServiceImpl::new)
+                .translator(xmlList(GeoData.class))
+                .factory(GeoServiceImpl::new)
                 .build());
     }
 
@@ -54,8 +60,8 @@ public class GeoServiceTest {
     public void testJson() {
         checkGeoService(Ressor.create().service(GeoService.class)
                 .fileSource("classpath:integration/geoData.json")
-                .json()
-                .<JsonNode>factory(GeoServiceImpl::new)
+                .translator(json())
+                .factory(GeoServiceImpl::new)
                 .build());
     }
 
@@ -63,9 +69,9 @@ public class GeoServiceTest {
     public void testGzipJson() {
         checkGeoService(Ressor.create().service(GeoService.class)
                 .fileSource("classpath:integration/geoData.json.gz")
-                .json()
+                .translator(json())
                 .gzipped()
-                .<JsonNode>factory(GeoServiceImpl::new)
+                .factory(GeoServiceImpl::new)
                 .build());
     }
 
@@ -73,8 +79,8 @@ public class GeoServiceTest {
     public void testYaml() {
         checkGeoService(Ressor.create().service(GeoService.class)
                 .fileSource("classpath:integration/geoData.yml")
-                .yaml()
-                .<JsonNode>factory(GeoServiceImpl::new)
+                .translator(yaml())
+                .factory(GeoServiceImpl::new)
                 .build());
     }
 
@@ -82,8 +88,8 @@ public class GeoServiceTest {
     public void testYamlObject() {
         checkGeoService(Ressor.create().service(GeoService.class)
                 .fileSource("classpath:integration/geoData.yml")
-                .yamlList(GeoData.class)
-                .<List<GeoData>>factory(GeoServiceImpl::new)
+                .translator(yamlList(GeoData.class))
+                .factory(GeoServiceImpl::new)
                 .build());
     }
 
@@ -91,8 +97,8 @@ public class GeoServiceTest {
     public void testJsonObject() {
         checkGeoService(Ressor.create().service(GeoService.class)
                 .fileSource("classpath:integration/geoData.json")
-                .jsonList(GeoData.class)
-                .<List<GeoData>>factory(GeoServiceImpl::new)
+                .translator(jsonList(GeoData.class))
+                .factory(GeoServiceImpl::new)
                 .build());
     }
 
@@ -100,8 +106,8 @@ public class GeoServiceTest {
     public void testString() {
         checkGeoService(Ressor.create().service(GeoService.class)
                 .fileSource("classpath:integration/geoData.csv")
-                .string()
-                .<String>factory(s -> new GeoServiceImpl(s.split(System.lineSeparator())))
+                .translator(string())
+                .factory(s -> new GeoServiceImpl(s.split(System.lineSeparator())))
                 .build());
     }
 
@@ -109,8 +115,8 @@ public class GeoServiceTest {
     public void testLines() {
         checkGeoService(Ressor.create().service(GeoService.class)
                 .fileSource("classpath:integration/geoData.csv")
-                .lines()
-                .<String[]>factory(GeoServiceImpl::new)
+                .translator(lines())
+                .factory(GeoServiceImpl::new)
                 .build());
     }
 
@@ -118,7 +124,7 @@ public class GeoServiceTest {
     public void testJsonImplementationOnly() {
         checkGeoService(Ressor.create().service(GeoServiceImpl.class)
                 .fileSource("classpath:integration/geoData.json")
-                .json()
+                .translator(json())
                 .proxyDefaultArguments(MissingNode.getInstance())
                 .build());
     }
@@ -127,7 +133,7 @@ public class GeoServiceTest {
     public void testJsonObjectImplementationOnly() {
         checkGeoService(Ressor.create().service(GeoServiceImpl.class)
                 .fileSource("classpath:integration/geoData.json")
-                .jsonList(GeoData.class)
+                .translator(jsonList(GeoData.class))
                 .proxyDefaultArguments(MissingNode.getInstance())
                 .build());
     }
@@ -136,7 +142,7 @@ public class GeoServiceTest {
     public void testYamlObjectImplementationOnly() {
         checkGeoService(Ressor.create().service(GeoServiceImpl.class)
                 .fileSource("classpath:integration/geoData.yml")
-                .yamlList(GeoData.class)
+                .translator(yamlList(GeoData.class))
                 .proxyDefaultArguments(MissingNode.getInstance())
                 .build());
     }
@@ -145,7 +151,7 @@ public class GeoServiceTest {
     public void testYamlImplementationOnly() {
         checkGeoService(Ressor.create().service(GeoServiceImpl.class)
                 .fileSource("classpath:integration/geoData.yml")
-                .yaml()
+                .translator(yaml())
                 .proxyDefaultArguments(MissingNode.getInstance())
                 .build());
     }
@@ -154,7 +160,7 @@ public class GeoServiceTest {
     public void testLinesImplementationOnly() {
         checkGeoService(Ressor.create().service(GeoServiceImpl.class)
                 .fileSource("classpath:integration/geoData.csv")
-                .lines()
+                .translator(lines())
                 .proxyDefaultArguments(MissingNode.getInstance())
                 .build());
     }
@@ -163,7 +169,7 @@ public class GeoServiceTest {
     public void testFileNotExists() {
         assertThrows(FileNotFoundException.class, () -> Ressor.create().service(GeoServiceImpl.class)
                 .fileSource("classpath:integration/fileNotExists.csv")
-                .lines()
+                .translator(lines())
                 .proxyDefaultArguments(MissingNode.getInstance())
                 .build());
     }
@@ -175,8 +181,8 @@ public class GeoServiceTest {
         Ressor ressor = Ressor.create();
         GeoService geoService = ressor.service(GeoService.class)
                 .fileSource(tempDir.resolve("file.yml"))
-                .yaml()
-                .<JsonNode>factory(GeoServiceImpl::new)
+                .translator(yaml())
+                .factory(GeoServiceImpl::new)
                 .build();
 
         ressor.listen(geoService);
@@ -219,8 +225,8 @@ public class GeoServiceTest {
         ErrorHandler errorHandler = simpleErrorHandler(reloadFailed::incrementAndGet, translateFailed::incrementAndGet);
         BiConsumer<String, RessorConfig> createService = (path, config) -> Ressor.create(config).service(GeoService.class)
                 .fileSource(path)
-                .json()
-                .<JsonNode>factory(GeoServiceImpl::new)
+                .translator(json())
+                .factory(GeoServiceImpl::new)
                 .errorHandler(errorHandler)
                 .build();
 
@@ -247,16 +253,16 @@ public class GeoServiceTest {
     public void testResourceRelatedErrors() {
         assertThrows(RessorBuilderException.class, () -> Ressor.create().service(GeoService.class)
                 .source(new FileSystemSource())
-                .xml().<JsonNode>factory(GeoServiceImpl::new).build());
+                .translator(xml()).factory(GeoServiceImpl::new).build());
 
         assertThrows(RessorBuilderException.class, () -> Ressor.create().service(GeoService.class)
                 .source(new FileSystemSource())
                 .resource(new TestResourceId())
-                .xml().<JsonNode>factory(GeoServiceImpl::new).build());
+                .translator(xml()).factory(GeoServiceImpl::new).build());
 
         assertThrows(RessorBuilderException.class, () -> Ressor.create().service(GeoService.class)
                 .resource(new TestResourceId())
-                .xml().<JsonNode>factory(GeoServiceImpl::new).build());
+                .translator(xml()).factory(GeoServiceImpl::new).build());
     }
 
     private void checkGeoService(GeoService geoService) {

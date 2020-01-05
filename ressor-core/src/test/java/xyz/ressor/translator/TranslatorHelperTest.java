@@ -19,9 +19,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static xyz.ressor.commons.utils.FileUtils.classpath;
 import static xyz.ressor.translator.Translator.define;
-import static xyz.ressor.translator.Translators.*;
+import static xyz.ressor.translator.TranslatorHelper.*;
 
-public class TranslatorsTest {
+public class TranslatorHelperTest {
 
     @Test
     public void testBytes2String() {
@@ -59,7 +59,7 @@ public class TranslatorsTest {
         byte[] bytes = new byte[] { 97, 98, 99, 100, 101, 102, 32, -47, -126, -48, -75, -47, -127, -47, -126 };
         ByteArrayInputStream is = new ByteArrayInputStream(bytes);
 
-        assertThat(inputStream2String().translate(is)).isEqualTo("abcdef тест");
+        assertThat(inputStream2String(UTF_8).translate(is)).isEqualTo("abcdef тест");
     }
 
     @Test
@@ -132,7 +132,7 @@ public class TranslatorsTest {
     @Test
     public void testXmlObjectTranslator() {
         byte[] bytes = classpath("translator/class_event.xml").getBytes(UTF_8);
-        Translator<InputStream, Car> translator = Translators.inputStream2XmlObject(Car.class);
+        Translator<InputStream, Car> translator = TranslatorHelper.inputStream2XmlObject(Car.class);
 
         translateAndCheckCar(bytes, translator);
     }
@@ -140,7 +140,7 @@ public class TranslatorsTest {
     @Test
     public void testJsonObjectTranslator() {
         byte[] bytes = classpath("translator/class_event.json").getBytes(UTF_8);
-        Translator<InputStream, Car> translator = Translators.inputStream2JsonObject(Car.class);
+        Translator<InputStream, Car> translator = TranslatorHelper.inputStream2JsonObject(Car.class);
 
         translateAndCheckCar(bytes, translator);
     }
@@ -148,7 +148,7 @@ public class TranslatorsTest {
     @Test
     public void testYamlObjectTranslator() {
         byte[] bytes = classpath("translator/class_event.yaml").getBytes(UTF_8);
-        Translator<InputStream, Car> translator = Translators.inputStream2YamlObject(Car.class);
+        Translator<InputStream, Car> translator = TranslatorHelper.inputStream2YamlObject(Car.class);
 
         translateAndCheckCar(bytes, translator);
     }
@@ -156,7 +156,7 @@ public class TranslatorsTest {
     @Test
     public void testXmlObjectListTranslator() {
         byte[] bytes = classpath("translator/class_events.xml").getBytes(UTF_8);
-        List<Car> i = Translators.inputStream2XmlObjectList(Car.class).translate(new ByteArrayInputStream(bytes));
+        List<Car> i = TranslatorHelper.inputStream2XmlObjectList(Car.class).translate(new ByteArrayInputStream(bytes));
 
         assertThat(i).hasSize(1);
         checkCar(i.get(0));
@@ -165,7 +165,7 @@ public class TranslatorsTest {
     @Test
     public void testJsonObjectListTranslator() {
         byte[] bytes = classpath("translator/class_events.json").getBytes(UTF_8);
-        List<Car> i = Translators.inputStream2JsonObjectList(Car.class).translate(new ByteArrayInputStream(bytes));
+        List<Car> i = TranslatorHelper.inputStream2JsonObjectList(Car.class).translate(new ByteArrayInputStream(bytes));
 
         assertThat(i).hasSize(1);
         checkCar(i.get(0));
@@ -174,7 +174,7 @@ public class TranslatorsTest {
     @Test
     public void testYamlObjectListTranslator() {
         byte[] bytes = classpath("translator/class_events.yaml").getBytes(UTF_8);
-        List<Car> i = Translators.inputStream2YamlObjectList(Car.class).translate(new ByteArrayInputStream(bytes));
+        List<Car> i = TranslatorHelper.inputStream2YamlObjectList(Car.class).translate(new ByteArrayInputStream(bytes));
 
         assertThat(i).hasSize(1);
         checkCar(i.get(0));

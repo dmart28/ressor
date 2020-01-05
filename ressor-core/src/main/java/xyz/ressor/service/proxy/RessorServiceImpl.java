@@ -23,10 +23,10 @@ import static xyz.ressor.commons.utils.RessorUtils.firstNonNull;
 import static xyz.ressor.commons.utils.RessorUtils.silentlyClose;
 import static xyz.ressor.service.proxy.StateVariables.ACTIONS;
 
-public class RessorServiceImpl<T> implements RessorService<T> {
+public class RessorServiceImpl<T, D> implements RessorService<T> {
     private static final Logger log = LoggerFactory.getLogger(RessorServiceImpl.class);
-    private final Function<Object, ? extends T> factory;
-    private final Translator<InputStream, ?> translator;
+    private final Function<D, ? extends T> factory;
+    private final Translator<InputStream, D> translator;
     private final ErrorHandler errorHandler;
     private final Class<? extends T> type;
     private final T initialInstance;
@@ -37,8 +37,8 @@ public class RessorServiceImpl<T> implements RessorService<T> {
     private volatile SourceVersion latestVersion;
     private volatile AtomicBoolean isReloading = new AtomicBoolean(false);
 
-    public RessorServiceImpl(Class<? extends T> type, Function<Object, ? extends T> factory,
-                             Translator<InputStream, ?> translator, ErrorHandler errorHandler,
+    public RessorServiceImpl(Class<? extends T> type, Function<D, ? extends T> factory,
+                             Translator<InputStream, D> translator, ErrorHandler errorHandler,
                              T initialInstance, ResourceId resourceId) {
         this.type = type;
         this.factory = factory;
@@ -144,7 +144,7 @@ public class RessorServiceImpl<T> implements RessorService<T> {
         return (V) state.get(key);
     }
 
-    public RessorServiceImpl<T> state(Object key, Object value) {
+    public RessorServiceImpl<T, D> state(Object key, Object value) {
         if (key != null && value != null) {
             state.put(key, value);
         }

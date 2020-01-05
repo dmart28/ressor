@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import xyz.ressor.Ressor;
 import xyz.ressor.service.action.Actions;
+import xyz.ressor.translator.Translators;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -50,11 +51,11 @@ public class ReloadActionsTest {
         StringBuilder dataSource2 = new StringBuilder();
 
         CharSequence string1 = stubSource(ressor.service(CharSequence.class)
-                .string()
+                .translator(Translators.string())
                 .factory(Function.identity()))
                 .build();
         CharSequence string2 = stringBuilderSource(dataSource2, ressor.service(CharSequence.class)
-                .string()
+                .translator(Translators.string())
                 .factory(Function.identity()))
                 .build();
 
@@ -148,7 +149,7 @@ public class ReloadActionsTest {
     private CharSequence createTestService() {
         CharSequence string = ressor.service(CharSequence.class)
                 .fileSource("classpath:fs/simpleText.txt")
-                .string()
+                .translator(Translators.string())
                 .factory(Function.identity())
                 .build();
         assertThat(string).isEqualTo("Test data");

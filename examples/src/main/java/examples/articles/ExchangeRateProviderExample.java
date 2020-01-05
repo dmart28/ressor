@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static java.util.Collections.unmodifiableMap;
+import static xyz.ressor.translator.Translators.json;
 
 public class ExchangeRateProviderExample {
 
@@ -21,7 +22,7 @@ public class ExchangeRateProviderExample {
         ExchangeRateProvider rateService = ressor.service(ExchangeRateProvider.class)
                 .source(Http.source())
                 .resource(Http.url("https://api.exchangeratesapi.io/latest"))
-                .json(ExchangeRateData.class)
+                .translator(json(ExchangeRateData.class))
                 .build();
 
         System.out.println("USD/IDR exchange rate: " + rateService.getRate(Currency.getInstance("USD"), Currency.getInstance("IDR")));

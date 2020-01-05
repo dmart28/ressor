@@ -45,7 +45,7 @@ public class FileSystemWatchServiceTest {
             writeLinesToFile(file1);
             writeLinesToFile(file2);
 
-            await().atMost(30, TimeUnit.SECONDS).until(() -> firstJobAlerted.get() && secondJobAlerted.get());
+            await().atMost(120, TimeUnit.SECONDS).until(() -> firstJobAlerted.get() && secondJobAlerted.get());
         } finally {
             deleteDirectory(file2.getParent().toFile());
             ws.destroy();

@@ -6,6 +6,8 @@ import xyz.ressor.source.http.HttpSource;
 
 import java.util.function.Function;
 
+import static xyz.ressor.translator.Translators.string;
+
 public class SingleSourceMultipleServices {
 
     public static void main(String[] args) {
@@ -31,7 +33,7 @@ public class SingleSourceMultipleServices {
         return ressor.service(CharSequence.class)
                 .source(httpSource)
                 .resource(Http.url("http://ressor-examples.s3-website.us-east-2.amazonaws.com/" + fileName))
-                .string()
+                .translator(string())
                 .factory(Function.identity())
                 .build();
     }
