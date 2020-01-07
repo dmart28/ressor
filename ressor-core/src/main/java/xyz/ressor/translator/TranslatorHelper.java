@@ -52,11 +52,11 @@ public abstract class TranslatorHelper {
     }
 
     public static Translator<InputStream, String> inputStream2String(Charset charset) {
-        return inputStream2Bytes().chain(bytes2String(charset));
+        return inputStream2Bytes().then(bytes2String(charset));
     }
 
     public static Translator<InputStream, String[]> inputStream2Lines(Charset charset) {
-        return inputStream2Bytes().chain(bytes2Lines(charset));
+        return inputStream2Bytes().then(bytes2Lines(charset));
     }
 
     public static Translator<InputStream, JsonNode> inputStream2Json(ObjectMapper mapper) {

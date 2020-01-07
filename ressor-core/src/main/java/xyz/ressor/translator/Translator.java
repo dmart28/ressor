@@ -58,6 +58,14 @@ public interface Translator<T, R> {
     }
 
     /**
+     * @deprecated use {@link #then(Translator)}
+     */
+    @Deprecated(forRemoval = true)
+    default <R1> Translator<T, R1> chain(Translator<R, R1> translator) {
+        return then(translator);
+    }
+
+    /**
      * Chains the provided translator <b>R->R1</b> to the current <b>T->R</b>.
      * <p/>
      * The resulting translator is <b>T->R->R1</b>.
@@ -66,7 +74,7 @@ public interface Translator<T, R> {
      * @param <R1> final result type
      * @return the chained translator
      */
-    default <R1> Translator<T, R1> chain(Translator<R, R1> translator) {
+    default <R1> Translator<T, R1> then(Translator<R, R1> translator) {
         return new Translator<>() {
             @Override
             public R1 translate(T resource) {
